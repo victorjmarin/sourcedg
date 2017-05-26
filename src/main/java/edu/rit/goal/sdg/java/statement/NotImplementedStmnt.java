@@ -10,6 +10,10 @@ public class NotImplementedStmnt implements Statement {
 	msg = cls.getClass().getSimpleName() + "[" + ctx.getClass().getSimpleName() + "]";
     }
 
+    public String getMsg() {
+	return msg;
+    }
+
     @Override
     public String toString() {
 	return msg;

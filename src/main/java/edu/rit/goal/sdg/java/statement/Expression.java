@@ -10,7 +10,7 @@ import edu.rit.goal.sdg.java.antlr.Java8Parser.ExpressionNameContext;
 
 public class Expression {
 
-    private ParseTree ast;
+    private final ParseTree ast;
     private final Set<String> readingVars;
 
     public Expression(final ParseTree ast) {
@@ -21,10 +21,6 @@ public class Expression {
 
     public ParseTree getAst() {
 	return ast;
-    }
-
-    public void setAst(final ParseTree ast) {
-	this.ast = ast;
     }
 
     public Set<String> getReadingVars() {

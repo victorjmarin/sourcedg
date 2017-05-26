@@ -7,10 +7,10 @@ import edu.rit.goal.sdg.java.statement.Statement;
 
 public class BasicForStmnt implements Statement {
 
-    private List<Statement> init;
-    private Expression condition;
-    private List<Statement> update;
-    private List<Statement> body;
+    private final List<Statement> init;
+    private final Expression condition;
+    private final List<Statement> update;
+    private final List<Statement> body;
 
     public BasicForStmnt(final List<Statement> init, final Expression condition, final List<Statement> update,
 	    final List<Statement> body) {
@@ -25,32 +25,16 @@ public class BasicForStmnt implements Statement {
 	return init;
     }
 
-    public void setInit(final List<Statement> init) {
-	this.init = init;
-    }
-
     public Expression getCondition() {
 	return condition;
-    }
-
-    public void setCondition(final Expression condition) {
-	this.condition = condition;
     }
 
     public List<Statement> getUpdate() {
 	return update;
     }
 
-    public void setUpdate(final List<Statement> update) {
-	this.update = update;
-    }
-
     public List<Statement> getBody() {
 	return body;
-    }
-
-    public void setBody(final List<Statement> body) {
-	this.body = body;
     }
 
     @Override

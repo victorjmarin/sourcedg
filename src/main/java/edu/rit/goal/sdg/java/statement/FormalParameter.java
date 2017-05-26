@@ -2,7 +2,7 @@ package edu.rit.goal.sdg.java.statement;
 
 public class FormalParameter {
 
-    private String variableDeclaratorId;
+    private final String variableDeclaratorId;
 
     public FormalParameter(final String variableDeclaratorId) {
 	super();
@@ -11,10 +11,6 @@ public class FormalParameter {
 
     public String getVariableDeclaratorId() {
 	return variableDeclaratorId;
-    }
-
-    public void setVariableDeclaratorId(final String variableDeclaratorId) {
-	this.variableDeclaratorId = variableDeclaratorId;
     }
 
     @Override

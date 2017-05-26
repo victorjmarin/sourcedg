@@ -38,7 +38,6 @@ public class HorwitzSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     @Override
     public void ifThenStmnt(final IfThenStmnt ifThenStmnt, final SysDepGraph sdg) {
 	// TODO Auto-generated method stub
-
     }
 
     @Override

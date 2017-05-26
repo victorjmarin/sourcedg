@@ -7,8 +7,8 @@ import edu.rit.goal.sdg.java.statement.Statement;
 
 public class IfThenStmnt implements Statement {
 
-    private Expression condition;
-    private List<Statement> thenBranch;
+    private final Expression condition;
+    private final List<Statement> thenBranch;
 
     public IfThenStmnt(final Expression condition, final List<Statement> thenBranch) {
 	super();
@@ -20,16 +20,8 @@ public class IfThenStmnt implements Statement {
 	return condition;
     }
 
-    public void setCondition(final Expression condition) {
-	this.condition = condition;
-    }
-
     public List<Statement> getThenBranch() {
 	return thenBranch;
-    }
-
-    public void setThenBranch(final List<Statement> thenBranch) {
-	this.thenBranch = thenBranch;
     }
 
     @Override

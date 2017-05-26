@@ -7,9 +7,9 @@ import edu.rit.goal.sdg.java.statement.Statement;
 
 public class IfThenElseStmnt implements Statement {
 
-    private Expression condition;
-    private List<Statement> thenBranch;
-    private List<Statement> elseBranch;
+    private final Expression condition;
+    private final List<Statement> thenBranch;
+    private final List<Statement> elseBranch;
 
     public IfThenElseStmnt(final Expression condition, final List<Statement> thenBranch,
 	    final List<Statement> elseBranch) {
@@ -23,24 +23,12 @@ public class IfThenElseStmnt implements Statement {
 	return condition;
     }
 
-    public void setCondition(final Expression condition) {
-	this.condition = condition;
-    }
-
     public List<Statement> getThenBranch() {
 	return thenBranch;
     }
 
-    public void setThenBranch(final List<Statement> thenBranch) {
-	this.thenBranch = thenBranch;
-    }
-
     public List<Statement> getElseBranch() {
 	return elseBranch;
-    }
-
-    public void setElseBranch(final List<Statement> elseBranch) {
-	this.elseBranch = elseBranch;
     }
 
     @Override

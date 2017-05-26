@@ -2,7 +2,7 @@ package edu.rit.goal.sdg.java.statement;
 
 public class ReturnStmnt implements Statement {
 
-    private Expression returnedExpr;
+    private final Expression returnedExpr;
 
     public ReturnStmnt(final Expression returnedExpr) {
 	super();
@@ -11,10 +11,6 @@ public class ReturnStmnt implements Statement {
 
     public Expression getReturnedExpr() {
 	return returnedExpr;
-    }
-
-    public void setReturnedExpr(final Expression returnedExpr) {
-	this.returnedExpr = returnedExpr;
     }
 
     @Override
@@ -27,5 +23,5 @@ public class ReturnStmnt implements Statement {
 	}
 	return sb.toString();
     }
-    
+
 }

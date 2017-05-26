@@ -7,8 +7,8 @@ import edu.rit.goal.sdg.java.statement.Statement;
 
 public class WhileStmnt implements Statement {
 
-    private Expression condition;
-    private List<Statement> body;
+    private final Expression condition;
+    private final List<Statement> body;
 
     public WhileStmnt(final Expression condition, final List<Statement> body) {
 	super();
@@ -20,16 +20,8 @@ public class WhileStmnt implements Statement {
 	return condition;
     }
 
-    public void setCondition(final Expression condition) {
-	this.condition = condition;
-    }
-
     public List<Statement> getBody() {
 	return body;
-    }
-
-    public void setBody(final List<Statement> body) {
-	this.body = body;
     }
 
     @Override
