@@ -1,9 +1,5 @@
 package edu.rit.goal.sdg.java.statement;
 
-import edu.rit.goal.sdg.java.graph.SysDepGraph;
-import edu.rit.goal.sdg.java.graph.Vertex;
-import edu.rit.goal.sdg.java.graph.VertexType;
-
 public class VariableDecl implements Statement {
 
     private final String variableDeclaratorId;
@@ -26,13 +22,6 @@ public class VariableDecl implements Statement {
     @Override
     public String toString() {
 	return variableDeclaratorId + " = " + variableInitializer;
-    }
-
-    @Override
-    public void buildSdg(final SysDepGraph sdg) {
-	final Vertex v = new Vertex(VertexType.DECL, toString());
-	sdg.addVertex(v);
-	System.out.println(toString());
     }
 
 }

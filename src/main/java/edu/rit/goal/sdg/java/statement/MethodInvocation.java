@@ -2,14 +2,12 @@ package edu.rit.goal.sdg.java.statement;
 
 import java.util.List;
 
-import edu.rit.goal.sdg.java.graph.SysDepGraph;
-
 public class MethodInvocation implements Statement {
 
     private String name;
-    private List<String> args;
+    private List<Expression> args;
 
-    public MethodInvocation(final String name, final List<String> args) {
+    public MethodInvocation(final String name, final List<Expression> args) {
 	super();
 	this.name = name;
 	this.args = args;
@@ -23,22 +21,17 @@ public class MethodInvocation implements Statement {
 	this.name = name;
     }
 
-    public List<String> getArgs() {
+    public List<Expression> getArgs() {
 	return args;
     }
 
-    public void setArgs(final List<String> args) {
+    public void setArgs(final List<Expression> args) {
 	this.args = args;
     }
 
     @Override
     public String toString() {
 	return name + args.toString();
-    }
-
-    @Override
-    public void buildSdg(final SysDepGraph sdg) {
-	System.out.println(toString());
     }
 
 }

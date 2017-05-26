@@ -22,7 +22,6 @@ public class FormalParameterListVisitor extends Java8BaseVisitor<List<FormalPara
 	final LastFormalParameterVisitor visitor = new LastFormalParameterVisitor();
 	final FormalParameter lastParameter = visitor.visit(ctx.lastFormalParameter());
 	result.add(lastParameter);
-
 	return result;
     }
 

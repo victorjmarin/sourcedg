@@ -1,7 +1,5 @@
 package edu.rit.goal.sdg.java.statement;
 
-import edu.rit.goal.sdg.java.graph.SysDepGraph;
-
 public class Assignment implements Statement {
 
     private String leftHandSide;
@@ -42,11 +40,6 @@ public class Assignment implements Statement {
     @Override
     public String toString() {
 	return leftHandSide + " " + operator + " " + rightHandSide;
-    }
-
-    @Override
-    public void buildSdg(final SysDepGraph sdg) {
-	System.out.println(toString());
     }
 
 }

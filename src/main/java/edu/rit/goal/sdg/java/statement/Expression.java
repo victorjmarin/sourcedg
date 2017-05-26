@@ -5,6 +5,7 @@ import java.util.Set;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
+import edu.rit.goal.sdg.java.antlr.Java8Parser.AmbiguousNameContext;
 import edu.rit.goal.sdg.java.antlr.Java8Parser.ExpressionNameContext;
 
 public class Expression {
@@ -36,7 +37,7 @@ public class Expression {
 
     @Override
     public String toString() {
-	return getText() + " -> " + readingVars;
+	return getText() + readingVars;
     }
 
     private Set<String> getReadingVars(final ParseTree ctx) {
@@ -44,7 +45,13 @@ public class Expression {
 	if (ctx.getChildCount() == 0) {
 	    final ParseTree parent = ctx.getParent();
 	    if (parent instanceof ExpressionNameContext) {
-		result.add(parent.getText());
+		final ParseTree firstChild = parent.getChild(0);
+		// Deal with a.length and such
+		if (firstChild instanceof AmbiguousNameContext) {
+		    result.add(firstChild.getText());
+		} else {
+		    result.add(parent.getText());
+		}
 		return result;
 	    }
 	}

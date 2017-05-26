@@ -11,7 +11,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import edu.rit.goal.sdg.java.Java8SdgBuilder;
+import edu.rit.goal.sdg.java.SysDepGraphBuilder;
+import edu.rit.goal.sdg.java.SysDepGraphBuilderFactory;
+import edu.rit.goal.sdg.java.SysDepGraphBuilderFactory.BuildStrategy;
 import edu.rit.goal.sdg.java.graph.SysDepGraph;
 import edu.rit.goal.sdg.java.graph.Vertex;
 
@@ -22,8 +24,8 @@ public class CircleTest {
     @Before
     public void parseTestProgram() throws IOException {
 	final String program = new String(Files.readAllBytes(Paths.get("programs/Circle.java")));
-	final Java8SdgBuilder javaParser = new Java8SdgBuilder();
-	sdg = javaParser.buildSdg(program);
+	final SysDepGraphBuilder builder = SysDepGraphBuilderFactory.using(BuildStrategy.HORWITZ);
+	sdg = builder.fromSource(program);
     }
 
     @Test
@@ -33,11 +35,12 @@ public class CircleTest {
 	Assert.assertTrue(params.contains("program"));
     }
 
-//    @Test
-//    public void formalInShouldBeParsed() {
-//	final Set<Vertex> vertices = sdg.vertexSet();
-//	final List<String> params = vertices.stream().map(v -> v.getAst()).collect(Collectors.toList());
-//	Assert.assertTrue(params.contains("rad"));
-//    }
+    // @Test
+    // public void formalInShouldBeParsed() {
+    // final Set<Vertex> vertices = sdg.vertexSet();
+    // final List<String> params = vertices.stream().map(v ->
+    // v.getAst()).collect(Collectors.toList());
+    // Assert.assertTrue(params.contains("rad"));
+    // }
 
 }

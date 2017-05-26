@@ -1,14 +1,24 @@
 public class Circle {
 
-    void program(int rad) {
-	boolean debug = false;
-	double pi = 3.14;
-	if (debug)
-	    rad = 4;
-	area = pi * (rad * rad);
-	circ = 2 * pi * rad;
-	System.out.println(area);
-	System.out.println(circ);
-    }
+    void escLAB3P1V1(int k) {
+	    for (int i = 1; i <= k; i++) {
+	        int currentFact = getFactorial(i);
+	        int nextFact = getFactorial(i + 1);
+	        
+	        if (currentFact <= k && k < nextFact) {
+	            System.out.print(i);
+	            break;
+	        }
+	        
+	        if (currentFact > k)
+	            break;
+	    }
+	}
 
+	int getFactorial(int n) {
+		int ret = 1;
+		for (int i = 1; i <= n; i++)
+			ret *= i;
+		return ret;
+	}
 }

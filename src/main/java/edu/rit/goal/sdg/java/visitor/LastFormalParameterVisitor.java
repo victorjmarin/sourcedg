@@ -6,7 +6,7 @@ import edu.rit.goal.sdg.java.statement.FormalParameter;
 
 public class LastFormalParameterVisitor extends Java8BaseVisitor<FormalParameter> {
 
-    // ... not supported currently.
+    // TODO: varargs (...) not supported currently, so we treat last parameter as a regular parameter
     @Override
     public FormalParameter visitLastFormalParameter(final Java8Parser.LastFormalParameterContext ctx) {
 	return new FormalParameterVisitor().visit(ctx);

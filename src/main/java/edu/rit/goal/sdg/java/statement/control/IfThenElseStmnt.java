@@ -1,16 +1,18 @@
-package edu.rit.goal.sdg.java.statement;
+package edu.rit.goal.sdg.java.statement.control;
 
 import java.util.List;
 
-import edu.rit.goal.sdg.java.graph.SysDepGraph;
+import edu.rit.goal.sdg.java.statement.Expression;
+import edu.rit.goal.sdg.java.statement.Statement;
 
-public class IfThenElse implements Statement {
+public class IfThenElseStmnt implements Statement {
 
     private Expression condition;
     private List<Statement> thenBranch;
     private List<Statement> elseBranch;
 
-    public IfThenElse(final Expression condition, final List<Statement> thenBranch, final List<Statement> elseBranch) {
+    public IfThenElseStmnt(final Expression condition, final List<Statement> thenBranch,
+	    final List<Statement> elseBranch) {
 	super();
 	this.condition = condition;
 	this.thenBranch = thenBranch;
@@ -42,9 +44,7 @@ public class IfThenElse implements Statement {
     }
 
     @Override
-    public void buildSdg(final SysDepGraph sdg) {
-	// TODO Auto-generated method stub
-
+    public String toString() {
+	return "if " + condition + " then " + thenBranch.toString() + " else " + elseBranch.toString();
     }
-
 }

@@ -8,6 +8,7 @@ import edu.rit.goal.sdg.java.antlr.Java8Parser;
 import edu.rit.goal.sdg.java.antlr.Java8Parser.ArgumentListContext;
 import edu.rit.goal.sdg.java.antlr.Java8Parser.ExpressionContext;
 import edu.rit.goal.sdg.java.antlr.Java8Parser.MethodNameContext;
+import edu.rit.goal.sdg.java.statement.Expression;
 import edu.rit.goal.sdg.java.statement.MethodInvocation;
 import edu.rit.goal.sdg.java.statement.Statement;
 
@@ -25,7 +26,8 @@ public class MethodInvocationVisitor extends Java8BaseVisitor<Statement> {
 	}
 	final ArgumentListContext argListCtx = ctx.argumentList();
 	final List<ExpressionContext> exprCtx = argListCtx.expression();
-	final List<String> args = exprCtx.stream().map(e -> e.getText()).collect(Collectors.toList());
+	final ExpressionVisitor visitor = new ExpressionVisitor();
+	final List<Expression> args = exprCtx.stream().map(e -> visitor.visit(e)).collect(Collectors.toList());
 	result = new MethodInvocation(methodName, args);
 	return result;
     }

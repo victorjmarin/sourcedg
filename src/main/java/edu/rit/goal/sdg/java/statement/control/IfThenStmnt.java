@@ -1,8 +1,9 @@
-package edu.rit.goal.sdg.java.statement;
+package edu.rit.goal.sdg.java.statement.control;
 
 import java.util.List;
 
-import edu.rit.goal.sdg.java.graph.SysDepGraph;
+import edu.rit.goal.sdg.java.statement.Expression;
+import edu.rit.goal.sdg.java.statement.Statement;
 
 public class IfThenStmnt implements Statement {
 
@@ -33,12 +34,16 @@ public class IfThenStmnt implements Statement {
 
     @Override
     public String toString() {
-	return "if " + condition + " then " + thenBranch.toString();
-    }
-
-    @Override
-    public void buildSdg(final SysDepGraph sdg) {
-	System.out.println(toString());
+	final StringBuilder sb = new StringBuilder();
+	sb.append("if ");
+	sb.append(condition);
+	sb.append(" {");
+	thenBranch.forEach(b -> {
+	    sb.append(b);
+	    sb.append(";");
+	});
+	sb.append("}");
+	return sb.toString();
     }
 
 }

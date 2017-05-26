@@ -21,7 +21,8 @@ public class LocalVariableDeclarationVisitor extends Java8BaseVisitor<List<State
 	varDeclCtx.forEach(v -> {
 	    final String variableDeclaratorId = v.variableDeclaratorId().getText();
 	    // TODO: Support for arrays
-	    final Expression variableInitializer = new Expression(v.variableInitializer().expression());
+	    final ExpressionVisitor visitor = new ExpressionVisitor();
+	    final Expression variableInitializer = visitor.visit(v.variableInitializer().expression());
 	    final Statement stmnt = new VariableDecl(variableDeclaratorId, variableInitializer);
 	    result.add(stmnt);
 	});

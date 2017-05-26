@@ -12,14 +12,13 @@ import edu.rit.goal.sdg.java.antlr.Java8Parser.ClassMemberDeclarationContext;
 import edu.rit.goal.sdg.java.antlr.Java8Parser.MethodBodyContext;
 import edu.rit.goal.sdg.java.antlr.Java8Parser.MethodDeclarationContext;
 import edu.rit.goal.sdg.java.antlr.Java8Parser.MethodDeclaratorContext;
-import edu.rit.goal.sdg.java.graph.SysDepGraph;
 import edu.rit.goal.sdg.java.statement.MethodSignature;
 import edu.rit.goal.sdg.java.statement.Statement;
 
-public class ClassBodyVisitor extends Java8BaseVisitor<SysDepGraph> {
+public class ClassBodyVisitor extends Java8BaseVisitor<List<Statement>> {
     @Override
-    public SysDepGraph visitClassBody(final Java8Parser.ClassBodyContext ctx) {
-	final List<Statement> stmnts = new LinkedList<>();
+    public List<Statement> visitClassBody(final Java8Parser.ClassBodyContext ctx) {
+	final List<Statement> result = new LinkedList<>();
 	// Iterate over class body declarations
 	for (final ClassBodyDeclarationContext classBody : ctx.classBodyDeclaration()) {
 	    final ClassMemberDeclarationContext classMember = classBody.classMemberDeclaration();
@@ -30,7 +29,7 @@ public class ClassBodyVisitor extends Java8BaseVisitor<SysDepGraph> {
 		final MethodDeclaratorContext methodDeclarator = methodDeclaration.methodHeader().methodDeclarator();
 		final MethodDeclaratorVisitor methodDeclVisitor = new MethodDeclaratorVisitor();
 		final MethodSignature methodSig = methodDeclVisitor.visit(methodDeclarator);
-		stmnts.add(methodSig);
+		result.add(methodSig);
 		// Method body
 		final MethodBodyContext methodBody = methodDeclaration.methodBody();
 		final BlockContext blockCtx = methodBody.block();
@@ -41,20 +40,10 @@ public class ClassBodyVisitor extends Java8BaseVisitor<SysDepGraph> {
 		    if (blockStatementsCtx != null) {
 			final BlockStatementsVisitor visitor = new BlockStatementsVisitor();
 			final List<Statement> blockStmnts = visitor.visit(blockStatementsCtx);
-			stmnts.addAll(blockStmnts);
+			result.addAll(blockStmnts);
 		    }
 		}
 	    }
-	}
-	final SysDepGraph result = buildSdg(stmnts);
-	return result;
-    }
-
-    private SysDepGraph buildSdg(final List<Statement> stmnts) {
-	final SysDepGraph result = new SysDepGraph();
-	for (final Statement s : stmnts) {
-	    if (s != null)
-		s.buildSdg(result);
 	}
 	return result;
     }
