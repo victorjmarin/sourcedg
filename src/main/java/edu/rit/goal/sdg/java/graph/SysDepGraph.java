@@ -25,6 +25,12 @@ public class SysDepGraph extends DefaultDirectedGraph<Vertex, Edge> {
 	return result;
     }
 
+    public List<Vertex> getAllVerticesByLabel(final String lookupId) {
+	final List<Vertex> result = vertexSet().stream().filter(v -> lookupId.equals(v.getLookupId()))
+		.collect(Collectors.toList());
+	return result;
+    }
+
     public List<Vertex> getAllAssignmentVerticesByLabel(final String lookupId) {
 	final List<Vertex> result = vertexSet().stream()
 		.filter(v -> lookupId.equals(v.getLookupId())

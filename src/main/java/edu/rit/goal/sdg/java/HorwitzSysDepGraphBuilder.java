@@ -142,11 +142,11 @@ public class HorwitzSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 		final Vertex actualParam = new Vertex(VertexType.ACTUAL_IN, paramName, paramName);
 		sdg.addVertex(actualParam);
 		final Vertex formalParam = getFormalParameter(methodName, i);
-		// Add edge if the method is part of the program itself
+		// Add edge if the method is part of the program itself and not some other API
 		if (formalParam != null) {
 		    sdg.addEdge(actualParam, formalParam, EdgeType.PARAM_IN);
+		    sdg.addEdge(invocationVtx, actualParam, EdgeType.CTRL_TRUE);
 		}
-		sdg.addEdge(invocationVtx, actualParam, EdgeType.CTRL_TRUE);
 		// Add edges w.r.t. variable declaration/assignments
 		final List<Vertex> paramAssignments = sdg.getAllAssignmentVerticesByLabel(paramName);
 		paramAssignments.forEach(p -> sdg.addEdge(p, actualParam, EdgeType.DATA));
@@ -220,10 +220,11 @@ public class HorwitzSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 
     private void dataDependencies(final Vertex vertex, final Set<String> deps, final SysDepGraph sdg) {
 	for (final String s : deps) {
-	    final Vertex v = sdg.getFirstVertexByLabel(s);
-	    if (v != null)
-		sdg.addEdge(v, vertex, EdgeType.DATA);
-	    else {
+	    // TODO: Check scope of variables?
+	    final List<Vertex> vtcs = sdg.getAllVerticesByLabel(s);
+	    if (!vtcs.isEmpty()) {
+		vtcs.forEach(v -> sdg.addEdge(v, vertex, EdgeType.DATA));
+	    } else {
 		// No declaration found. Create initial state
 		final Vertex initialStateVtx = new Vertex(VertexType.INITIAL_STATE, s);
 		sdg.addVertex(initialStateVtx);
