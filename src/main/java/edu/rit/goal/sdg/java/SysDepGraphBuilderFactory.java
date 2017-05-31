@@ -13,7 +13,7 @@ public class SysDepGraphBuilderFactory {
 	SysDepGraphBuilder result = null;
 	switch (strategy) {
 	case HORWITZ:
-	    result = new HorwitzSysDepGraphBuilder();
+	    result = new HorwitzRepsSysDepGraphBuilder();
 	}
 	return result;
     }

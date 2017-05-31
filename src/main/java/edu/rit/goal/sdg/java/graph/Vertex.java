@@ -3,7 +3,7 @@ package edu.rit.goal.sdg.java.graph;
 public class Vertex {
 
     private final VertexType type;
-    private final String label;
+    private String label;
     private String lookupId;
 
     public Vertex(final VertexType type, final String label) {
@@ -23,6 +23,10 @@ public class Vertex {
 
     public String getLabel() {
 	return label;
+    }
+
+    public void setLabel(final String label) {
+	this.label = label;
     }
 
     public String getLookupId() {

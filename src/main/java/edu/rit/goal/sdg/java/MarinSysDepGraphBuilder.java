@@ -11,7 +11,7 @@ import edu.rit.goal.sdg.java.statement.control.BasicForStmnt;
 /**
  * Implementation of features not described in the paper by Horwitz and Reps.
  */
-public class MarinSysDepGraphBuilder extends HorwitzSysDepGraphBuilder {
+public class MarinSysDepGraphBuilder extends HorwitzRepsSysDepGraphBuilder {
 
     @Override
     public List<Vertex> basicForStmnt(final BasicForStmnt basicForStmnt, final SysDepGraph sdg, final boolean isNested) {

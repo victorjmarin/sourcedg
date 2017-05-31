@@ -2,8 +2,11 @@ package edu.rit.goal.sdg.java.statement;
 
 import java.util.List;
 
+import edu.rit.goal.sdg.java.graph.PrimitiveType;
+
 public class MethodSignature implements Statement {
 
+    private PrimitiveType returnType;
     private final String name;
     private final List<FormalParameter> params;
 
@@ -11,6 +14,14 @@ public class MethodSignature implements Statement {
 	super();
 	this.name = name;
 	this.params = params;
+    }
+
+    public PrimitiveType getReturnType() {
+	return returnType;
+    }
+
+    public void setReturnType(final PrimitiveType returnType) {
+	this.returnType = returnType;
     }
 
     public String getName() {

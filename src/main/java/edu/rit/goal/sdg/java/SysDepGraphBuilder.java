@@ -7,7 +7,6 @@ import edu.rit.goal.sdg.java.graph.Vertex;
 import edu.rit.goal.sdg.java.statement.Assignment;
 import edu.rit.goal.sdg.java.statement.MethodInvocation;
 import edu.rit.goal.sdg.java.statement.MethodSignature;
-import edu.rit.goal.sdg.java.statement.NotImplementedStmnt;
 import edu.rit.goal.sdg.java.statement.ReturnStmnt;
 import edu.rit.goal.sdg.java.statement.Statement;
 import edu.rit.goal.sdg.java.statement.VariableDecl;
@@ -43,7 +42,5 @@ public interface SysDepGraphBuilder {
     List<Vertex> methodInvocation(MethodInvocation methodInvocation, SysDepGraph sdg, boolean isNested);
 
     List<Vertex> returnStmnt(ReturnStmnt returnStmnt, SysDepGraph sdg, boolean isNested);
-
-    void notImplementedStmnt(NotImplementedStmnt notImplementedStmnt, SysDepGraph sdg);
 
 }

@@ -11,7 +11,7 @@ import edu.rit.goal.sdg.java.antlr.Java8Parser.ClassBodyDeclarationContext;
 import edu.rit.goal.sdg.java.antlr.Java8Parser.ClassMemberDeclarationContext;
 import edu.rit.goal.sdg.java.antlr.Java8Parser.MethodBodyContext;
 import edu.rit.goal.sdg.java.antlr.Java8Parser.MethodDeclarationContext;
-import edu.rit.goal.sdg.java.antlr.Java8Parser.MethodDeclaratorContext;
+import edu.rit.goal.sdg.java.antlr.Java8Parser.MethodHeaderContext;
 import edu.rit.goal.sdg.java.statement.MethodSignature;
 import edu.rit.goal.sdg.java.statement.Statement;
 
@@ -26,9 +26,9 @@ public class ClassBodyVisitor extends Java8BaseVisitor<List<Statement>> {
 	    // We are only interested in methods currently
 	    if (methodDeclaration != null) {
 		// Method signature
-		final MethodDeclaratorContext methodDeclarator = methodDeclaration.methodHeader().methodDeclarator();
-		final MethodDeclaratorVisitor methodDeclVisitor = new MethodDeclaratorVisitor();
-		final MethodSignature methodSig = methodDeclVisitor.visit(methodDeclarator);
+		final MethodHeaderContext methodHeader = methodDeclaration.methodHeader();
+		final MethodHeaderVisitor methodHeaderVisitor = new MethodHeaderVisitor();
+		final MethodSignature methodSig = methodHeaderVisitor.visit(methodHeader);
 		result.add(methodSig);
 		// Method body
 		final MethodBodyContext methodBody = methodDeclaration.methodBody();
