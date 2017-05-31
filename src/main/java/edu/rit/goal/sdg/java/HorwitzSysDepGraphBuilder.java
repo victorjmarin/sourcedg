@@ -121,7 +121,7 @@ public class HorwitzSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	// Invocation vertex
 	final Vertex invocationVtx = new Vertex(VertexType.CALL, methodInvocation.toString());
 	sdg.addVertex(invocationVtx);
-	final Vertex methodVertex = sdg.getVertexByLabel(methodName);
+	final Vertex methodVertex = sdg.getFirstVertexByLabel(methodName);
 	// Add edge if the method is part of the program itself and not some other API,
 	// like System.out.println
 	if (methodVertex != null) {
@@ -138,7 +138,8 @@ public class HorwitzSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	if (inVars != null) {
 	    for (int i = 0; i < inVars.size(); i++) {
 		final Expression var = inVars.get(i);
-		final Vertex actualParam = new Vertex(VertexType.ACTUAL_IN, var.toString());
+		final String paramName = var.toString();
+		final Vertex actualParam = new Vertex(VertexType.ACTUAL_IN, paramName, paramName);
 		sdg.addVertex(actualParam);
 		final Vertex formalParam = getFormalParameter(methodName, i);
 		// Add edge if the method is part of the program itself
@@ -146,6 +147,9 @@ public class HorwitzSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 		    sdg.addEdge(actualParam, formalParam, EdgeType.PARAM_IN);
 		}
 		sdg.addEdge(invocationVtx, actualParam, EdgeType.CTRL_TRUE);
+		// Add edges w.r.t. variable declaration/assignments
+		final List<Vertex> paramAssignments = sdg.getAllAssignmentVerticesByLabel(paramName);
+		paramAssignments.forEach(p -> sdg.addEdge(p, actualParam, EdgeType.DATA));
 	    }
 	}
 	return list(invocationVtx);
@@ -153,7 +157,6 @@ public class HorwitzSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 
     @Override
     public List<Vertex> returnStmnt(final ReturnStmnt returnStmnt, final SysDepGraph sdg, final boolean isNested) {
-	// TODO Auto-generated method stub
 	final Expression returnedExpr = returnStmnt.getReturnedExpr();
 	final Vertex v = new Vertex(VertexType.RET, returnedExpr.toString());
 	sdg.addVertex(v);
@@ -217,7 +220,7 @@ public class HorwitzSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 
     private void dataDependencies(final Vertex vertex, final Set<String> deps, final SysDepGraph sdg) {
 	for (final String s : deps) {
-	    final Vertex v = sdg.getVertexByLabel(s);
+	    final Vertex v = sdg.getFirstVertexByLabel(s);
 	    if (v != null)
 		sdg.addEdge(v, vertex, EdgeType.DATA);
 	    else {

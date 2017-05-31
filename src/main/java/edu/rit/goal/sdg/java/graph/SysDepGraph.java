@@ -1,5 +1,8 @@
 package edu.rit.goal.sdg.java.graph;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.jgrapht.graph.DefaultDirectedGraph;
 
 public class SysDepGraph extends DefaultDirectedGraph<Vertex, Edge> {
@@ -16,9 +19,17 @@ public class SysDepGraph extends DefaultDirectedGraph<Vertex, Edge> {
 	return edge;
     }
 
-    public Vertex getVertexByLabel(final String lookupId) {
+    public Vertex getFirstVertexByLabel(final String lookupId) {
 	final Vertex result = vertexSet().stream().filter(v -> lookupId.equals(v.getLookupId())).findFirst()
 		.orElse(null);
+	return result;
+    }
+
+    public List<Vertex> getAllAssignmentVerticesByLabel(final String lookupId) {
+	final List<Vertex> result = vertexSet().stream()
+		.filter(v -> lookupId.equals(v.getLookupId())
+			&& (v.getType().equals(VertexType.DECL) || v.getType().equals(VertexType.ASSIGN)))
+		.collect(Collectors.toList());
 	return result;
     }
 

@@ -76,7 +76,7 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 		if (s instanceof MethodSignature) {
 		    final MethodSignature methodSignature = (MethodSignature) s;
 		    final String methodName = methodSignature.getName();
-		    currentEnterVertex = sdg.getVertexByLabel(methodName);
+		    currentEnterVertex = sdg.getFirstVertexByLabel(methodName);
 		} else if (s instanceof BasicForStmnt) {
 		    final List<Vertex> vtcs = basicForStmnt((BasicForStmnt) s, sdg, isNested);
 		    result.addAll(vtcs);
