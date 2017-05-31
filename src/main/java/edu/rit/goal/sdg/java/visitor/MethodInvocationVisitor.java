@@ -28,7 +28,7 @@ public class MethodInvocationVisitor extends Java8BaseVisitor<Statement> {
 	final List<ExpressionContext> exprCtx = argListCtx.expression();
 	final ExpressionVisitor visitor = new ExpressionVisitor();
 	final List<Expression> args = exprCtx.stream().map(e -> visitor.visit(e)).collect(Collectors.toList());
-	result = new MethodInvocation(methodName, args);
+	result = new MethodInvocation(methodName, null, args);
 	return result;
     }
 

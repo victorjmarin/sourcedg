@@ -5,25 +5,44 @@ import java.util.List;
 public class MethodInvocation implements Statement {
 
     private final String name;
-    private final List<Expression> args;
+    private final String outVar;
+    private final List<Expression> inVars;
 
-    public MethodInvocation(final String name, final List<Expression> args) {
+    public MethodInvocation(final String name, final String outVar, final List<Expression> inVars) {
 	super();
 	this.name = name;
-	this.args = args;
+	this.outVar = outVar;
+	this.inVars = inVars;
     }
 
     public String getName() {
 	return name;
     }
 
-    public List<Expression> getArgs() {
-	return args;
+    public String getOutVar() {
+	return outVar;
+    }
+
+    public List<Expression> getInVars() {
+	return inVars;
     }
 
     @Override
     public String toString() {
-	return name + args.toString();
+	final StringBuilder sb = new StringBuilder();
+	if (outVar != null) {
+	    sb.append(outVar);
+	    sb.append("=");
+	}
+	sb.append(name);
+	sb.append(inVars);
+	return sb.toString();
+    }
+
+    @Override
+    public List<Statement> expandScope() {
+	// TODO Auto-generated method stub
+	return null;
     }
 
 }

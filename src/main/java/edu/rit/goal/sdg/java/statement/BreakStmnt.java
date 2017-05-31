@@ -1,5 +1,7 @@
 package edu.rit.goal.sdg.java.statement;
 
+import java.util.List;
+
 public class BreakStmnt implements Statement {
 
     private final String gotoLabel;
@@ -22,6 +24,12 @@ public class BreakStmnt implements Statement {
 	    sb.append(gotoLabel);
 	}
 	return sb.toString();
+    }
+
+    @Override
+    public List<Statement> expandScope() {
+	// TODO Auto-generated method stub
+	return null;
     }
 
 }

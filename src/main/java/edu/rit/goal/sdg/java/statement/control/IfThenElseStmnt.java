@@ -35,4 +35,10 @@ public class IfThenElseStmnt implements Statement {
     public String toString() {
 	return "if " + condition + " then " + thenBranch.toString() + " else " + elseBranch.toString();
     }
+
+    @Override
+    public List<Statement> expandScope() {
+	// TODO Auto-generated method stub
+	return null;
+    }
 }

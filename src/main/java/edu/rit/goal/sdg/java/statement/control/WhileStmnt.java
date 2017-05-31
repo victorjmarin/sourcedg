@@ -38,4 +38,10 @@ public class WhileStmnt implements Statement {
 	return sb.toString();
     }
 
+    @Override
+    public List<Statement> expandScope() {
+	// TODO Auto-generated method stub
+	return null;
+    }
+
 }

@@ -1,5 +1,7 @@
 package edu.rit.goal.sdg.java.statement;
 
+import java.util.List;
+
 public class ReturnStmnt implements Statement {
 
     private final Expression returnedExpr;
@@ -22,6 +24,12 @@ public class ReturnStmnt implements Statement {
 	    sb.append(returnedExpr);
 	}
 	return sb.toString();
+    }
+
+    @Override
+    public List<Statement> expandScope() {
+	// TODO Auto-generated method stub
+	return null;
     }
 
 }

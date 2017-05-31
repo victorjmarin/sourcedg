@@ -3,25 +3,39 @@ package edu.rit.goal.sdg.java.graph;
 public class Vertex {
 
     private final VertexType type;
-    private final String ast;
+    private final String label;
+    private String lookupId;
 
-    public Vertex(final VertexType type, final String ast) {
+    public Vertex(final VertexType type, final String label) {
+	this(type, label, null);
+    }
+
+    public Vertex(final VertexType type, final String label, final String lookupId) {
 	super();
 	this.type = type;
-	this.ast = ast;
+	this.label = label;
+	this.lookupId = lookupId;
     }
 
     public VertexType getType() {
 	return type;
     }
 
-    public String getAst() {
-	return ast;
+    public String getLabel() {
+	return label;
+    }
+
+    public String getLookupId() {
+	return lookupId;
+    }
+
+    public void setLookupId(final String lookupId) {
+	this.lookupId = lookupId;
     }
 
     @Override
     public String toString() {
-	return type + "-" + ast;
+	return type + "-" + label;
     }
 
 }

@@ -33,7 +33,7 @@ public class Expression {
 
     @Override
     public String toString() {
-	return getText() + readingVars;
+	return getText();
     }
 
     private Set<String> getReadingVars(final ParseTree ctx) {

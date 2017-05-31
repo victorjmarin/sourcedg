@@ -23,7 +23,17 @@ public class MethodSignature implements Statement {
 
     @Override
     public String toString() {
-	return name + params.toString();
+	final StringBuilder sb = new StringBuilder();
+	sb.append(name);
+	if (params != null)
+	    sb.append(params);
+	return sb.toString();
+    }
+
+    @Override
+    public List<Statement> expandScope() {
+	// TODO Auto-generated method stub
+	return null;
     }
 
 }

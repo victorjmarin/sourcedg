@@ -1,5 +1,8 @@
 package edu.rit.goal.sdg.java.statement;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class VariableDecl implements Statement {
 
     private final String variableDeclaratorId;
@@ -21,7 +24,14 @@ public class VariableDecl implements Statement {
 
     @Override
     public String toString() {
-	return variableDeclaratorId + " = " + variableInitializer;
+	return variableDeclaratorId + "=" + variableInitializer;
+    }
+
+    @Override
+    public List<Statement> expandScope() {
+	final List<Statement> result = new ArrayList<>();
+	result.add(this);
+	return result;
     }
 
 }

@@ -24,6 +24,10 @@ public class IfThenStmnt implements Statement {
 	return thenBranch;
     }
 
+    public List<Statement> expandScope() {
+	return thenBranch;
+    }
+
     @Override
     public String toString() {
 	final StringBuilder sb = new StringBuilder();

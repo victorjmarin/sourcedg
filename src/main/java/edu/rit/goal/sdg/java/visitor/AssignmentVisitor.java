@@ -10,7 +10,7 @@ public class AssignmentVisitor extends Java8BaseVisitor<Statement> {
 
     @Override
     public Statement visitAssignment(final Java8Parser.AssignmentContext ctx) {
-	Assignment result = null;
+	Statement result = null;
 	final String leftHandSide = ctx.leftHandSide().getText();
 	final String operator = ctx.assignmentOperator().getText();
 	final ExpressionVisitor visitor = new ExpressionVisitor();

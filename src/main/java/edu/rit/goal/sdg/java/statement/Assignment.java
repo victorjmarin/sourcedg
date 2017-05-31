@@ -1,5 +1,7 @@
 package edu.rit.goal.sdg.java.statement;
 
+import java.util.List;
+
 public class Assignment implements Statement {
 
     private final String leftHandSide;
@@ -27,7 +29,13 @@ public class Assignment implements Statement {
 
     @Override
     public String toString() {
-	return leftHandSide + " " + operator + " " + rightHandSide;
+	return leftHandSide + operator + rightHandSide;
+    }
+
+    @Override
+    public List<Statement> expandScope() {
+	// TODO Auto-generated method stub
+	return null;
     }
 
 }
