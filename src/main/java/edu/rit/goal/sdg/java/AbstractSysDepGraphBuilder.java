@@ -32,7 +32,7 @@ import edu.rit.goal.sdg.java.visitor.ClassBodyVisitor;
 public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 
     protected Vertex currentEnterVertex;
-    protected Vertex currentResultVertex;
+    protected Vertex currentResultOutVertex;
     protected final Map<String, List<Vertex>> formalParameters = new HashMap<>();
     protected final Map<Vertex, Vertex> methodResult = new HashMap<>();
 
@@ -76,7 +76,7 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 		    final MethodSignature methodSignature = (MethodSignature) s;
 		    final String methodName = methodSignature.getName();
 		    currentEnterVertex = sdg.getFirstVertexByLabel(methodName);
-		    currentResultVertex = sdg.getFirstVertexByLabel(methodName + "result");
+		    currentResultOutVertex = sdg.getFirstVertexByLabel(getResultOutVtxName(methodName));
 		} else if (s instanceof BasicForStmnt) {
 		    final List<Vertex> vtcs = basicForStmnt((BasicForStmnt) s, sdg, isNested);
 		    result.addAll(vtcs);
@@ -164,4 +164,12 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
     }
 
     protected abstract void doFinally();
+
+    protected String getResultOutVtxName(final String methodName) {
+	return methodName + "ResultOut";
+    }
+    
+    protected String getResultInVtxName(final String methodName) {
+	return methodName + "ResultIn";
+    }
 }
