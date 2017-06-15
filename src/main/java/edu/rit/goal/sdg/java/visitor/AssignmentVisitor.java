@@ -1,9 +1,15 @@
 package edu.rit.goal.sdg.java.visitor;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import edu.rit.goal.sdg.java.antlr.Java8BaseVisitor;
 import edu.rit.goal.sdg.java.antlr.Java8Parser;
+import edu.rit.goal.sdg.java.antlr.Java8Parser.ArgumentListContext;
 import edu.rit.goal.sdg.java.statement.Assignment;
 import edu.rit.goal.sdg.java.statement.Expression;
+import edu.rit.goal.sdg.java.statement.MethodInvocationAssignment;
 import edu.rit.goal.sdg.java.statement.Statement;
 
 public class AssignmentVisitor extends Java8BaseVisitor<Statement> {
@@ -19,6 +25,18 @@ public class AssignmentVisitor extends Java8BaseVisitor<Statement> {
 	// Add dependency w.r.t. variable being assigned if it is a short-hand operator
 	if (isShortHandOperator(operator)) {
 	    rightHandSide.getReadingVars().add(leftHandSide);
+	}
+	// Method call
+	final String methodName = VisitorUtils.getMethodName(ctx);
+	final boolean isMethodInvocation = methodName != null;
+	if (isMethodInvocation) {
+	    final String outVar = leftHandSide;
+	    final List<Expression> rhsList = new ArrayList<>();
+	    rhsList.add(rightHandSide);
+	    final ArgumentListContext argListCtx = VisitorUtils.getArgListCtx(ctx.expression());
+	    final List<Expression> inVars = argListCtx.expression().stream().map(exp -> visitor.visit(exp))
+		    .collect(Collectors.toList());
+	    result = new MethodInvocationAssignment(methodName, outVar, inVars);
 	}
 	return result;
     }

@@ -9,6 +9,7 @@ import edu.rit.goal.sdg.java.antlr.Java8Parser.BlockContext;
 import edu.rit.goal.sdg.java.antlr.Java8Parser.BlockStatementsContext;
 import edu.rit.goal.sdg.java.antlr.Java8Parser.BreakStatementContext;
 import edu.rit.goal.sdg.java.antlr.Java8Parser.ContinueStatementContext;
+import edu.rit.goal.sdg.java.antlr.Java8Parser.DoStatementContext;
 import edu.rit.goal.sdg.java.antlr.Java8Parser.ExpressionStatementContext;
 import edu.rit.goal.sdg.java.antlr.Java8Parser.ReturnStatementContext;
 import edu.rit.goal.sdg.java.antlr.Java8Parser.StatementExpressionContext;
@@ -16,6 +17,7 @@ import edu.rit.goal.sdg.java.statement.BreakStmnt;
 import edu.rit.goal.sdg.java.statement.ContinueStmnt;
 import edu.rit.goal.sdg.java.statement.ReturnStmnt;
 import edu.rit.goal.sdg.java.statement.Statement;
+import edu.rit.goal.sdg.java.statement.control.DoStmnt;
 
 public class StmntWithoutTrailingSubstmntVisitor extends Java8BaseVisitor<List<Statement>> {
 
@@ -46,6 +48,10 @@ public class StmntWithoutTrailingSubstmntVisitor extends Java8BaseVisitor<List<S
 	    final ContinueStmntVisitor visitor = new ContinueStmntVisitor();
 	    final ContinueStmnt stmnt = visitor.visit(ctx.continueStatement());
 	    result.add(stmnt);
+	} else if (isDoWhile(ctx)) {
+	    final DoStmntVisitor visitor = new DoStmntVisitor();
+	    final DoStmnt stmnt = visitor.visit(ctx.doStatement());
+	    result.add(stmnt);
 	}
 	return result;
     }
@@ -72,6 +78,11 @@ public class StmntWithoutTrailingSubstmntVisitor extends Java8BaseVisitor<List<S
 
     private boolean isContinue(final Java8Parser.StatementWithoutTrailingSubstatementContext ctx) {
 	final ContinueStatementContext stmnt = ctx.continueStatement();
+	return stmnt != null;
+    }
+
+    private boolean isDoWhile(final Java8Parser.StatementWithoutTrailingSubstatementContext ctx) {
+	final DoStatementContext stmnt = ctx.doStatement();
 	return stmnt != null;
     }
 

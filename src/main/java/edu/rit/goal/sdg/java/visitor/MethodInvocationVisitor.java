@@ -16,19 +16,25 @@ public class MethodInvocationVisitor extends Java8BaseVisitor<Statement> {
 
     @Override
     public Statement visitMethodInvocation(final Java8Parser.MethodInvocationContext ctx) {
+	List<Expression> args = null;
 	Statement result = null;
-	String methodName = "";
+	String refVar = null;
+	String methodName = null;
 	final MethodNameContext methodNameCtx = ctx.methodName();
 	if (methodNameCtx != null) {
 	    methodName = methodNameCtx.getText();
 	} else {
-	    methodName = ctx.typeName().getText() + "." + ctx.Identifier();
+	    // Calling method on a referenced object
+	    refVar = ctx.typeName().getText();
+	    methodName = ctx.Identifier().getText();
 	}
 	final ArgumentListContext argListCtx = ctx.argumentList();
-	final List<ExpressionContext> exprCtx = argListCtx.expression();
-	final ExpressionVisitor visitor = new ExpressionVisitor();
-	final List<Expression> args = exprCtx.stream().map(e -> visitor.visit(e)).collect(Collectors.toList());
-	result = new MethodInvocation(methodName, null, args);
+	if (argListCtx != null) {
+	    final List<ExpressionContext> exprCtx = argListCtx.expression();
+	    final ExpressionVisitor visitor = new ExpressionVisitor();
+	    args = exprCtx.stream().map(e -> visitor.visit(e)).collect(Collectors.toList());
+	}
+	result = new MethodInvocation(refVar, methodName, args);
 	return result;
     }
 

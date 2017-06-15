@@ -13,6 +13,8 @@ public class ForInitVisitor extends Java8BaseVisitor<List<Statement>> {
     @Override
     public List<Statement> visitForInit(final Java8Parser.ForInitContext ctx) {
 	final List<Statement> result = new ArrayList<>();
+	if (ctx == null)
+	    return result;
 	if (isLocalVarDecl(ctx)) {
 	    final LocalVariableDeclarationVisitor visitor = new LocalVariableDeclarationVisitor();
 	    final List<Statement> stmnts = visitor.visit(ctx.localVariableDeclaration());

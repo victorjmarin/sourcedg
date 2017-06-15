@@ -1,6 +1,8 @@
 package edu.rit.goal.sdg.java;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,13 +19,20 @@ import edu.rit.goal.sdg.java.graph.ScopedVertex;
 import edu.rit.goal.sdg.java.graph.SysDepGraph;
 import edu.rit.goal.sdg.java.graph.Vertex;
 import edu.rit.goal.sdg.java.statement.Assignment;
+import edu.rit.goal.sdg.java.statement.BreakStmnt;
 import edu.rit.goal.sdg.java.statement.MethodInvocation;
+import edu.rit.goal.sdg.java.statement.MethodInvocationAssignment;
 import edu.rit.goal.sdg.java.statement.MethodSignature;
 import edu.rit.goal.sdg.java.statement.NotImplementedStmnt;
+import edu.rit.goal.sdg.java.statement.PostDecrementExpr;
+import edu.rit.goal.sdg.java.statement.PostIncrementExpr;
+import edu.rit.goal.sdg.java.statement.PreDecrementExpr;
+import edu.rit.goal.sdg.java.statement.PreIncrementExpr;
 import edu.rit.goal.sdg.java.statement.ReturnStmnt;
 import edu.rit.goal.sdg.java.statement.Statement;
 import edu.rit.goal.sdg.java.statement.VariableDecl;
 import edu.rit.goal.sdg.java.statement.control.BasicForStmnt;
+import edu.rit.goal.sdg.java.statement.control.DoStmnt;
 import edu.rit.goal.sdg.java.statement.control.IfThenElseStmnt;
 import edu.rit.goal.sdg.java.statement.control.IfThenStmnt;
 import edu.rit.goal.sdg.java.statement.control.WhileStmnt;
@@ -34,7 +43,9 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
     protected Vertex currentEnterVertex;
     protected Vertex currentResultOutVertex;
     protected final Map<String, List<Vertex>> formalParameters = new HashMap<>();
-    protected final Map<Vertex, Vertex> methodResult = new HashMap<>();
+    protected Vertex currentCtrlVtx;
+    protected Deque<Vertex> varStack = new ArrayDeque<>();
+    private List<Statement> stmnts;
 
     @Override
     public SysDepGraph fromSource(final String program) {
@@ -43,7 +54,7 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 	final CommonTokenStream tokens = new CommonTokenStream(lexer);
 	final Java8Parser parser = new Java8Parser(tokens);
 	final ClassBodyVisitor visitor = new ClassBodyVisitor();
-	final List<Statement> stmnts = visitor.visit(parser.classDeclaration());
+	stmnts = visitor.visit(parser.classDeclaration());
 	final SysDepGraph result = build(stmnts);
 	return result;
     }
@@ -76,6 +87,7 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 		    final MethodSignature methodSignature = (MethodSignature) s;
 		    final String methodName = methodSignature.getName();
 		    currentEnterVertex = sdg.getFirstVertexByLabel(methodName);
+		    currentCtrlVtx = currentEnterVertex;
 		    currentResultOutVertex = sdg.getFirstVertexByLabel(getResultOutVtxName(methodName));
 		} else if (s instanceof BasicForStmnt) {
 		    final List<Vertex> vtcs = basicForStmnt((BasicForStmnt) s, sdg, isNested);
@@ -89,6 +101,9 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 		} else if (s instanceof WhileStmnt) {
 		    final List<Vertex> vtcs = whileStmnt((WhileStmnt) s, sdg, isNested);
 		    result.addAll(vtcs);
+		} else if (s instanceof DoStmnt) {
+		    final List<Vertex> vtcs = doStmnt((DoStmnt) s, sdg, isNested);
+		    result.addAll(vtcs);
 		} else if (s instanceof VariableDecl) {
 		    final List<Vertex> vtcs = variableDeclaration((VariableDecl) s, sdg, isNested, scope);
 		    result.addAll(vtcs);
@@ -98,8 +113,26 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 		} else if (s instanceof MethodInvocation) {
 		    final List<Vertex> vtcs = methodInvocation((MethodInvocation) s, sdg, isNested);
 		    result.addAll(vtcs);
+		} else if (s instanceof MethodInvocationAssignment) {
+		    final List<Vertex> vtcs = methodInvocationAssignment((MethodInvocationAssignment) s, sdg, isNested);
+		    result.addAll(vtcs);
 		} else if (s instanceof ReturnStmnt) {
 		    final List<Vertex> vtcs = returnStmnt((ReturnStmnt) s, sdg, isNested);
+		    result.addAll(vtcs);
+		} else if (s instanceof BreakStmnt) {
+		    final List<Vertex> vtcs = breakStmnt((BreakStmnt) s, sdg, isNested);
+		    result.addAll(vtcs);
+		} else if (s instanceof PostIncrementExpr) {
+		    final List<Vertex> vtcs = postIncrementExpr((PostIncrementExpr) s, sdg, isNested);
+		    result.addAll(vtcs);
+		} else if (s instanceof PostDecrementExpr) {
+		    final List<Vertex> vtcs = postDecrementExpr((PostDecrementExpr) s, sdg, isNested);
+		    result.addAll(vtcs);
+		} else if (s instanceof PreIncrementExpr) {
+		    final List<Vertex> vtcs = preIncrementExpr((PreIncrementExpr) s, sdg, isNested);
+		    result.addAll(vtcs);
+		} else if (s instanceof PreDecrementExpr) {
+		    final List<Vertex> vtcs = preDecrementExpr((PreDecrementExpr) s, sdg, isNested);
 		    result.addAll(vtcs);
 		} else if (s instanceof NotImplementedStmnt) {
 		    notImplementedStmnt((NotImplementedStmnt) s, sdg);
@@ -160,7 +193,7 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
     }
 
     public Vertex getCurrentResultVertex() {
-	return methodResult.get(getCurrentEnterVertex());
+	return currentResultOutVertex;
     }
 
     protected abstract void doFinally();
@@ -168,8 +201,28 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
     protected String getResultOutVtxName(final String methodName) {
 	return methodName + "ResultOut";
     }
-    
+
     protected String getResultInVtxName(final String methodName) {
 	return methodName + "ResultIn";
+    }
+
+    protected List<Vertex> list(final Vertex... vertices) {
+	final List<Vertex> result = new ArrayList<>(vertices.length);
+	for (final Vertex v : vertices) {
+	    result.add(v);
+	}
+	return result;
+    }
+
+    protected String lookupId(final String lookupId) {
+	return getCurrentEnterVertex().getLabel() + lookupId;
+    }
+
+    protected Vertex getCurrentControlVertex() {
+	return currentCtrlVtx;
+    }
+
+    protected void setCurrentControlVertex(final Vertex currentCtrlVtx) {
+	this.currentCtrlVtx = currentCtrlVtx;
     }
 }

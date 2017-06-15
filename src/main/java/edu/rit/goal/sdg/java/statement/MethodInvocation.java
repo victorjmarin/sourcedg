@@ -4,23 +4,24 @@ import java.util.List;
 
 public class MethodInvocation implements Statement {
 
-    private final String name;
-    private final String outVar;
+    // Variable name of the object to which the invoked method belongs to.
+    private final String refVar;
+    private final String methodName;
     private final List<Expression> inVars;
 
-    public MethodInvocation(final String name, final String outVar, final List<Expression> inVars) {
+    public MethodInvocation(final String refVar, final String methodName, final List<Expression> inVars) {
 	super();
-	this.name = name;
-	this.outVar = outVar;
+	this.refVar = refVar;
+	this.methodName = methodName;
 	this.inVars = inVars;
     }
 
-    public String getName() {
-	return name;
+    public String getRefVar() {
+	return refVar;
     }
 
-    public String getOutVar() {
-	return outVar;
+    public String getMethodName() {
+	return methodName;
     }
 
     public List<Expression> getInVars() {
@@ -30,12 +31,13 @@ public class MethodInvocation implements Statement {
     @Override
     public String toString() {
 	final StringBuilder sb = new StringBuilder();
-	if (outVar != null) {
-	    sb.append(outVar);
-	    sb.append("=");
+	if (refVar != null) {
+	    sb.append(refVar);
+	    sb.append(".");
 	}
-	sb.append(name);
-	sb.append(inVars);
+	sb.append(methodName);
+	if (inVars != null && !inVars.isEmpty())
+	    sb.append(inVars);
 	return sb.toString();
     }
 

@@ -14,14 +14,21 @@ import edu.rit.goal.sdg.java.graph.SysDepGraph;
 import edu.rit.goal.sdg.java.graph.Vertex;
 import edu.rit.goal.sdg.java.graph.VertexType;
 import edu.rit.goal.sdg.java.statement.Assignment;
+import edu.rit.goal.sdg.java.statement.BreakStmnt;
 import edu.rit.goal.sdg.java.statement.Expression;
 import edu.rit.goal.sdg.java.statement.FormalParameter;
 import edu.rit.goal.sdg.java.statement.MethodInvocation;
+import edu.rit.goal.sdg.java.statement.MethodInvocationAssignment;
 import edu.rit.goal.sdg.java.statement.MethodSignature;
+import edu.rit.goal.sdg.java.statement.PostDecrementExpr;
+import edu.rit.goal.sdg.java.statement.PostIncrementExpr;
+import edu.rit.goal.sdg.java.statement.PreDecrementExpr;
+import edu.rit.goal.sdg.java.statement.PreIncrementExpr;
 import edu.rit.goal.sdg.java.statement.ReturnStmnt;
 import edu.rit.goal.sdg.java.statement.Statement;
 import edu.rit.goal.sdg.java.statement.VariableDecl;
 import edu.rit.goal.sdg.java.statement.control.BasicForStmnt;
+import edu.rit.goal.sdg.java.statement.control.DoStmnt;
 import edu.rit.goal.sdg.java.statement.control.IfThenElseStmnt;
 import edu.rit.goal.sdg.java.statement.control.IfThenStmnt;
 import edu.rit.goal.sdg.java.statement.control.WhileStmnt;
@@ -62,7 +69,7 @@ public class HorwitzRepsSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     @Override
     public List<Vertex> basicForStmnt(final BasicForStmnt basicForStmnt, final SysDepGraph sdg,
 	    final boolean isNested) {
-	System.err.println("Basic for statement not implemented");
+	System.err.println("Basic for statement not implemented.");
 	return list(new Vertex[1]);
     }
 
@@ -101,6 +108,17 @@ public class HorwitzRepsSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     }
 
     @Override
+    public List<Vertex> doStmnt(final DoStmnt doStmnt, final SysDepGraph sdg, final boolean isNested) {
+	// Condition
+	final Expression condition = doStmnt.getCondition();
+	final Vertex condVtx = new Vertex(VertexType.COND, condition.toString());
+	// Body
+	final List<Statement> body = doStmnt.getBody();
+	final List<Vertex> result = ctrlStructureTrue(condVtx, body, sdg, isNested);
+	return result;
+    }
+
+    @Override
     public List<Vertex> variableDeclaration(final VariableDecl variableDecl, final SysDepGraph sdg,
 	    final boolean isNested, final List<Statement> scope) {
 	final String lookupId = variableDecl.getVariableDeclaratorId();
@@ -131,11 +149,14 @@ public class HorwitzRepsSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	return list(v);
     }
 
+    // TODO: This method will no longer receive method invocations that involve an
+    // assignment or declaration.
     @Override
     public List<Vertex> methodInvocation(final MethodInvocation methodInvocation, final SysDepGraph sdg,
 	    final boolean isNested) {
-	final String methodName = methodInvocation.getName();
-	final String outVar = methodInvocation.getOutVar();
+	final String methodName = methodInvocation.getMethodName();
+	// final String outVar = methodInvocation.getOutVar();
+	final String outVar = null;
 	final List<Expression> inVars = methodInvocation.getInVars();
 	// Invocation vertex
 	final Vertex invocationVtx = new Vertex(VertexType.CALL, methodInvocation.toString());
@@ -185,6 +206,13 @@ public class HorwitzRepsSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     }
 
     @Override
+    public List<Vertex> methodInvocationAssignment(final MethodInvocationAssignment methodInvocationAssignment,
+	    final SysDepGraph sdg, final boolean isNested) {
+	// TODO Auto-generated method stub
+	return null;
+    }
+
+    @Override
     public List<Vertex> returnStmnt(final ReturnStmnt returnStmnt, final SysDepGraph sdg, final boolean isNested) {
 	final Expression returnedExpr = returnStmnt.getReturnedExpr();
 	final Vertex v = new Vertex(VertexType.RETURN, returnedExpr.toString());
@@ -196,6 +224,37 @@ public class HorwitzRepsSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	    notNestedStmntEdge(v, sdg);
 	}
 	return list(v);
+    }
+
+    @Override
+    public List<Vertex> breakStmnt(final BreakStmnt breakStmnt, final SysDepGraph sdg, final boolean isNested) {
+	final Vertex v = new Vertex(VertexType.BREAK, "break");
+	sdg.addVertex(v);
+	return list(v);
+    }
+
+    @Override
+    public List<Vertex> postIncrementExpr(final PostIncrementExpr postIncrementExpr, final SysDepGraph sdg,
+	    final boolean isNested) {
+	return shortHandExpr(postIncrementExpr, sdg, isNested);
+    }
+
+    @Override
+    public List<Vertex> postDecrementExpr(final PostDecrementExpr postDecrementExpr, final SysDepGraph sdg,
+	    final boolean isNested) {
+	return shortHandExpr(postDecrementExpr, sdg, isNested);
+    }
+
+    @Override
+    public List<Vertex> preIncrementExpr(final PreIncrementExpr preIncrementExpr, final SysDepGraph sdg,
+	    final boolean isNested) {
+	return shortHandExpr(preIncrementExpr, sdg, isNested);
+    }
+
+    @Override
+    public List<Vertex> preDecrementExpr(final PreDecrementExpr preDecrementExpr, final SysDepGraph sdg,
+	    final boolean isNested) {
+	return shortHandExpr(preDecrementExpr, sdg, isNested);
     }
 
     @Override
@@ -235,8 +294,8 @@ public class HorwitzRepsSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
      * Helper methods
      */
 
-    private List<Vertex> ctrlStructureTrue(final Vertex conditionVtx, final List<Statement> body, final SysDepGraph sdg,
-	    final boolean isNested) {
+    protected List<Vertex> ctrlStructureTrue(final Vertex conditionVtx, final List<Statement> body,
+	    final SysDepGraph sdg, final boolean isNested) {
 	List<Vertex> result = new ArrayList<>();
 	List<Vertex> bodyVtcs = new ArrayList<>();
 	sdg.addVertex(conditionVtx);
@@ -273,14 +332,6 @@ public class HorwitzRepsSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	}
     }
 
-    private List<Vertex> list(final Vertex... vertices) {
-	final List<Vertex> result = new ArrayList<>(vertices.length);
-	for (final Vertex v : vertices) {
-	    result.add(v);
-	}
-	return result;
-    }
-
     private void dataDependencies(final Vertex vertex, final List<Expression> exprs, final SysDepGraph sdg,
 	    final boolean isNested) {
 	final Set<String> deps = exprs.stream().map(e -> e.getReadingVars()).reduce(new HashSet<>(), (s1, s2) -> {
@@ -312,6 +363,13 @@ public class HorwitzRepsSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 		}
 	    }
 	}
+    }
+
+    private List<Vertex> shortHandExpr(final Expression expr, final SysDepGraph sdg, final boolean isNested) {
+	final Vertex vtx = new Vertex(VertexType.ASSIGN, expr.toString());
+	sdg.addVertex(vtx);
+	dataDependencies(vtx, expr.getReadingVars(), sdg, isNested);
+	return list(vtx);
     }
 
 }

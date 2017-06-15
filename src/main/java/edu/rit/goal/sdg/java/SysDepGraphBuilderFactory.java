@@ -3,7 +3,7 @@ package edu.rit.goal.sdg.java;
 public class SysDepGraphBuilderFactory {
 
     public enum BuildStrategy {
-	HORWITZ
+	HORWITZ, MARIN
     }
 
     private SysDepGraphBuilderFactory() {
@@ -14,6 +14,10 @@ public class SysDepGraphBuilderFactory {
 	switch (strategy) {
 	case HORWITZ:
 	    result = new HorwitzRepsSysDepGraphBuilder();
+	    break;
+	case MARIN:
+	    result = new MarinSysDepGraphBuilder();
+	    break;
 	}
 	return result;
     }

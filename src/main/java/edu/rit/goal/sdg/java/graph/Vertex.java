@@ -2,9 +2,12 @@ package edu.rit.goal.sdg.java.graph;
 
 public class Vertex {
 
-    private final VertexType type;
+    private VertexType type;
     private String label;
     private String lookupId;
+
+    public Vertex() {
+    }
 
     public Vertex(final VertexType type, final String label) {
 	this(type, label, null);
