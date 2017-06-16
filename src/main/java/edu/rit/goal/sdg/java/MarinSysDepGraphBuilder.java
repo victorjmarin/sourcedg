@@ -12,6 +12,7 @@ import edu.rit.goal.sdg.java.graph.Vertex;
 import edu.rit.goal.sdg.java.graph.VertexType;
 import edu.rit.goal.sdg.java.statement.Assignment;
 import edu.rit.goal.sdg.java.statement.BreakStmnt;
+import edu.rit.goal.sdg.java.statement.ContinueStmnt;
 import edu.rit.goal.sdg.java.statement.Expression;
 import edu.rit.goal.sdg.java.statement.FormalParameter;
 import edu.rit.goal.sdg.java.statement.MethodInvocation;
@@ -230,6 +231,16 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	}
 	sdg.addEdge(breakVtx, outerCtrlVyx, EdgeType.CTRL_TRUE);
 	return list(breakVtx);
+    }
+
+    @Override
+    public List<Vertex> continueStmnt(final ContinueStmnt continueStmnt, final SysDepGraph sdg,
+	    final boolean isNested) {
+	final Vertex continueVtx = new Vertex(VertexType.CONTINUE, "continue");
+	sdg.addVertex(continueVtx);
+	final Vertex ctrlVtx = ctrlStack.getLast();
+	sdg.addEdge(continueVtx, ctrlVtx, EdgeType.CTRL_TRUE);
+	return list(continueVtx);
     }
 
     @Override

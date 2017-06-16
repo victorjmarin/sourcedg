@@ -6,6 +6,7 @@ import edu.rit.goal.sdg.java.graph.SysDepGraph;
 import edu.rit.goal.sdg.java.graph.Vertex;
 import edu.rit.goal.sdg.java.statement.Assignment;
 import edu.rit.goal.sdg.java.statement.BreakStmnt;
+import edu.rit.goal.sdg.java.statement.ContinueStmnt;
 import edu.rit.goal.sdg.java.statement.MethodInvocation;
 import edu.rit.goal.sdg.java.statement.MethodInvocationAssignment;
 import edu.rit.goal.sdg.java.statement.MethodSignature;
@@ -57,6 +58,8 @@ public interface SysDepGraphBuilder {
 	    boolean isNested);
 
     List<Vertex> breakStmnt(BreakStmnt breakStmnt, SysDepGraph sdg, boolean isNested);
+
+    List<Vertex> continueStmnt(ContinueStmnt continueStmnt, SysDepGraph sdg, boolean isNested);
 
     List<Vertex> postIncrementExpr(PostIncrementExpr postIncrementExpr, SysDepGraph sdg, boolean isNested);
 

@@ -21,6 +21,7 @@ import edu.rit.goal.sdg.java.graph.Vertex;
 import edu.rit.goal.sdg.java.graph.VertexType;
 import edu.rit.goal.sdg.java.statement.Assignment;
 import edu.rit.goal.sdg.java.statement.BreakStmnt;
+import edu.rit.goal.sdg.java.statement.ContinueStmnt;
 import edu.rit.goal.sdg.java.statement.MethodInvocation;
 import edu.rit.goal.sdg.java.statement.MethodInvocationAssignment;
 import edu.rit.goal.sdg.java.statement.MethodSignature;
@@ -127,6 +128,9 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 		    result.addAll(vtcs);
 		} else if (s instanceof BreakStmnt) {
 		    final List<Vertex> vtcs = breakStmnt((BreakStmnt) s, sdg, isNested);
+		    result.addAll(vtcs);
+		} else if (s instanceof ContinueStmnt) {
+		    final List<Vertex> vtcs = continueStmnt((ContinueStmnt) s, sdg, isNested);
 		    result.addAll(vtcs);
 		} else if (s instanceof PostIncrementExpr) {
 		    final List<Vertex> vtcs = postIncrementExpr((PostIncrementExpr) s, sdg, isNested);
@@ -261,7 +265,7 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 	putVarWriting(result);
 	return result;
     }
-    
+
     protected Vertex createAssignVtx(final String label, final String lookupId) {
 	final Vertex result = new Vertex(VertexType.ASSIGN, label, lookupId);
 	putVarWriting(result);

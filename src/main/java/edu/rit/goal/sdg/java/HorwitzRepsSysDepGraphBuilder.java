@@ -15,6 +15,7 @@ import edu.rit.goal.sdg.java.graph.Vertex;
 import edu.rit.goal.sdg.java.graph.VertexType;
 import edu.rit.goal.sdg.java.statement.Assignment;
 import edu.rit.goal.sdg.java.statement.BreakStmnt;
+import edu.rit.goal.sdg.java.statement.ContinueStmnt;
 import edu.rit.goal.sdg.java.statement.Expression;
 import edu.rit.goal.sdg.java.statement.FormalParameter;
 import edu.rit.goal.sdg.java.statement.MethodInvocation;
@@ -239,6 +240,11 @@ public class HorwitzRepsSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	final Vertex v = new Vertex(VertexType.BREAK, "break");
 	sdg.addVertex(v);
 	return list(v);
+    }
+    
+    @Override
+    public List<Vertex> continueStmnt(final ContinueStmnt continueStmnt, final SysDepGraph sdg, final boolean isNested) {
+	return list(new Vertex());
     }
 
     @Override

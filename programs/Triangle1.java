@@ -25,7 +25,7 @@ public class Triangle1 {
 	int[] arr3 = new int[] { 3 };
 	for (int i : arr1) {
 	    for (int j : arr2) {
-		break;
+		continue;
 	    }
 	}
 	for (int k = 0; k < 10; k++) {
