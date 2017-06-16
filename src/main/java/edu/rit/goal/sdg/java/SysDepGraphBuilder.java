@@ -18,6 +18,7 @@ import edu.rit.goal.sdg.java.statement.Statement;
 import edu.rit.goal.sdg.java.statement.VariableDecl;
 import edu.rit.goal.sdg.java.statement.control.BasicForStmnt;
 import edu.rit.goal.sdg.java.statement.control.DoStmnt;
+import edu.rit.goal.sdg.java.statement.control.EnhancedForStmnt;
 import edu.rit.goal.sdg.java.statement.control.IfThenElseStmnt;
 import edu.rit.goal.sdg.java.statement.control.IfThenStmnt;
 import edu.rit.goal.sdg.java.statement.control.WhileStmnt;
@@ -34,6 +35,8 @@ public interface SysDepGraphBuilder {
     void methodSignature(MethodSignature methodSignature, SysDepGraph sdg);
 
     List<Vertex> basicForStmnt(BasicForStmnt basicForStmnt, SysDepGraph sdg, boolean isNested);
+
+    List<Vertex> enhancedForStmnt(EnhancedForStmnt enhancedForStmnt, SysDepGraph sdg, boolean isNested);
 
     List<Vertex> ifThenElseStmnt(IfThenElseStmnt ifThenElseStmnt, SysDepGraph sdg, boolean isNested);
 

@@ -11,5 +11,12 @@ public class ExpressionVisitor extends Java8BaseVisitor<Expression> {
 	final Expression result = new Expression(ctx);
 	return result;
     }
+    
+    void a () {
+
+	for (final int i: new int[]{1, 2}) {
+	    System.out.println(i);
+	}
+    }
 
 }

@@ -14,6 +14,7 @@ import edu.rit.goal.sdg.java.antlr.Java8Parser.StatementWithoutTrailingSubstatem
 import edu.rit.goal.sdg.java.antlr.Java8Parser.WhileStatementContext;
 import edu.rit.goal.sdg.java.statement.Statement;
 import edu.rit.goal.sdg.java.statement.control.BasicForStmnt;
+import edu.rit.goal.sdg.java.statement.control.EnhancedForStmnt;
 import edu.rit.goal.sdg.java.statement.control.IfThenElseStmnt;
 import edu.rit.goal.sdg.java.statement.control.IfThenStmnt;
 import edu.rit.goal.sdg.java.statement.control.WhileStmnt;
@@ -36,7 +37,9 @@ public class StatementVisitor extends Java8BaseVisitor<List<Statement>> {
 	    final BasicForStmnt stmnt = visitor.visit(ctx.forStatement());
 	    result.add(stmnt);
 	} else if (isEnhancedFor(ctx)) {
-	    // TODO
+	    final EnhancedForStmntVisitor visitor = new EnhancedForStmntVisitor();
+	    final EnhancedForStmnt stmnt = visitor.visit(ctx.forStatement());
+	    result.add(stmnt);
 	} else if (isWhile(ctx)) {
 	    final WhileStmntVisitor visitor = new WhileStmntVisitor();
 	    final WhileStmnt stmnt = visitor.visit(ctx.whileStatement());

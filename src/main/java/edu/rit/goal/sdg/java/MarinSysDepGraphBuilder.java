@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 
 import edu.rit.goal.sdg.java.graph.EdgeType;
 import edu.rit.goal.sdg.java.graph.SysDepGraph;
@@ -25,6 +26,7 @@ import edu.rit.goal.sdg.java.statement.Statement;
 import edu.rit.goal.sdg.java.statement.VariableDecl;
 import edu.rit.goal.sdg.java.statement.control.BasicForStmnt;
 import edu.rit.goal.sdg.java.statement.control.DoStmnt;
+import edu.rit.goal.sdg.java.statement.control.EnhancedForStmnt;
 import edu.rit.goal.sdg.java.statement.control.IfThenElseStmnt;
 import edu.rit.goal.sdg.java.statement.control.IfThenStmnt;
 import edu.rit.goal.sdg.java.statement.control.WhileStmnt;
@@ -67,7 +69,7 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	final Expression varInit = variableDecl.getVariableInitializer();
 	final Vertex declVtx = new Vertex(VertexType.DECL, variableDecl.toString(), lookupId(varName));
 	sdg.addVertex(declVtx);
-	varStack.add(declVtx);
+	putVarWriting(declVtx);
 	if (!isNested) {
 	    notNestedStmntEdge(declVtx, sdg);
 	}
@@ -77,21 +79,55 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     @Override
     public List<Vertex> basicForStmnt(final BasicForStmnt basicForStmnt, final SysDepGraph sdg,
 	    final boolean isNested) {
-	// Initialization
 	final List<Statement> init = basicForStmnt.getInit();
-	_build(init, sdg, isNested);
-	// Condition
 	final Expression cond = basicForStmnt.getCondition();
-	final Vertex condVtx = new Vertex(VertexType.COND, cond.toString());
-	// Body
+	final List<Statement> update = basicForStmnt.getUpdate();
 	final List<Statement> body = basicForStmnt.getBody();
-	final List<Vertex> result = ctrlStructureTrue(condVtx, body, sdg, isNested);
+	return forStmnt(init, cond, update, body, sdg, isNested);
+    }
+
+    @Override
+    public List<Vertex> enhancedForStmnt(final EnhancedForStmnt enhancedForStmnt, final SysDepGraph sdg,
+	    final boolean isNested) {
+	final String var = enhancedForStmnt.getVar();
+	// Condition
+	final Expression iterable = enhancedForStmnt.getIterable();
+	final Vertex condVtx = new Vertex(VertexType.COND, iterable.toString());
+	sdg.addVertex(condVtx);
+	// Update. Needs to be executed after updating the control stack, so we pass it as
+	// a function
+	final Function<Void, Void> f = arg -> {
+	    final Vertex updVtx = createDeclVtx(var, var);
+	    sdg.addVertex(updVtx);
+	    sdg.addEdge(condVtx, updVtx, EdgeType.CTRL_TRUE);
+	    return null;
+	};
+	// Body
+	final List<Statement> body = enhancedForStmnt.getBody();
+	final List<Vertex> result = ctrlStructureTrue(condVtx, body, sdg, f, isNested);
+	// Loop
+	sdg.addEdge(condVtx, condVtx, EdgeType.CTRL_TRUE);
+	return result;
+    }
+
+    public List<Vertex> forStmnt(final List<Statement> init, final Expression cond, final List<Statement> update,
+	    final List<Statement> body, final SysDepGraph sdg, final boolean isNested) {
+	// Initialization. Needs to be executed after updating the control stack, so we
+	// pass it as a function
+	final Function<Void, Void> f = arg -> {
+	    _build(init, sdg, isNested);
+	    return null;
+	};
+	// Condition
+	final Vertex condVtx = new Vertex(VertexType.COND, cond.toString());
+	sdg.addVertex(condVtx);
 	// Loop
 	sdg.addEdge(condVtx, condVtx, EdgeType.CTRL_TRUE);
 	// Update
-	final List<Statement> update = basicForStmnt.getUpdate();
 	final List<Vertex> updateVtcs = _build(update, sdg, isNested);
 	ctrlTrueEdges(condVtx, updateVtcs, sdg);
+	// Body
+	final List<Vertex> result = ctrlStructureTrue(condVtx, body, sdg, f, isNested);
 	// Data dependencies
 	dataDependencies(condVtx, cond.getReadingVars(), sdg, isNested);
 	return result;
@@ -103,6 +139,7 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	// Condition
 	final Expression condition = ifThenElseStmnt.getCondition();
 	final Vertex conditionVtx = new Vertex(VertexType.COND, condition.toString());
+	sdg.addVertex(conditionVtx);
 	// Then branch
 	final List<Statement> thenBranch = ifThenElseStmnt.getThenBranch();
 	final List<Vertex> result = ctrlStructureTrue(conditionVtx, thenBranch, sdg, isNested);
@@ -119,6 +156,7 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	// Condition
 	final Expression condition = ifThenStmnt.getCondition();
 	final Vertex condVtx = new Vertex(VertexType.COND, condition.toString());
+	sdg.addVertex(condVtx);
 	// Then branch
 	final List<Statement> thenBranch = ifThenStmnt.getThenBranch();
 	final List<Vertex> result = ctrlStructureTrue(condVtx, thenBranch, sdg, isNested);
@@ -131,6 +169,7 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	final Expression condition = whileStmnt.getCondition();
 	final List<Statement> body = whileStmnt.getBody();
 	final Vertex conditionVtx = new Vertex(VertexType.COND, condition.toString());
+	sdg.addVertex(conditionVtx);
 	final List<Vertex> result = ctrlStructureTrue(conditionVtx, body, sdg, isNested);
 	return result;
     }
@@ -140,10 +179,11 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	// Condition
 	final Expression condition = doStmnt.getCondition();
 	final Vertex condVtx = new Vertex(VertexType.COND, condition.toString());
+	sdg.addVertex(condVtx);
 	// Body
 	final List<Statement> body = doStmnt.getBody();
 	final boolean isDoStmnt = true;
-	final List<Vertex> result = ctrlStructureTrue(condVtx, body, sdg, isDoStmnt, isNested);
+	final List<Vertex> result = ctrlStructureTrue(condVtx, body, sdg, isDoStmnt, null, isNested);
 	return result;
     }
 
@@ -153,6 +193,7 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	final String assignedVar = assignment.getLeftHandSide();
 	final Vertex assignVtx = new Vertex(VertexType.ASSIGN, assignment.toString(), lookupId(assignedVar));
 	sdg.addVertex(assignVtx);
+	putVarWriting(assignVtx);
 	varStack.add(assignVtx);
 	return list(assignVtx);
     }
@@ -178,11 +219,16 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     public List<Vertex> breakStmnt(final BreakStmnt breakStmnt, final SysDepGraph sdg, final boolean isNested) {
 	final Vertex breakVtx = new Vertex(VertexType.BREAK, "break");
 	sdg.addVertex(breakVtx);
-	Vertex ctrlVtx = getCurrentControlVertex();
-	if (ctrlVtx == getCurrentEnterVertex()) {
-	    ctrlVtx = getCurrentResultVertex();
+	// Get outer control vertex
+	final Vertex currentCtrlVtx = ctrlStack.pollLast();
+	Vertex outerCtrlVyx = ctrlStack.getLast();
+	// Restore last vertex
+	ctrlStack.add(currentCtrlVtx);
+	// Check if outer vertex exists or just use the result vertex
+	if (outerCtrlVyx == getCurrentEnterVertex()) {
+	    outerCtrlVyx = getCurrentResultVertex();
 	}
-	sdg.addEdge(breakVtx, ctrlVtx, EdgeType.CTRL_TRUE);
+	sdg.addEdge(breakVtx, outerCtrlVyx, EdgeType.CTRL_TRUE);
 	return list(breakVtx);
     }
 
@@ -250,15 +296,26 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 
     protected List<Vertex> ctrlStructureTrue(final Vertex conditionVtx, final List<Statement> body,
 	    final SysDepGraph sdg, final boolean isNested) {
-	return ctrlStructureTrue(conditionVtx, body, sdg, false, isNested);
+	return ctrlStructureTrue(conditionVtx, body, sdg, false, null, isNested);
     }
 
     protected List<Vertex> ctrlStructureTrue(final Vertex conditionVtx, final List<Statement> body,
-	    final SysDepGraph sdg, final boolean isDoStmnt, final boolean isNested) {
+	    final SysDepGraph sdg, final Function<Void, Void> f, final boolean isNested) {
+	return ctrlStructureTrue(conditionVtx, body, sdg, false, f, isNested);
+    }
+
+    protected List<Vertex> ctrlStructureTrue(final Vertex conditionVtx, final List<Statement> body,
+	    final SysDepGraph sdg, final boolean isDoStmnt, final Function<Void, Void> f, final boolean isNested) {
 	List<Vertex> result = new ArrayList<>();
 	List<Vertex> bodyVtcs = new ArrayList<>();
-	sdg.addVertex(conditionVtx);
+	ctrlStack.add(conditionVtx);
+	System.out.println("Ctrl changed: " + conditionVtx);
+	if (f != null)
+	    f.apply(null);
 	bodyVtcs = _build(body, sdg, true);
+	System.out.println(ctrlVtxVarDeclMap);
+	final Vertex currentCtrlVtx = ctrlStack.pollLast();
+	removeScopedVarDecl(currentCtrlVtx);
 	if (!isNested) {
 	    // Method entry dependency
 	    notNestedStmntEdge(conditionVtx, sdg);
@@ -270,10 +327,8 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	// Add extra control edges if do stmnt because the body will execute at least once
 	// no matter the condition.
 	if (isDoStmnt) {
-	    final Vertex ctrlVtx = getCurrentControlVertex();
-	    ctrlTrueEdges(ctrlVtx, bodyVtcs, sdg);
+	    ctrlTrueEdges(currentCtrlVtx, bodyVtcs, sdg);
 	}
-	setCurrentControlVertex(conditionVtx);
 	return result;
     }
 

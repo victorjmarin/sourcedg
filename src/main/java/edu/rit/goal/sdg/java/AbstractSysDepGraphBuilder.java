@@ -18,6 +18,7 @@ import edu.rit.goal.sdg.java.antlr.Java8Parser;
 import edu.rit.goal.sdg.java.graph.ScopedVertex;
 import edu.rit.goal.sdg.java.graph.SysDepGraph;
 import edu.rit.goal.sdg.java.graph.Vertex;
+import edu.rit.goal.sdg.java.graph.VertexType;
 import edu.rit.goal.sdg.java.statement.Assignment;
 import edu.rit.goal.sdg.java.statement.BreakStmnt;
 import edu.rit.goal.sdg.java.statement.MethodInvocation;
@@ -33,6 +34,7 @@ import edu.rit.goal.sdg.java.statement.Statement;
 import edu.rit.goal.sdg.java.statement.VariableDecl;
 import edu.rit.goal.sdg.java.statement.control.BasicForStmnt;
 import edu.rit.goal.sdg.java.statement.control.DoStmnt;
+import edu.rit.goal.sdg.java.statement.control.EnhancedForStmnt;
 import edu.rit.goal.sdg.java.statement.control.IfThenElseStmnt;
 import edu.rit.goal.sdg.java.statement.control.IfThenStmnt;
 import edu.rit.goal.sdg.java.statement.control.WhileStmnt;
@@ -43,8 +45,9 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
     protected Vertex currentEnterVertex;
     protected Vertex currentResultOutVertex;
     protected final Map<String, List<Vertex>> formalParameters = new HashMap<>();
-    protected Vertex currentCtrlVtx;
+    protected Deque<Vertex> ctrlStack = new ArrayDeque<>();
     protected Deque<Vertex> varStack = new ArrayDeque<>();
+    protected Map<Vertex, List<Vertex>> ctrlVtxVarDeclMap = new HashMap<>();
     private List<Statement> stmnts;
 
     @Override
@@ -87,10 +90,13 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 		    final MethodSignature methodSignature = (MethodSignature) s;
 		    final String methodName = methodSignature.getName();
 		    currentEnterVertex = sdg.getFirstVertexByLabel(methodName);
-		    currentCtrlVtx = currentEnterVertex;
+		    ctrlStack.add(currentEnterVertex);
 		    currentResultOutVertex = sdg.getFirstVertexByLabel(getResultOutVtxName(methodName));
 		} else if (s instanceof BasicForStmnt) {
 		    final List<Vertex> vtcs = basicForStmnt((BasicForStmnt) s, sdg, isNested);
+		    result.addAll(vtcs);
+		} else if (s instanceof EnhancedForStmnt) {
+		    final List<Vertex> vtcs = enhancedForStmnt((EnhancedForStmnt) s, sdg, isNested);
 		    result.addAll(vtcs);
 		} else if (s instanceof IfThenElseStmnt) {
 		    final List<Vertex> vtcs = ifThenElseStmnt((IfThenElseStmnt) s, sdg, isNested);
@@ -218,11 +224,48 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 	return getCurrentEnterVertex().getLabel() + lookupId;
     }
 
-    protected Vertex getCurrentControlVertex() {
-	return currentCtrlVtx;
+    protected void putVarWriting(final Vertex vtx) {
+	System.out.println("putting var: " + vtx);
+	final Vertex currCtrlVtx = ctrlStack.getLast();
+	List<Vertex> vtcs = ctrlVtxVarDeclMap.get(currCtrlVtx);
+	if (vtcs == null) {
+	    vtcs = new ArrayList<>();
+	    ctrlVtxVarDeclMap.put(currCtrlVtx, vtcs);
+	}
+	final String lookupId = vtx.getLookupId();
+	final List<Vertex> olderRefs = vtcs.stream().filter(v -> lookupId.equals(v.getLookupId()))
+		.collect(Collectors.toList());
+	vtcs.removeAll(olderRefs);
+	vtcs.add(vtx);
     }
 
-    protected void setCurrentControlVertex(final Vertex currentCtrlVtx) {
-	this.currentCtrlVtx = currentCtrlVtx;
+    protected void removeScopedVarDecl(final Vertex ctrlVtx) {
+	System.out.println("removing vars: " + ctrlVtx);
+	final List<Vertex> vtcs = ctrlVtxVarDeclMap.get(ctrlVtx);
+	if (vtcs == null)
+	    return;
+	final List<Vertex> updatedVtcs = new ArrayList<>(vtcs.size());
+	for (final Vertex v : vtcs) {
+	    if (!v.getType().equals(VertexType.DECL))
+		updatedVtcs.add(v);
+	}
+	if (updatedVtcs.size() == 0) {
+	    ctrlVtxVarDeclMap.remove(ctrlVtx);
+	} else {
+	    ctrlVtxVarDeclMap.put(ctrlVtx, updatedVtcs);
+	}
     }
+
+    protected Vertex createDeclVtx(final String label, final String lookupId) {
+	final Vertex result = new Vertex(VertexType.DECL, label, lookupId);
+	putVarWriting(result);
+	return result;
+    }
+    
+    protected Vertex createAssignVtx(final String label, final String lookupId) {
+	final Vertex result = new Vertex(VertexType.ASSIGN, label, lookupId);
+	putVarWriting(result);
+	return result;
+    }
+
 }

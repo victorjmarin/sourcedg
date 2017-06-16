@@ -27,7 +27,7 @@ public class Triangle1Test {
 
     @Test
     public void enterShouldBeParsed() {
-	
+
     }
 
 }

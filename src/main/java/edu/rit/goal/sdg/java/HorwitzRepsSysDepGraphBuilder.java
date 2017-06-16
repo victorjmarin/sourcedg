@@ -29,6 +29,7 @@ import edu.rit.goal.sdg.java.statement.Statement;
 import edu.rit.goal.sdg.java.statement.VariableDecl;
 import edu.rit.goal.sdg.java.statement.control.BasicForStmnt;
 import edu.rit.goal.sdg.java.statement.control.DoStmnt;
+import edu.rit.goal.sdg.java.statement.control.EnhancedForStmnt;
 import edu.rit.goal.sdg.java.statement.control.IfThenElseStmnt;
 import edu.rit.goal.sdg.java.statement.control.IfThenStmnt;
 import edu.rit.goal.sdg.java.statement.control.WhileStmnt;
@@ -70,6 +71,13 @@ public class HorwitzRepsSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     public List<Vertex> basicForStmnt(final BasicForStmnt basicForStmnt, final SysDepGraph sdg,
 	    final boolean isNested) {
 	System.err.println("Basic for statement not implemented.");
+	return list(new Vertex[1]);
+    }
+
+    @Override
+    public List<Vertex> enhancedForStmnt(final EnhancedForStmnt enhancedForStmnt, final SysDepGraph sdg,
+	    final boolean isNested) {
+	System.err.println("Enhanced for statement not implemented.");
 	return list(new Vertex[1]);
     }
 
