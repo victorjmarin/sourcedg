@@ -229,7 +229,7 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
     }
 
     protected void putVarWriting(final Vertex vtx) {
-	System.out.println("putting var: " + vtx);
+	//System.out.println("putting var: " + vtx);
 	final Vertex currCtrlVtx = ctrlStack.getLast();
 	List<Vertex> vtcs = ctrlVtxVarDeclMap.get(currCtrlVtx);
 	if (vtcs == null) {
@@ -244,7 +244,7 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
     }
 
     protected void removeScopedVarDecl(final Vertex ctrlVtx) {
-	System.out.println("removing vars: " + ctrlVtx);
+	//System.out.println("removing scoped vars: " + ctrlVtx);
 	final List<Vertex> vtcs = ctrlVtxVarDeclMap.get(ctrlVtx);
 	if (vtcs == null)
 	    return;

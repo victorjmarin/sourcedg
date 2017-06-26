@@ -13,13 +13,13 @@ import edu.rit.goal.sdg.java.SysDepGraphBuilderFactory;
 import edu.rit.goal.sdg.java.SysDepGraphBuilderFactory.BuildStrategy;
 import edu.rit.goal.sdg.java.graph.SysDepGraph;
 
-public class Triangle1Test {
+public class Triangle4Test {
 
     private static SysDepGraph sdg;
 
     @BeforeClass
     public static void parseTestProgram() throws IOException, ExportException {
-	final String program = new String(Files.readAllBytes(Paths.get("programs/Triangle1.java")));
+	final String program = new String(Files.readAllBytes(Paths.get("programs/Triangle4.java")));
 	final SysDepGraphBuilder builder = SysDepGraphBuilderFactory.using(BuildStrategy.MARIN);
 	sdg = builder.fromSource(program);
 	System.out.println(sdg);

@@ -72,6 +72,7 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	sdg.addVertex(declVtx);
 	putVarWriting(declVtx);
 	if (!isNested) {
+	    // Method entry dependency
 	    notNestedStmntEdge(declVtx, sdg);
 	}
 	return list(declVtx);
@@ -204,6 +205,10 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	    final boolean isNested) {
 	final Vertex invocationVtx = new Vertex(VertexType.CALL, methodInvocation.toString());
 	sdg.addVertex(invocationVtx);
+	if (!isNested) {
+	    // Method entry dependency
+	    notNestedStmntEdge(invocationVtx, sdg);
+	}
 	return list(invocationVtx);
     }
 
@@ -213,6 +218,10 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	// Invocation vertex
 	final Vertex invocationVtx = new Vertex(VertexType.CALL, methodInvocationAssignment.toString());
 	sdg.addVertex(invocationVtx);
+	if (!isNested) {
+	    // Method entry dependency
+	    notNestedStmntEdge(invocationVtx, sdg);
+	}
 	return list(invocationVtx);
     }
 
@@ -276,6 +285,7 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	final Vertex v = new Vertex(VertexType.RETURN, returnedExpr.toString());
 	sdg.addVertex(v);
 	if (!isNested) {
+	    // Method entry dependency
 	    notNestedStmntEdge(v, sdg);
 	}
 	return list(v);
@@ -320,11 +330,11 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	List<Vertex> result = new ArrayList<>();
 	List<Vertex> bodyVtcs = new ArrayList<>();
 	ctrlStack.add(conditionVtx);
-	System.out.println("Ctrl changed: " + conditionVtx);
+	// System.out.println("Ctrl changed: " + conditionVtx);
 	if (f != null)
 	    f.apply(null);
 	bodyVtcs = _build(body, sdg, true);
-	System.out.println(ctrlVtxVarDeclMap);
+	// System.out.println(ctrlVtxVarDeclMap);
 	final Vertex currentCtrlVtx = ctrlStack.pollLast();
 	removeScopedVarDecl(currentCtrlVtx);
 	if (!isNested) {

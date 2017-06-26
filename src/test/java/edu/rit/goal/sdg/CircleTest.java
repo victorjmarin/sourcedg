@@ -30,7 +30,7 @@ public class CircleTest {
     @BeforeClass
     public static void parseTestProgram() throws IOException, ExportException {
 	final String program = new String(Files.readAllBytes(Paths.get("programs/Circle.java")));
-	final SysDepGraphBuilder builder = SysDepGraphBuilderFactory.using(BuildStrategy.HORWITZ);
+	final SysDepGraphBuilder builder = SysDepGraphBuilderFactory.using(BuildStrategy.MARIN);
 	sdg = builder.fromSource(program);
 	final GraphMLExporter<Vertex, Edge> exporter = new GraphMLExporter<Vertex, Edge>();
 	exporter.setEdgeLabelAttributeName("label");
