@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import edu.rit.goal.sdg.java.graph.EdgeType;
+import edu.rit.goal.sdg.java.graph.PrimitiveType;
 import edu.rit.goal.sdg.java.graph.SysDepGraph;
 import edu.rit.goal.sdg.java.graph.Vertex;
 import edu.rit.goal.sdg.java.graph.VertexType;
@@ -44,10 +45,19 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	final Vertex enterVtx = new Vertex(VertexType.ENTER, methodName, methodName);
 	sdg.addVertex(enterVtx);
 	// Result vertex placeholder
-	final String resultOutVtxName = getResultOutVtxName(methodName);
-	final Vertex resultOutVtx = new Vertex(VertexType.FORMAL_OUT, resultOutVtxName, resultOutVtxName);
-	sdg.addVertex(resultOutVtx);
-	notNestedStmntEdge(enterVtx, resultOutVtx, sdg);
+	final PrimitiveType returnType = methodSignature.getReturnType();
+	if (returnType != PrimitiveType.VOID) {
+	    // Result out
+	    final String resultOutVtxName = getResultOutVtxName(methodName);
+	    final Vertex resultOutVtx = new Vertex(VertexType.FORMAL_OUT, resultOutVtxName, resultOutVtxName);
+	    sdg.addVertex(resultOutVtx);
+	    notNestedStmntEdge(enterVtx, resultOutVtx, sdg);
+	    // Result in
+	    final String resultInVtxName = getResultInVtxName(methodName);
+	    final Vertex resultInVtx = new Vertex(VertexType.FORMAL_IN, resultInVtxName, resultInVtxName);
+	    sdg.addVertex(resultInVtx);
+	    notNestedStmntEdge(enterVtx, resultInVtx, sdg);
+	}
 	// Create formal parameter vertices
 	final List<FormalParameter> params = methodSignature.getParams();
 	if (params != null) {
@@ -222,6 +232,14 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	    // Method entry dependency
 	    notNestedStmntEdge(invocationVtx, sdg);
 	}
+	// Actual in
+	final String methodName = methodInvocationAssignment.getName();
+	final String outVar = methodInvocationAssignment.getOutVar();
+	final Vertex actualInVtx = new Vertex(VertexType.ACTUAL_IN, outVar, outVar);
+	sdg.addVertex(actualInVtx);
+	sdg.addEdge(invocationVtx, actualInVtx, EdgeType.CTRL_TRUE);
+	final Vertex calledResultInVertex = sdg.getFirstVertexByLabel(getResultInVtxName(methodName));
+	sdg.addEdge(actualInVtx, calledResultInVertex, EdgeType.PARAM_IN);
 	return list(invocationVtx);
     }
 
