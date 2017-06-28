@@ -4,6 +4,7 @@ import java.util.List;
 
 import edu.rit.goal.sdg.java.antlr.Java8BaseVisitor;
 import edu.rit.goal.sdg.java.antlr.Java8Parser;
+import edu.rit.goal.sdg.java.antlr.Java8Parser.ExpressionContext;
 import edu.rit.goal.sdg.java.antlr.Java8Parser.StatementContext;
 import edu.rit.goal.sdg.java.statement.Expression;
 import edu.rit.goal.sdg.java.statement.Statement;
@@ -14,7 +15,10 @@ public class WhileStmntVisitor extends Java8BaseVisitor<WhileStmnt> {
     @Override
     public WhileStmnt visitWhileStatement(final Java8Parser.WhileStatementContext ctx) {
 	final ExpressionVisitor exprVisitor = new ExpressionVisitor();
-	final Expression condition = exprVisitor.visit(ctx.expression());
+	final ExpressionContext exprCtx = ctx.expression();
+	// Check for function call/assignment as guard
+	VisitorUtils.checkForUnsupportedFeatures(exprCtx);
+	final Expression condition = exprVisitor.visit(exprCtx);
 	final StatementContext stmntCtx = ctx.statement();
 	final StatementVisitor visitor = new StatementVisitor();
 	final List<Statement> body = visitor.visit(stmntCtx);

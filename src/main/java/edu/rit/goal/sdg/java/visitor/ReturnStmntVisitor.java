@@ -13,6 +13,8 @@ public class ReturnStmntVisitor extends Java8BaseVisitor<ReturnStmnt> {
 	Expression returnedExpr = null;
 	final ExpressionContext exprCtx = ctx.expression();
 	if (exprCtx != null) {
+	    // Check for function call/assignment in return
+	    VisitorUtils.checkForUnsupportedFeatures(exprCtx);
 	    final ExpressionVisitor visitor = new ExpressionVisitor();
 	    returnedExpr = visitor.visit(exprCtx);
 	}

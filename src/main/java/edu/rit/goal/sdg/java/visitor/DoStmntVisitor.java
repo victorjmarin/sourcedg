@@ -19,6 +19,8 @@ public class DoStmntVisitor extends Java8BaseVisitor<DoStmnt> {
 	final List<Statement> body = stmntVisitor.visit(stmntCtx);
 	final ExpressionVisitor exprVisitor = new ExpressionVisitor();
 	final ExpressionContext exprCtx = ctx.expression();
+	// Check for function call/assignment as guard
+	VisitorUtils.checkForUnsupportedFeatures(exprCtx);
 	final Expression condition = exprVisitor.visit(exprCtx);
 	final DoStmnt result = new DoStmnt(body, condition);
 	return result;

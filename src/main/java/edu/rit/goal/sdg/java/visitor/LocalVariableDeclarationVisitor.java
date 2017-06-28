@@ -12,7 +12,6 @@ import edu.rit.goal.sdg.java.antlr.Java8Parser.MethodInvocation_lfno_primaryCont
 import edu.rit.goal.sdg.java.antlr.Java8Parser.TypeNameContext;
 import edu.rit.goal.sdg.java.antlr.Java8Parser.VariableDeclaratorContext;
 import edu.rit.goal.sdg.java.antlr.Java8Parser.VariableDeclaratorListContext;
-import edu.rit.goal.sdg.java.exception.InvocationArgException;
 import edu.rit.goal.sdg.java.statement.Expression;
 import edu.rit.goal.sdg.java.statement.MethodInvocationAssignment;
 import edu.rit.goal.sdg.java.statement.Statement;
@@ -40,11 +39,8 @@ public class LocalVariableDeclarationVisitor extends Java8BaseVisitor<List<State
 		rhsList.add(variableInitializer);
 		final ArgumentListContext argListCtx = VisitorUtils.getArgListCtx(v.variableInitializer());
 		final List<Expression> inVars = argListCtx.expression().stream().map(exp -> {
-		    final MethodInvocation_lfno_primaryContext methodInvocationCtx = VisitorUtils.getMethodInvCtx(exp);
-		    // Function call as function argument
-		    if (methodInvocationCtx != null) {
-			throw new InvocationArgException(exp);
-		    }
+		    // Check for function call/assignment as function argument
+		    VisitorUtils.checkForUnsupportedFeatures(exp);
 		    return visitor.visit(exp);
 		}).collect(Collectors.toList());
 		final MethodInvocation_lfno_primaryContext methodInvCtx = VisitorUtils.getMethodInvCtx(ctx);
