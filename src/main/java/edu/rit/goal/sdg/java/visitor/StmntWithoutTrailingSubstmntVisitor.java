@@ -34,8 +34,11 @@ public class StmntWithoutTrailingSubstmntVisitor extends Java8BaseVisitor<List<S
 	} else if (isBlock(ctx)) {
 	    final BlockContext blockCtx = ctx.block();
 	    final BlockStatementsContext blockStmntsCtx = blockCtx.blockStatements();
-	    final BlockStatementsVisitor visitor = new BlockStatementsVisitor();
-	    result = visitor.visit(blockStmntsCtx);
+	    // Check block body is not empty
+	    if (blockStmntsCtx != null) {
+		final BlockStatementsVisitor visitor = new BlockStatementsVisitor();
+		result = visitor.visit(blockStmntsCtx);
+	    }
 	} else if (isReturn(ctx)) {
 	    final ReturnStmntVisitor visitor = new ReturnStmntVisitor();
 	    final ReturnStmnt stmnt = visitor.visit(ctx.returnStatement());
