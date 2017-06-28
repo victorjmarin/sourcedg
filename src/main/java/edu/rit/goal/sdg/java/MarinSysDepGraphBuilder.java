@@ -11,6 +11,7 @@ import edu.rit.goal.sdg.java.graph.PrimitiveType;
 import edu.rit.goal.sdg.java.graph.SysDepGraph;
 import edu.rit.goal.sdg.java.graph.Vertex;
 import edu.rit.goal.sdg.java.graph.VertexType;
+import edu.rit.goal.sdg.java.statement.ArrayAccessAssignment;
 import edu.rit.goal.sdg.java.statement.Assignment;
 import edu.rit.goal.sdg.java.statement.BreakStmnt;
 import edu.rit.goal.sdg.java.statement.ContinueStmnt;
@@ -81,6 +82,7 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	final Vertex declVtx = new Vertex(VertexType.DECL, variableDecl.toString(), lookupId(varName));
 	sdg.addVertex(declVtx);
 	putVarWriting(declVtx);
+	dataDependencies(declVtx, varInit.getReadingVars(), sdg, isNested);
 	if (!isNested) {
 	    // Method entry dependency
 	    notNestedStmntEdge(declVtx, sdg);
@@ -150,16 +152,17 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	    final boolean isNested) {
 	// Condition
 	final Expression condition = ifThenElseStmnt.getCondition();
-	final Vertex conditionVtx = new Vertex(VertexType.COND, condition.toString());
-	sdg.addVertex(conditionVtx);
+	final Vertex condVtx = new Vertex(VertexType.COND, condition.toString());
+	sdg.addVertex(condVtx);
 	// Then branch
 	final List<Statement> thenBranch = ifThenElseStmnt.getThenBranch();
-	final List<Vertex> result = ctrlStructureTrue(conditionVtx, thenBranch, sdg, isNested);
+	final List<Vertex> result = ctrlStructureTrue(condVtx, thenBranch, sdg, isNested);
 	// Else branch
 	final List<Statement> elseBranch = ifThenElseStmnt.getElseBranch();
 	final List<Vertex> elseVtcs = _build(elseBranch, sdg, true);
-	ctrlFalseEdges(conditionVtx, elseVtcs, sdg);
-	// dataDependencies(conditionVtx, condition.getReadingVars(), sdg, isNested);
+	ctrlFalseEdges(condVtx, elseVtcs, sdg);
+	// Data dependencies
+	dataDependencies(condVtx, condition.getReadingVars(), sdg, isNested);
 	return result;
     }
 
@@ -172,7 +175,8 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	// Then branch
 	final List<Statement> thenBranch = ifThenStmnt.getThenBranch();
 	final List<Vertex> result = ctrlStructureTrue(condVtx, thenBranch, sdg, isNested);
-	// dataDependencies(conditionVtx, condition.getReadingVars(), sdg, isNested);
+	// Data dependencies
+	dataDependencies(condVtx, condition.getReadingVars(), sdg, isNested);
 	return result;
     }
 
@@ -180,9 +184,11 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     public List<Vertex> whileStmnt(final WhileStmnt whileStmnt, final SysDepGraph sdg, final boolean isNested) {
 	final Expression condition = whileStmnt.getCondition();
 	final List<Statement> body = whileStmnt.getBody();
-	final Vertex conditionVtx = new Vertex(VertexType.COND, condition.toString());
-	sdg.addVertex(conditionVtx);
-	final List<Vertex> result = ctrlStructureTrue(conditionVtx, body, sdg, isNested);
+	final Vertex condVtx = new Vertex(VertexType.COND, condition.toString());
+	sdg.addVertex(condVtx);
+	final List<Vertex> result = ctrlStructureTrue(condVtx, body, sdg, isNested);
+	// Data dependencies
+	dataDependencies(condVtx, condition.getReadingVars(), sdg, isNested);
 	return result;
     }
 
@@ -196,17 +202,46 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	final List<Statement> body = doStmnt.getBody();
 	final boolean isDoStmnt = true;
 	final List<Vertex> result = ctrlStructureTrue(condVtx, body, sdg, isDoStmnt, null, isNested);
+	// Data dependencies
+	dataDependencies(condVtx, condition.getReadingVars(), sdg, isNested);
 	return result;
+    }
+
+    @Override
+    public List<Vertex> arrayAccessAssignment(final ArrayAccessAssignment arrayAccessAssignment, final SysDepGraph sdg,
+	    final boolean isNested, final List<Statement> scope) {
+	final String assignedVar = arrayAccessAssignment.getExpressionName();
+	final Vertex assignVtx = new Vertex(VertexType.ASSIGN, arrayAccessAssignment.toString(), lookupId(assignedVar));
+	sdg.addVertex(assignVtx);
+	final List<Expression> exprs = new ArrayList<>();
+	exprs.add(arrayAccessAssignment.getIndex());
+	exprs.add(arrayAccessAssignment.getRightHandSide());
+	dataDependencies(assignVtx, exprs, sdg, isNested);
+	if (!isNested) {
+	    // Method entry dependency
+	    notNestedStmntEdge(assignVtx, sdg);
+	}
+	return list(assignVtx);
     }
 
     @Override
     public List<Vertex> assignment(final Assignment assignment, final SysDepGraph sdg, final boolean isNested,
 	    final List<Statement> scope) {
-	final String assignedVar = assignment.getLeftHandSide();
+	final String assignedVar = assignment.getLeftHandSide().toString();
 	final Vertex assignVtx = new Vertex(VertexType.ASSIGN, assignment.toString(), lookupId(assignedVar));
+	final Expression initializer = assignment.getRightHandSide();
 	sdg.addVertex(assignVtx);
 	putVarWriting(assignVtx);
 	varStack.add(assignVtx);
+	// Data dependencies
+	final List<Expression> exprs = new ArrayList<>();
+	exprs.add(assignment.getLeftHandSide());
+	dataDependencies(assignVtx, exprs, sdg, isNested);
+	dataDependencies(assignVtx, initializer.getReadingVars(), sdg, isNested);
+	if (!isNested) {
+	    // Method entry dependency
+	    notNestedStmntEdge(assignVtx, sdg);
+	}
 	return list(assignVtx);
     }
 
@@ -219,6 +254,34 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	    // Method entry dependency
 	    notNestedStmntEdge(invocationVtx, sdg);
 	}
+	final String methodName = methodInvocation.getMethodName();
+	final Vertex methodVertex = sdg.getFirstVertexByLabel(methodName);
+	// Add edge if the method is part of the program itself and not some other API,
+	// like System.out.println
+	if (methodVertex != null) {
+	    sdg.addEdge(invocationVtx, methodVertex, EdgeType.CALL);
+	}
+	// PARAM_IN edges
+	final List<Expression> inVars = methodInvocation.getInVars();
+	if (inVars != null) {
+	    for (int i = 0; i < inVars.size(); i++) {
+		final Vertex formalParam = getFormalParameter(methodName, i);
+		// Only if the method is part of the program itself and not some other API
+		if (formalParam != null) {
+		    final Expression var = inVars.get(i);
+		    final String paramName = var.toString();
+		    final Vertex actualParam = new Vertex(VertexType.ACTUAL_IN, paramName, paramName);
+		    sdg.addVertex(actualParam);
+		    sdg.addEdge(actualParam, formalParam, EdgeType.PARAM_IN);
+		    sdg.addEdge(invocationVtx, actualParam, EdgeType.CTRL_TRUE);
+		    // Add edges w.r.t. variable declaration/assignments
+		    final List<Vertex> paramAssignments = sdg.getAllAssignmentVerticesByLabel(paramName);
+		    paramAssignments.forEach(p -> sdg.addEdge(p, actualParam, EdgeType.FLOW));
+		}
+	    }
+	}
+	// Data dependencies
+	dataDependencies(invocationVtx, inVars, sdg, isNested);
 	return list(invocationVtx);
     }
 
@@ -226,16 +289,18 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     public List<Vertex> methodInvocationAssignment(final MethodInvocationAssignment methodInvocationAssignment,
 	    final SysDepGraph sdg, final boolean isNested) {
 	// Invocation vertex
-	final Vertex invocationVtx = new Vertex(VertexType.CALL, methodInvocationAssignment.toString());
-	sdg.addVertex(invocationVtx);
-	if (!isNested) {
-	    // Method entry dependency
-	    notNestedStmntEdge(invocationVtx, sdg);
-	}
-	// Actual in
-	final String methodName = methodInvocationAssignment.getName();
+	final List<Vertex> invocationVtxLst = methodInvocation(methodInvocationAssignment, sdg, isNested);
+	final Vertex invocationVtx = invocationVtxLst.get(0);
+	final String methodName = methodInvocationAssignment.getMethodName();
 	final String outVar = methodInvocationAssignment.getOutVar();
-	final Vertex actualInVtx = new Vertex(VertexType.ACTUAL_IN, outVar, outVar);
+	// Actual out
+	final Vertex actualOutVtx = new Vertex(VertexType.ACTUAL_OUT, outVar, lookupId(outVar));
+	sdg.addVertex(actualOutVtx);
+	sdg.addEdge(invocationVtx, actualOutVtx, EdgeType.CTRL_TRUE);
+	final Vertex resultVtx = sdg.getFirstVertexByLabel(getResultOutVtxName(methodName));
+	sdg.addEdge(resultVtx, actualOutVtx, EdgeType.PARAM_OUT);
+	// Actual in
+	final Vertex actualInVtx = new Vertex(VertexType.ACTUAL_IN, outVar);
 	sdg.addVertex(actualInVtx);
 	sdg.addEdge(invocationVtx, actualInVtx, EdgeType.CTRL_TRUE);
 	final Vertex calledResultInVertex = sdg.getFirstVertexByLabel(getResultInVtxName(methodName));
@@ -300,19 +365,27 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     @Override
     public List<Vertex> returnStmnt(final ReturnStmnt returnStmnt, final SysDepGraph sdg, final boolean isNested) {
 	final Expression returnedExpr = returnStmnt.getReturnedExpr();
-	final Vertex v = new Vertex(VertexType.RETURN, returnedExpr.toString());
-	sdg.addVertex(v);
+	final Vertex returnVtx = new Vertex(VertexType.RETURN, returnedExpr.toString());
+	sdg.addVertex(returnVtx);
+	// Data dependencies
+	dataDependencies(returnVtx, returnedExpr.getReadingVars(), sdg, isNested);
 	if (!isNested) {
 	    // Method entry dependency
-	    notNestedStmntEdge(v, sdg);
+	    notNestedStmntEdge(returnVtx, sdg);
 	}
-	return list(v);
+	return list(returnVtx);
     }
 
     @Override
-    protected void doFinally() {
-	// TODO Auto-generated method stub
-
+    protected void doFinally(final SysDepGraph sdg) {
+	// FORMAL_OUT data dependencies
+	// final Set<Vertex> vertices = sdg.vertexSet();
+	// final List<Vertex> paramVtcs = vertices.stream().filter(v ->
+	// v.getType().equals(VertexType.FORMAL_OUT))
+	// .collect(Collectors.toList());
+	// for (final Vertex v: paramVtcs) {
+	// dataDependencies(v, exprs, sdg, isNested);
+	// }
     }
 
     // Helper methods
@@ -321,6 +394,8 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	final String lookupId = expr.getReadingVars().iterator().next();
 	final Vertex vtx = new Vertex(VertexType.ASSIGN, expr.toString(), lookupId(lookupId));
 	sdg.addVertex(vtx);
+	// Data dependencies
+	dataDependencies(vtx, expr.getReadingVars(), sdg, isNested);
 	return list(vtx);
     }
 

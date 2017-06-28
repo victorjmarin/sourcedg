@@ -19,6 +19,7 @@ import edu.rit.goal.sdg.java.graph.ScopedVertex;
 import edu.rit.goal.sdg.java.graph.SysDepGraph;
 import edu.rit.goal.sdg.java.graph.Vertex;
 import edu.rit.goal.sdg.java.graph.VertexType;
+import edu.rit.goal.sdg.java.statement.ArrayAccessAssignment;
 import edu.rit.goal.sdg.java.statement.Assignment;
 import edu.rit.goal.sdg.java.statement.BreakStmnt;
 import edu.rit.goal.sdg.java.statement.ContinueStmnt;
@@ -78,7 +79,7 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 	// Process methods first so that they are available for reference
 	methods.forEach(m -> methodSignature((MethodSignature) m, result));
 	_build(stmnts, result, false);
-	doFinally();
+	doFinally(result);
 	return result;
     }
 
@@ -114,14 +115,18 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 		} else if (s instanceof VariableDecl) {
 		    final List<Vertex> vtcs = variableDeclaration((VariableDecl) s, sdg, isNested, scope);
 		    result.addAll(vtcs);
+		} else if (s instanceof ArrayAccessAssignment) {
+		    final List<Vertex> vtcs = arrayAccessAssignment((ArrayAccessAssignment) s, sdg, isNested, scope);
+		    result.addAll(vtcs);
 		} else if (s instanceof Assignment) {
 		    final List<Vertex> vtcs = assignment((Assignment) s, sdg, isNested, scope);
 		    result.addAll(vtcs);
-		} else if (s instanceof MethodInvocation) {
-		    final List<Vertex> vtcs = methodInvocation((MethodInvocation) s, sdg, isNested);
-		    result.addAll(vtcs);
+		    // Has to be called before MethodInvocation because MethodInvocationAssignment is a subclass
 		} else if (s instanceof MethodInvocationAssignment) {
 		    final List<Vertex> vtcs = methodInvocationAssignment((MethodInvocationAssignment) s, sdg, isNested);
+		    result.addAll(vtcs);
+		} else if (s instanceof MethodInvocation) {
+		    final List<Vertex> vtcs = methodInvocation((MethodInvocation) s, sdg, isNested);
 		    result.addAll(vtcs);
 		} else if (s instanceof ReturnStmnt) {
 		    final List<Vertex> vtcs = returnStmnt((ReturnStmnt) s, sdg, isNested);
@@ -206,7 +211,7 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 	return currentResultOutVertex;
     }
 
-    protected abstract void doFinally();
+    protected abstract void doFinally(SysDepGraph sdg);
 
     protected String getResultOutVtxName(final String methodName) {
 	return methodName + "ResultOut";
@@ -229,7 +234,7 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
     }
 
     protected void putVarWriting(final Vertex vtx) {
-	//System.out.println("putting var: " + vtx);
+	// System.out.println("putting var: " + vtx);
 	final Vertex currCtrlVtx = ctrlStack.getLast();
 	List<Vertex> vtcs = ctrlVtxVarDeclMap.get(currCtrlVtx);
 	if (vtcs == null) {
@@ -244,7 +249,7 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
     }
 
     protected void removeScopedVarDecl(final Vertex ctrlVtx) {
-	//System.out.println("removing scoped vars: " + ctrlVtx);
+	// System.out.println("removing scoped vars: " + ctrlVtx);
 	final List<Vertex> vtcs = ctrlVtxVarDeclMap.get(ctrlVtx);
 	if (vtcs == null)
 	    return;

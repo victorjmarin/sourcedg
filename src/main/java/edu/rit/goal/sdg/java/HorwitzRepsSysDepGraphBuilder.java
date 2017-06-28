@@ -13,6 +13,7 @@ import edu.rit.goal.sdg.java.graph.ScopedVertex;
 import edu.rit.goal.sdg.java.graph.SysDepGraph;
 import edu.rit.goal.sdg.java.graph.Vertex;
 import edu.rit.goal.sdg.java.graph.VertexType;
+import edu.rit.goal.sdg.java.statement.ArrayAccessAssignment;
 import edu.rit.goal.sdg.java.statement.Assignment;
 import edu.rit.goal.sdg.java.statement.BreakStmnt;
 import edu.rit.goal.sdg.java.statement.ContinueStmnt;
@@ -143,9 +144,16 @@ public class HorwitzRepsSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     }
 
     @Override
+    public List<Vertex> arrayAccessAssignment(final ArrayAccessAssignment arrayAccessAssignment, final SysDepGraph sdg,
+	    final boolean isNested, final List<Statement> scope) {
+	// TODO Auto-generated method stub
+	return null;
+    }
+
+    @Override
     public List<Vertex> assignment(final Assignment assignment, final SysDepGraph sdg, final boolean isNested,
 	    final List<Statement> scope) {
-	final String variableName = assignment.getLeftHandSide();
+	final String variableName = assignment.getLeftHandSide().toString();
 	final Expression initializer = assignment.getRightHandSide();
 	final Vertex v = new Vertex(VertexType.ASSIGN, assignment.toString(), variableName);
 	sdg.addVertex(v);
@@ -241,9 +249,10 @@ public class HorwitzRepsSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	sdg.addVertex(v);
 	return list(v);
     }
-    
+
     @Override
-    public List<Vertex> continueStmnt(final ContinueStmnt continueStmnt, final SysDepGraph sdg, final boolean isNested) {
+    public List<Vertex> continueStmnt(final ContinueStmnt continueStmnt, final SysDepGraph sdg,
+	    final boolean isNested) {
 	return list(new Vertex());
     }
 
@@ -272,7 +281,7 @@ public class HorwitzRepsSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     }
 
     @Override
-    protected void doFinally() {
+    protected void doFinally(final SysDepGraph sdg) {
 	defOrderEdges();
     }
 

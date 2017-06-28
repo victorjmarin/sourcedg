@@ -2,29 +2,18 @@ package edu.rit.goal.sdg.java.statement;
 
 import java.util.List;
 
-public class MethodInvocationAssignment implements Statement {
+public class MethodInvocationAssignment extends MethodInvocation implements Statement {
 
-    private final String name;
     private final String outVar;
-    private final List<Expression> inVars;
 
-    public MethodInvocationAssignment(final String name, final String outVar, final List<Expression> inVars) {
-	super();
-	this.name = name;
+    public MethodInvocationAssignment(final String refVar, final String methodName, final String outVar,
+	    final List<Expression> inVars) {
+	super(refVar, methodName, inVars);
 	this.outVar = outVar;
-	this.inVars = inVars;
-    }
-
-    public String getName() {
-	return name;
     }
 
     public String getOutVar() {
 	return outVar;
-    }
-
-    public List<Expression> getInVars() {
-	return inVars;
     }
 
     @Override
@@ -34,8 +23,7 @@ public class MethodInvocationAssignment implements Statement {
 	    sb.append(outVar);
 	    sb.append("=");
 	}
-	sb.append(name);
-	sb.append(inVars);
+	sb.append(super.toString());
 	return sb.toString();
     }
 

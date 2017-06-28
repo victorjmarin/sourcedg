@@ -4,6 +4,7 @@ import java.util.List;
 
 import edu.rit.goal.sdg.java.graph.SysDepGraph;
 import edu.rit.goal.sdg.java.graph.Vertex;
+import edu.rit.goal.sdg.java.statement.ArrayAccessAssignment;
 import edu.rit.goal.sdg.java.statement.Assignment;
 import edu.rit.goal.sdg.java.statement.BreakStmnt;
 import edu.rit.goal.sdg.java.statement.ContinueStmnt;
@@ -48,6 +49,9 @@ public interface SysDepGraphBuilder {
     List<Vertex> doStmnt(DoStmnt doStmnt, SysDepGraph sdg, boolean isNested);
 
     List<Vertex> variableDeclaration(VariableDecl variableDecl, SysDepGraph sdg, boolean isNested,
+	    List<Statement> scope);
+
+    List<Vertex> arrayAccessAssignment(ArrayAccessAssignment arrayAccessAssignment, SysDepGraph sdg, boolean isNested,
 	    List<Statement> scope);
 
     List<Vertex> assignment(Assignment assignment, SysDepGraph sdg, boolean isNested, List<Statement> scope);

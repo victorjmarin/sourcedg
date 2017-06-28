@@ -19,7 +19,7 @@ public class Triangle4Test {
 
     @BeforeClass
     public static void parseTestProgram() throws IOException, ExportException {
-	final String program = new String(Files.readAllBytes(Paths.get("programs/Triangle4.java")));
+	final String program = new String(Files.readAllBytes(Paths.get("programs/DataDep1.java")));
 	final SysDepGraphBuilder builder = SysDepGraphBuilderFactory.using(BuildStrategy.MARIN);
 	sdg = builder.fromSource(program);
 	System.out.println(sdg);

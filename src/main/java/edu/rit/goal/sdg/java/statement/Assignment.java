@@ -4,18 +4,18 @@ import java.util.List;
 
 public class Assignment implements Statement {
 
-    private final String leftHandSide;
+    private final Expression leftHandSide;
     private final String operator;
     private final Expression rightHandSide;
 
-    public Assignment(final String leftHandSide, final String operator, final Expression rightHandSide) {
+    public Assignment(final Expression leftHandSide, final String operator, final Expression rightHandSide) {
 	super();
 	this.leftHandSide = leftHandSide;
 	this.operator = operator;
 	this.rightHandSide = rightHandSide;
     }
 
-    public String getLeftHandSide() {
+    public Expression getLeftHandSide() {
 	return leftHandSide;
     }
 
