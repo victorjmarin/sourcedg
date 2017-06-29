@@ -213,6 +213,7 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	final String assignedVar = arrayAccessAssignment.getExpressionName();
 	final Vertex assignVtx = new Vertex(VertexType.ASSIGN, arrayAccessAssignment.toString(), lookupId(assignedVar));
 	sdg.addVertex(assignVtx);
+	putVarWriting(assignVtx);
 	final List<Expression> exprs = new ArrayList<>();
 	exprs.add(arrayAccessAssignment.getIndex());
 	exprs.add(arrayAccessAssignment.getRightHandSide());
@@ -227,17 +228,13 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     @Override
     public List<Vertex> assignment(final Assignment assignment, final SysDepGraph sdg, final boolean isNested,
 	    final List<Statement> scope) {
-	final String assignedVar = assignment.getLeftHandSide().toString();
-	final Vertex assignVtx = new Vertex(VertexType.ASSIGN, assignment.toString(), lookupId(assignedVar));
-	final Expression initializer = assignment.getRightHandSide();
+	final String outVar = assignment.getOutVar();
+	final Vertex assignVtx = new Vertex(VertexType.ASSIGN, assignment.toString(), lookupId(outVar));
+	final Set<String> inVars = assignment.getInVars();
 	sdg.addVertex(assignVtx);
 	putVarWriting(assignVtx);
-	varStack.add(assignVtx);
 	// Data dependencies
-	final List<Expression> exprs = new ArrayList<>();
-	exprs.add(assignment.getLeftHandSide());
-	dataDependencies(assignVtx, exprs, sdg, isNested);
-	dataDependencies(assignVtx, initializer.getReadingVars(), sdg, isNested);
+	dataDependencies(assignVtx, inVars, sdg, isNested);
 	if (!isNested) {
 	    // Method entry dependency
 	    notNestedStmntEdge(assignVtx, sdg);
@@ -279,9 +276,9 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 		    paramAssignments.forEach(p -> sdg.addEdge(p, actualParam, EdgeType.FLOW));
 		}
 	    }
+	    // Data dependencies
+	    dataDependencies(invocationVtx, inVars, sdg, isNested);
 	}
-	// Data dependencies
-	dataDependencies(invocationVtx, inVars, sdg, isNested);
 	return list(invocationVtx);
     }
 
@@ -296,6 +293,7 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	// Actual out
 	final Vertex actualOutVtx = new Vertex(VertexType.ACTUAL_OUT, outVar, lookupId(outVar));
 	sdg.addVertex(actualOutVtx);
+	putVarWriting(actualOutVtx);
 	sdg.addEdge(invocationVtx, actualOutVtx, EdgeType.CTRL_TRUE);
 	final Vertex resultVtx = sdg.getFirstVertexByLabel(getResultOutVtxName(methodName));
 	sdg.addEdge(resultVtx, actualOutVtx, EdgeType.PARAM_OUT);
@@ -313,15 +311,12 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	final Vertex breakVtx = new Vertex(VertexType.BREAK, "break");
 	sdg.addVertex(breakVtx);
 	// Get outer control vertex
-	final Vertex currentCtrlVtx = ctrlStack.pollLast();
-	Vertex outerCtrlVyx = ctrlStack.getLast();
-	// Restore last vertex
-	ctrlStack.add(currentCtrlVtx);
+	Vertex outerCtrlVtx = getOuterCtrlVtx();
 	// Check if outer vertex exists or just use the result vertex
-	if (outerCtrlVyx == getCurrentEnterVertex()) {
-	    outerCtrlVyx = getCurrentResultVertex();
+	if (outerCtrlVtx == getCurrentEnterVertex()) {
+	    outerCtrlVtx = getCurrentResultVertex();
 	}
-	sdg.addEdge(breakVtx, outerCtrlVyx, EdgeType.CTRL_TRUE);
+	sdg.addEdge(breakVtx, outerCtrlVtx, EdgeType.CTRL_TRUE);
 	return list(breakVtx);
     }
 
@@ -426,7 +421,12 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	// System.out.println("Ctrl changed: " + conditionVtx);
 	if (f != null)
 	    f.apply(null);
+	// Will be used to generate data dependencies
+	if (isDoStmnt) {
+	    currentCtrlIsDoStmnt = true;
+	}
 	bodyVtcs = _build(body, sdg, true);
+	currentCtrlIsDoStmnt = false;
 	// System.out.println(ctrlVtxVarDeclMap);
 	final Vertex currentCtrlVtx = ctrlStack.pollLast();
 	removeScopedVarDecl(currentCtrlVtx);
@@ -465,7 +465,7 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	    final boolean isNested) {
 	for (final String s : deps) {
 	    // TODO: Check scope of variables?
-	    final List<Vertex> vtcs = sdg.getAllVerticesByLabel(lookupId(s));
+	    final List<Vertex> vtcs = getAllVerticesInScope(lookupId(s));
 	    if (!vtcs.isEmpty()) {
 		vtcs.forEach(v -> {
 		    // Can't have a data dependecy w.r.t. ACTUAL_IN param.

@@ -153,13 +153,13 @@ public class HorwitzRepsSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     @Override
     public List<Vertex> assignment(final Assignment assignment, final SysDepGraph sdg, final boolean isNested,
 	    final List<Statement> scope) {
-	final String variableName = assignment.getLeftHandSide().toString();
-	final Expression initializer = assignment.getRightHandSide();
-	final Vertex v = new Vertex(VertexType.ASSIGN, assignment.toString(), variableName);
+	final String outVar = assignment.getOutVar();
+	final Set<String> inVars = assignment.getInVars();
+	final Vertex v = new Vertex(VertexType.ASSIGN, assignment.toString(), outVar);
 	sdg.addVertex(v);
 	// addDefOrderEdge(v, sdg, scope);
 	addDefOrderVertex(v, scope);
-	dataDependencies(v, initializer.getReadingVars(), sdg, isNested);
+	dataDependencies(v, inVars, sdg, isNested);
 	if (!isNested) {
 	    notNestedStmntEdge(v, sdg);
 	}

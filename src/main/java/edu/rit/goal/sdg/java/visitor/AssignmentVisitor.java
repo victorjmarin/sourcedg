@@ -23,7 +23,7 @@ public class AssignmentVisitor extends Java8BaseVisitor<Statement> {
     public Statement visitAssignment(final Java8Parser.AssignmentContext ctx) {
 	Statement result = null;
 	final LeftHandSideContext lhsCtx = ctx.leftHandSide();
-	final String leftHandSide = lhsCtx.getText();
+	final String outVar = lhsCtx.getText();
 	final String operator = ctx.assignmentOperator().getText();
 	final ExpressionVisitor visitor = new ExpressionVisitor();
 	final Expression rightHandSide = visitor.visit(ctx.expression());
@@ -34,18 +34,16 @@ public class AssignmentVisitor extends Java8BaseVisitor<Statement> {
 	    final Expression index = visitor.visit(arrayAccessCtx.expression(0));
 	    result = new ArrayAccessAssignment(expressionName, index, operator, rightHandSide);
 	} else {
-	    final Expression lhs = new Expression(lhsCtx);
-	    result = new Assignment(lhs, operator, rightHandSide);
+	    result = new Assignment(outVar, operator, rightHandSide);
 	}
 	// Add dependency w.r.t. variable being assigned if it is a short-hand operator
 	if (isShortHandOperator(operator)) {
-	    rightHandSide.getReadingVars().add(leftHandSide);
+	    rightHandSide.getReadingVars().add(outVar);
 	}
 	// Method call
 	final String methodName = VisitorUtils.getMethodName(ctx);
 	final boolean isMethodInvocation = methodName != null;
 	if (isMethodInvocation) {
-	    final String outVar = leftHandSide;
 	    final List<Expression> rhsList = new ArrayList<>();
 	    rhsList.add(rightHandSide);
 	    final ArgumentListContext argListCtx = VisitorUtils.getArgListCtx(ctx.expression());

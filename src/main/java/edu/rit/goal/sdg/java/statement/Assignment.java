@@ -1,26 +1,31 @@
 package edu.rit.goal.sdg.java.statement;
 
 import java.util.List;
+import java.util.Set;
 
 public class Assignment implements Statement {
 
-    private final Expression leftHandSide;
+    private final String outVar;
     private final String operator;
     private final Expression rightHandSide;
 
-    public Assignment(final Expression leftHandSide, final String operator, final Expression rightHandSide) {
+    public Assignment(final String outVar, final String operator, final Expression rightHandSide) {
 	super();
-	this.leftHandSide = leftHandSide;
+	this.outVar = outVar;
 	this.operator = operator;
 	this.rightHandSide = rightHandSide;
     }
 
-    public Expression getLeftHandSide() {
-	return leftHandSide;
+    public String getOutVar() {
+	return outVar;
     }
 
     public String getOperator() {
 	return operator;
+    }
+
+    public Set<String> getInVars() {
+	return rightHandSide.getReadingVars();
     }
 
     public Expression getRightHandSide() {
@@ -29,7 +34,7 @@ public class Assignment implements Statement {
 
     @Override
     public String toString() {
-	return leftHandSide + operator + rightHandSide;
+	return outVar + operator + rightHandSide;
     }
 
     @Override

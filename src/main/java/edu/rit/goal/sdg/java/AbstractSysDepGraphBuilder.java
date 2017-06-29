@@ -48,8 +48,8 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
     protected Vertex currentResultOutVertex;
     protected final Map<String, List<Vertex>> formalParameters = new HashMap<>();
     protected Deque<Vertex> ctrlStack = new ArrayDeque<>();
-    protected Deque<Vertex> varStack = new ArrayDeque<>();
     protected Map<Vertex, List<Vertex>> ctrlVtxVarDeclMap = new HashMap<>();
+    protected boolean currentCtrlIsDoStmnt;
     private List<Statement> stmnts;
 
     @Override
@@ -89,9 +89,13 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 	for (final Statement s : stmnts) {
 	    if (s != null) {
 		if (s instanceof MethodSignature) {
+		    ctrlStack.clear();
+		    ctrlVtxVarDeclMap.clear();
 		    final MethodSignature methodSignature = (MethodSignature) s;
 		    final String methodName = methodSignature.getName();
 		    currentEnterVertex = sdg.getFirstVertexByLabel(methodName);
+		    // Make formal parameters available in ctrl vtx -> var decl mapping
+		    ctrlVtxVarDeclMap.put(currentEnterVertex, formalParameters.get(methodName));
 		    ctrlStack.add(currentEnterVertex);
 		    currentResultOutVertex = sdg.getFirstVertexByLabel(getResultOutVtxName(methodName));
 		} else if (s instanceof BasicForStmnt) {
@@ -121,7 +125,8 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 		} else if (s instanceof Assignment) {
 		    final List<Vertex> vtcs = assignment((Assignment) s, sdg, isNested, scope);
 		    result.addAll(vtcs);
-		    // Has to be called before MethodInvocation because MethodInvocationAssignment is a subclass
+		    // Has to be called before MethodInvocation because
+		    // MethodInvocationAssignment is a subclass
 		} else if (s instanceof MethodInvocationAssignment) {
 		    final List<Vertex> vtcs = methodInvocationAssignment((MethodInvocationAssignment) s, sdg, isNested);
 		    result.addAll(vtcs);
@@ -233,13 +238,30 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 	return getCurrentEnterVertex().getLabel() + lookupId;
     }
 
+    protected Vertex getOuterCtrlVtx() {
+	// Get outer control vertex
+	final Vertex currentCtrlVtx = ctrlStack.pollLast();
+	final Vertex result = ctrlStack.getLast();
+	// Restore last vertex
+	ctrlStack.add(currentCtrlVtx);
+	return result;
+    }
+
     protected void putVarWriting(final Vertex vtx) {
 	// System.out.println("putting var: " + vtx);
 	final Vertex currCtrlVtx = ctrlStack.getLast();
-	List<Vertex> vtcs = ctrlVtxVarDeclMap.get(currCtrlVtx);
+	putVarWriting(vtx, currCtrlVtx);
+	if (currentCtrlIsDoStmnt) {
+	    final Vertex outerCtrlVtx = getOuterCtrlVtx();
+	    putVarWriting(vtx, outerCtrlVtx);
+	}
+    }
+
+    private void putVarWriting(final Vertex vtx, final Vertex ctrlVtx) {
+	List<Vertex> vtcs = ctrlVtxVarDeclMap.get(ctrlVtx);
 	if (vtcs == null) {
 	    vtcs = new ArrayList<>();
-	    ctrlVtxVarDeclMap.put(currCtrlVtx, vtcs);
+	    ctrlVtxVarDeclMap.put(ctrlVtx, vtcs);
 	}
 	final String lookupId = vtx.getLookupId();
 	final List<Vertex> olderRefs = vtcs.stream().filter(v -> lookupId.equals(v.getLookupId()))
@@ -249,7 +271,7 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
     }
 
     protected void removeScopedVarDecl(final Vertex ctrlVtx) {
-	// System.out.println("removing scoped vars: " + ctrlVtx);
+	// System.out.println("removing scoped var. decl. inside " + ctrlVtx);
 	final List<Vertex> vtcs = ctrlVtxVarDeclMap.get(ctrlVtx);
 	if (vtcs == null)
 	    return;
@@ -274,6 +296,18 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
     protected Vertex createAssignVtx(final String label, final String lookupId) {
 	final Vertex result = new Vertex(VertexType.ASSIGN, label, lookupId);
 	putVarWriting(result);
+	return result;
+    }
+
+    protected List<Vertex> getAllVerticesInScope(final String lookupId) {
+	final List<Vertex> result = new ArrayList<>();
+	for (final List<Vertex> l : ctrlVtxVarDeclMap.values()) {
+	    for (final Vertex v : l) {
+		if (lookupId.equals(v.getLookupId())) {
+		    result.add(v);
+		}
+	    }
+	}
 	return result;
     }
 
