@@ -464,14 +464,9 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     private void dataDependencies(final Vertex vertex, final Set<String> deps, final SysDepGraph sdg,
 	    final boolean isNested) {
 	for (final String s : deps) {
-	    // TODO: Check scope of variables?
 	    final List<Vertex> vtcs = getAllVerticesInScope(lookupId(s));
 	    if (!vtcs.isEmpty()) {
-		vtcs.forEach(v -> {
-		    // Can't have a data dependecy w.r.t. ACTUAL_IN param.
-		    if (!VertexType.ACTUAL_IN.equals(v.getType()))
-			sdg.addEdge(v, vertex, EdgeType.FLOW);
-		});
+		vtcs.forEach(v -> sdg.addEdge(v, vertex, EdgeType.FLOW));
 	    } else {
 		// No declaration found. Create initial state
 		final Vertex initialStateVtx = new Vertex(VertexType.INITIAL_STATE, s);
