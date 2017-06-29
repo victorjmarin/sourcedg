@@ -12,10 +12,13 @@ import edu.rit.goal.sdg.java.statement.MethodSignature;
 
 public class MethodDeclaratorVisitor extends Java8BaseVisitor<MethodSignature> {
 
+    public static String currentMethodName;
+
     @Override
     public MethodSignature visitMethodDeclarator(final Java8Parser.MethodDeclaratorContext ctx) {
 	final TerminalNode identifier = ctx.Identifier();
 	final String methodName = identifier.getText();
+	currentMethodName = methodName;
 	final FormalParameterListVisitor parameterVisitor = new FormalParameterListVisitor();
 	final FormalParameterListContext formalParamListCtx = ctx.formalParameterList();
 	List<FormalParameter> params = null;

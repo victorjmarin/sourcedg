@@ -10,6 +10,8 @@ public class ReturnStmntVisitor extends Java8BaseVisitor<ReturnStmnt> {
 
     @Override
     public ReturnStmnt visitReturnStatement(final Java8Parser.ReturnStatementContext ctx) {
+	// We only support one exit point per method currently
+	VisitorUtils.checkForMultipleExitPoints(MethodDeclaratorVisitor.currentMethodName, ctx);
 	Expression returnedExpr = null;
 	final ExpressionContext exprCtx = ctx.expression();
 	if (exprCtx != null) {

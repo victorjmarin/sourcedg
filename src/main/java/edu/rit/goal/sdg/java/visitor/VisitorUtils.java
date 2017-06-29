@@ -1,5 +1,8 @@
 package edu.rit.goal.sdg.java.visitor;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
@@ -9,8 +12,11 @@ import edu.rit.goal.sdg.java.antlr.Java8Parser.MethodInvocation_lfno_primaryCont
 import edu.rit.goal.sdg.java.antlr.Java8Parser.MethodNameContext;
 import edu.rit.goal.sdg.java.exception.AssignmentGuardException;
 import edu.rit.goal.sdg.java.exception.InvocationArgException;
+import edu.rit.goal.sdg.java.exception.MultipleExitPointsException;
 
 public class VisitorUtils {
+
+    private static Map<String, Boolean> methodNameReturnCount = new HashMap<>();
 
     public static String getMethodName(final ParseTree ctx) {
 	String result = null;
@@ -84,7 +90,13 @@ public class VisitorUtils {
 	if (isAssignment) {
 	    throw new AssignmentGuardException(ctx);
 	}
+    }
 
+    public static void checkForMultipleExitPoints(final String methodName, final ParserRuleContext ctx) {
+	final Boolean hasExitPoint = methodNameReturnCount.get(methodName);
+	if (hasExitPoint != null)
+	    throw new MultipleExitPointsException(ctx);
+	methodNameReturnCount.put(methodName, true);
     }
 
 }
