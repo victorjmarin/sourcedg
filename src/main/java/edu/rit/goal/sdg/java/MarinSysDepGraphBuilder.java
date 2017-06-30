@@ -126,24 +126,27 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 
     public List<Vertex> forStmnt(final List<Statement> init, final Expression cond, final List<Statement> update,
 	    final List<Statement> body, final SysDepGraph sdg, final boolean isNested) {
-	// Initialization. Needs to be executed after updating the control stack, so we
-	// pass it as a function
-	final Function<Void, Void> f = arg -> {
-	    _build(init, sdg, isNested);
-	    return null;
-	};
 	// Condition
 	final Vertex condVtx = new Vertex(VertexType.COND, cond.toString());
 	sdg.addVertex(condVtx);
 	// Loop
 	sdg.addEdge(condVtx, condVtx, EdgeType.CTRL_TRUE);
-	// Update
-	final List<Vertex> updateVtcs = _build(update, sdg, isNested);
-	ctrlTrueEdges(condVtx, updateVtcs, sdg);
+	final List<Vertex> updateVtcs = new ArrayList<>();
+	final Function<Void, Void> f = arg -> {
+	    // Initialization. Needs to be executed after updating the control stack so that
+	    // the mapping ctrlVtxVarDeclMap is correct.
+	    _build(init, sdg, isNested);
+	    // Update. Setting isNested to true will prevent a CTRL_TRUE edge from the
+	    // outer conditional vertex to the update vertex, which depends on the
+	    // conditional vertex of this for.
+	    updateVtcs.addAll(_build(update, sdg, true));
+	    // Data dependencies
+	    dataDependencies(condVtx, cond.getReadingVars(), sdg, isNested);
+	    return null;
+	};
 	// Body
 	final List<Vertex> result = ctrlStructureTrue(condVtx, body, sdg, f, isNested);
-	// Data dependencies
-	dataDependencies(condVtx, cond.getReadingVars(), sdg, isNested);
+	ctrlTrueEdges(condVtx, updateVtcs, sdg);
 	return result;
     }
 
@@ -311,11 +314,7 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	final Vertex breakVtx = new Vertex(VertexType.BREAK, "break");
 	sdg.addVertex(breakVtx);
 	// Get outer control vertex
-	Vertex outerCtrlVtx = getOuterCtrlVtx();
-	// Check if outer vertex exists or just use the result vertex
-	if (outerCtrlVtx == getCurrentEnterVertex()) {
-	    outerCtrlVtx = getCurrentResultVertex();
-	}
+	final Vertex outerCtrlVtx = getOuterCtrlVtx();
 	sdg.addEdge(breakVtx, outerCtrlVtx, EdgeType.CTRL_TRUE);
 	return list(breakVtx);
     }
@@ -391,8 +390,13 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	final String lookupId = expr.getReadingVars().iterator().next();
 	final Vertex vtx = new Vertex(VertexType.ASSIGN, expr.toString(), lookupId(lookupId));
 	sdg.addVertex(vtx);
+	if (!isNested) {
+	    // Method entry dependency
+	    notNestedStmntEdge(vtx, sdg);
+	}
 	// Data dependencies
 	dataDependencies(vtx, expr.getReadingVars(), sdg, isNested);
+	putVarWriting(vtx);
 	return list(vtx);
     }
 

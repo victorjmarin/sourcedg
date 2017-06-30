@@ -302,9 +302,11 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
     protected List<Vertex> getAllVerticesInScope(final String lookupId) {
 	final List<Vertex> result = new ArrayList<>();
 	for (final List<Vertex> l : ctrlVtxVarDeclMap.values()) {
-	    for (final Vertex v : l) {
-		if (lookupId.equals(v.getLookupId())) {
-		    result.add(v);
+	    if (l != null) {
+		for (final Vertex v : l) {
+		    if (lookupId.equals(v.getLookupId())) {
+			result.add(v);
+		    }
 		}
 	    }
 	}
