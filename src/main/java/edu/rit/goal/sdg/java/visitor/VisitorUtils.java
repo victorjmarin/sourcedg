@@ -99,4 +99,25 @@ public class VisitorUtils {
 	methodNameReturnCount.put(methodName, true);
     }
 
+    public static boolean isShortHandOperator(final String operator) {
+	switch (operator) {
+	case "=":
+	    return false;
+	case "*=":
+	case "/=":
+	case "%=":
+	case "+=":
+	case "-=":
+	case "<<=":
+	case ">>=":
+	case ">>>=":
+	case "&=":
+	case "^=":
+	case "|=":
+	    return true;
+	default:
+	    return false;
+	}
+    }
+
 }

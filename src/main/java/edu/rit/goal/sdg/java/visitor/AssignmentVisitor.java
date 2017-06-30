@@ -37,7 +37,7 @@ public class AssignmentVisitor extends Java8BaseVisitor<Statement> {
 	    result = new Assignment(outVar, operator, rightHandSide);
 	}
 	// Add dependency w.r.t. variable being assigned if it is a short-hand operator
-	if (isShortHandOperator(operator)) {
+	if (VisitorUtils.isShortHandOperator(operator)) {
 	    rightHandSide.getReadingVars().add(outVar);
 	}
 	// Method call
@@ -58,27 +58,6 @@ public class AssignmentVisitor extends Java8BaseVisitor<Statement> {
 	    result = new MethodInvocationAssignment(refVar, methodName, outVar, inVars);
 	}
 	return result;
-    }
-
-    private boolean isShortHandOperator(final String operator) {
-	switch (operator) {
-	case "=":
-	    return false;
-	case "*=":
-	case "/=":
-	case "%=":
-	case "+=":
-	case "-=":
-	case "<<=":
-	case ">>=":
-	case ">>>=":
-	case "&=":
-	case "^=":
-	case "|=":
-	    return true;
-	default:
-	    return false;
-	}
     }
 
     private boolean isArrayAccess(final Java8Parser.AssignmentContext ctx) {

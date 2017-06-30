@@ -4,8 +4,10 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.CharStream;
@@ -78,12 +80,13 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 		.collect(Collectors.toList());
 	// Process methods first so that they are available for reference
 	methods.forEach(m -> methodSignature((MethodSignature) m, result));
-	_build(stmnts, result, false);
+	_build(stmnts, result, false, false, false);
 	doFinally(result);
 	return result;
     }
 
-    protected List<Vertex> _build(final List<Statement> stmnts, final SysDepGraph sdg, final boolean isNested) {
+    protected List<Vertex> _build(final List<Statement> stmnts, final SysDepGraph sdg, final boolean isNested,
+	    final boolean isForStmntHeader, final boolean isLoopBody) {
 	final List<Statement> scope = stmnts;
 	final List<Vertex> result = new ArrayList<>();
 	for (final Statement s : stmnts) {
@@ -105,10 +108,10 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 		    final List<Vertex> vtcs = enhancedForStmnt((EnhancedForStmnt) s, sdg, isNested);
 		    result.addAll(vtcs);
 		} else if (s instanceof IfThenElseStmnt) {
-		    final List<Vertex> vtcs = ifThenElseStmnt((IfThenElseStmnt) s, sdg, isNested);
+		    final List<Vertex> vtcs = ifThenElseStmnt((IfThenElseStmnt) s, sdg, isNested, isLoopBody);
 		    result.addAll(vtcs);
 		} else if (s instanceof IfThenStmnt) {
-		    final List<Vertex> vtcs = ifThenStmnt((IfThenStmnt) s, sdg, isNested);
+		    final List<Vertex> vtcs = ifThenStmnt((IfThenStmnt) s, sdg, isNested, isLoopBody);
 		    result.addAll(vtcs);
 		} else if (s instanceof WhileStmnt) {
 		    final List<Vertex> vtcs = whileStmnt((WhileStmnt) s, sdg, isNested);
@@ -117,13 +120,15 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 		    final List<Vertex> vtcs = doStmnt((DoStmnt) s, sdg, isNested);
 		    result.addAll(vtcs);
 		} else if (s instanceof VariableDecl) {
-		    final List<Vertex> vtcs = variableDeclaration((VariableDecl) s, sdg, isNested, scope);
+		    final List<Vertex> vtcs = variableDeclaration((VariableDecl) s, sdg, isNested, scope,
+			    isForStmntHeader);
 		    result.addAll(vtcs);
 		} else if (s instanceof ArrayAccessAssignment) {
-		    final List<Vertex> vtcs = arrayAccessAssignment((ArrayAccessAssignment) s, sdg, isNested, scope);
+		    final List<Vertex> vtcs = arrayAccessAssignment((ArrayAccessAssignment) s, sdg, isNested, scope,
+			    isForStmntHeader);
 		    result.addAll(vtcs);
 		} else if (s instanceof Assignment) {
-		    final List<Vertex> vtcs = assignment((Assignment) s, sdg, isNested, scope);
+		    final List<Vertex> vtcs = assignment((Assignment) s, sdg, isNested, scope, isForStmntHeader, isLoopBody);
 		    result.addAll(vtcs);
 		    // Has to be called before MethodInvocation because
 		    // MethodInvocationAssignment is a subclass
@@ -143,16 +148,16 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 		    final List<Vertex> vtcs = continueStmnt((ContinueStmnt) s, sdg, isNested);
 		    result.addAll(vtcs);
 		} else if (s instanceof PostIncrementExpr) {
-		    final List<Vertex> vtcs = postIncrementExpr((PostIncrementExpr) s, sdg, isNested);
+		    final List<Vertex> vtcs = postIncrementExpr((PostIncrementExpr) s, sdg, isNested, isForStmntHeader, isLoopBody);
 		    result.addAll(vtcs);
 		} else if (s instanceof PostDecrementExpr) {
-		    final List<Vertex> vtcs = postDecrementExpr((PostDecrementExpr) s, sdg, isNested);
+		    final List<Vertex> vtcs = postDecrementExpr((PostDecrementExpr) s, sdg, isNested, isForStmntHeader, isLoopBody);
 		    result.addAll(vtcs);
 		} else if (s instanceof PreIncrementExpr) {
-		    final List<Vertex> vtcs = preIncrementExpr((PreIncrementExpr) s, sdg, isNested);
+		    final List<Vertex> vtcs = preIncrementExpr((PreIncrementExpr) s, sdg, isNested, isForStmntHeader, isLoopBody);
 		    result.addAll(vtcs);
 		} else if (s instanceof PreDecrementExpr) {
-		    final List<Vertex> vtcs = preDecrementExpr((PreDecrementExpr) s, sdg, isNested);
+		    final List<Vertex> vtcs = preDecrementExpr((PreDecrementExpr) s, sdg, isNested, isForStmntHeader, isLoopBody);
 		    result.addAll(vtcs);
 		} else if (s instanceof NotImplementedStmnt) {
 		    notImplementedStmnt((NotImplementedStmnt) s, sdg);
@@ -247,55 +252,64 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 	return result;
     }
 
-    protected void putVarWriting(final Vertex vtx) {
+    protected void putVarWriting(final Vertex vtx, final boolean isForStmntHeader) {
 	// System.out.println("putting var: " + vtx);
 	final Vertex currCtrlVtx = ctrlStack.getLast();
-	putVarWriting(vtx, currCtrlVtx);
+	putVarWriting(vtx, currCtrlVtx, isForStmntHeader);
 	if (currentCtrlIsDoStmnt) {
 	    final Vertex outerCtrlVtx = getOuterCtrlVtx();
-	    putVarWriting(vtx, outerCtrlVtx);
+	    putVarWriting(vtx, outerCtrlVtx, isForStmntHeader);
 	}
     }
 
-    private void putVarWriting(final Vertex vtx, final Vertex ctrlVtx) {
+    private void putVarWriting(final Vertex vtx, final Vertex ctrlVtx, final boolean isForStmntHeader) {
 	List<Vertex> vtcs = ctrlVtxVarDeclMap.get(ctrlVtx);
 	if (vtcs == null) {
 	    vtcs = new ArrayList<>();
 	    ctrlVtxVarDeclMap.put(ctrlVtx, vtcs);
 	}
 	final String lookupId = vtx.getLookupId();
-	final List<Vertex> olderRefs = vtcs.stream().filter(v -> lookupId.equals(v.getLookupId()))
-		.collect(Collectors.toList());
-	vtcs.removeAll(olderRefs);
+	// Keep both the initialization and update vertices in for statements.
+	if (!isForStmntHeader) {
+	    final List<Vertex> olderRefs = vtcs.stream().filter(v -> lookupId.equals(v.getLookupId()))
+		    .collect(Collectors.toList());
+	    vtcs.removeAll(olderRefs);
+	}
 	vtcs.add(vtx);
     }
 
     protected void removeScopedVarDecl(final Vertex ctrlVtx) {
 	// System.out.println("removing scoped var. decl. inside " + ctrlVtx);
 	final List<Vertex> vtcs = ctrlVtxVarDeclMap.get(ctrlVtx);
+	final Set<String> scopedVarsLookupId = new HashSet<>();
 	if (vtcs == null)
 	    return;
-	final List<Vertex> updatedVtcs = new ArrayList<>(vtcs.size());
+	List<Vertex> updatedVtcs = new ArrayList<>(vtcs.size());
 	for (final Vertex v : vtcs) {
 	    if (!v.getType().equals(VertexType.DECL))
 		updatedVtcs.add(v);
+	    else
+		scopedVarsLookupId.add(v.getLookupId());
 	}
 	if (updatedVtcs.size() == 0) {
 	    ctrlVtxVarDeclMap.remove(ctrlVtx);
 	} else {
+	    // Remove assignment vertices for variables locally declared
+	    updatedVtcs = updatedVtcs.stream().filter(v -> !scopedVarsLookupId.contains(v.getLookupId()))
+		    .collect(Collectors.toList());
 	    ctrlVtxVarDeclMap.put(ctrlVtx, updatedVtcs);
 	}
     }
 
-    protected Vertex createDeclVtx(final String label, final String lookupId) {
+    protected Vertex createDeclVtx(final String label, final String lookupId, final boolean isForStmntHeader) {
 	final Vertex result = new Vertex(VertexType.DECL, label, lookupId);
-	putVarWriting(result);
+	putVarWriting(result, isForStmntHeader);
 	return result;
     }
 
-    protected Vertex createAssignVtx(final String label, final String lookupId) {
+    protected Vertex createAssignVtx(final String label, final String lookupId, final boolean isForStmntHeader) {
 	final Vertex result = new Vertex(VertexType.ASSIGN, label, lookupId);
-	putVarWriting(result);
+	putVarWriting(result, isForStmntHeader);
 	return result;
     }
 
