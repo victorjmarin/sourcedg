@@ -368,6 +368,8 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	    // Method entry dependency
 	    notNestedStmntEdge(returnVtx, sdg);
 	}
+	// Edge from RETURN vertex to FORMAL_OUT result vertex
+	sdg.addEdge(returnVtx, getCurrentResultVertex(), EdgeType.FLOW);
 	return list(returnVtx);
     }
 
