@@ -16,6 +16,15 @@ import edu.rit.goal.sdg.java.statement.MethodSignature;
 import edu.rit.goal.sdg.java.statement.Statement;
 
 public class ClassBodyVisitor extends Java8BaseVisitor<List<Statement>> {
+
+    @Override
+    protected List<Statement> aggregateResult(final List<Statement> aggregate, final List<Statement> nextResult) {
+	List<Statement> result = nextResult;
+	if (result == null)
+	    result = aggregate;
+	return result;
+    }
+
     @Override
     public List<Statement> visitClassBody(final Java8Parser.ClassBodyContext ctx) {
 	final List<Statement> result = new LinkedList<>();

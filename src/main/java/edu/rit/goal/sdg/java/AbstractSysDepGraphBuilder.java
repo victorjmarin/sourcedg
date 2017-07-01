@@ -61,7 +61,7 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 	final CommonTokenStream tokens = new CommonTokenStream(lexer);
 	final Java8Parser parser = new Java8Parser(tokens);
 	final ClassBodyVisitor visitor = new ClassBodyVisitor();
-	stmnts = visitor.visit(parser.classDeclaration());
+	stmnts = visitor.visit(parser.compilationUnit());
 	final SysDepGraph result = build(stmnts);
 	return result;
     }
@@ -128,7 +128,8 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 			    isForStmntHeader);
 		    result.addAll(vtcs);
 		} else if (s instanceof Assignment) {
-		    final List<Vertex> vtcs = assignment((Assignment) s, sdg, isNested, scope, isForStmntHeader, isLoopBody);
+		    final List<Vertex> vtcs = assignment((Assignment) s, sdg, isNested, scope, isForStmntHeader,
+			    isLoopBody);
 		    result.addAll(vtcs);
 		    // Has to be called before MethodInvocation because
 		    // MethodInvocationAssignment is a subclass
@@ -148,16 +149,20 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 		    final List<Vertex> vtcs = continueStmnt((ContinueStmnt) s, sdg, isNested);
 		    result.addAll(vtcs);
 		} else if (s instanceof PostIncrementExpr) {
-		    final List<Vertex> vtcs = postIncrementExpr((PostIncrementExpr) s, sdg, isNested, isForStmntHeader, isLoopBody);
+		    final List<Vertex> vtcs = postIncrementExpr((PostIncrementExpr) s, sdg, isNested, isForStmntHeader,
+			    isLoopBody);
 		    result.addAll(vtcs);
 		} else if (s instanceof PostDecrementExpr) {
-		    final List<Vertex> vtcs = postDecrementExpr((PostDecrementExpr) s, sdg, isNested, isForStmntHeader, isLoopBody);
+		    final List<Vertex> vtcs = postDecrementExpr((PostDecrementExpr) s, sdg, isNested, isForStmntHeader,
+			    isLoopBody);
 		    result.addAll(vtcs);
 		} else if (s instanceof PreIncrementExpr) {
-		    final List<Vertex> vtcs = preIncrementExpr((PreIncrementExpr) s, sdg, isNested, isForStmntHeader, isLoopBody);
+		    final List<Vertex> vtcs = preIncrementExpr((PreIncrementExpr) s, sdg, isNested, isForStmntHeader,
+			    isLoopBody);
 		    result.addAll(vtcs);
 		} else if (s instanceof PreDecrementExpr) {
-		    final List<Vertex> vtcs = preDecrementExpr((PreDecrementExpr) s, sdg, isNested, isForStmntHeader, isLoopBody);
+		    final List<Vertex> vtcs = preDecrementExpr((PreDecrementExpr) s, sdg, isNested, isForStmntHeader,
+			    isLoopBody);
 		    result.addAll(vtcs);
 		} else if (s instanceof NotImplementedStmnt) {
 		    notImplementedStmnt((NotImplementedStmnt) s, sdg);

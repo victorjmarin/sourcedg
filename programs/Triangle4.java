@@ -1,3 +1,5 @@
+import java.util.Scanner;
+
 public class Triangle4 {
 
     void triangle4() {
