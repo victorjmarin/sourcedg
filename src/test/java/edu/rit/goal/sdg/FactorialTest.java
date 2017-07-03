@@ -52,7 +52,7 @@ public class FactorialTest {
 	outgoingEdges.forEach(e -> {
 	    System.out.println("  " + e + "=(" + e.getSource() + "," + e.getTarget() + ")");
 	});
-	Assert.assertTrue(outgoingEdges.size() == 5);
+	Assert.assertTrue(outgoingEdges.size() == 7);
     }
 
     @Test
