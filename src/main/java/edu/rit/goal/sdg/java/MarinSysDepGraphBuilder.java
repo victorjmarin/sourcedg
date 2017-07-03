@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import edu.rit.goal.sdg.java.graph.EdgeType;
 import edu.rit.goal.sdg.java.graph.PrimitiveType;
@@ -32,6 +33,8 @@ import edu.rit.goal.sdg.java.statement.control.DoStmnt;
 import edu.rit.goal.sdg.java.statement.control.EnhancedForStmnt;
 import edu.rit.goal.sdg.java.statement.control.IfThenElseStmnt;
 import edu.rit.goal.sdg.java.statement.control.IfThenStmnt;
+import edu.rit.goal.sdg.java.statement.control.SwitchBlockStmntGroup;
+import edu.rit.goal.sdg.java.statement.control.SwitchStmnt;
 import edu.rit.goal.sdg.java.statement.control.WhileStmnt;
 import edu.rit.goal.sdg.java.visitor.VisitorUtils;
 
@@ -174,7 +177,8 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     }
 
     @Override
-    public List<Vertex> ifThenStmnt(final IfThenStmnt ifThenStmnt, final SysDepGraph sdg, final boolean isNested, final boolean isLoopBody) {
+    public List<Vertex> ifThenStmnt(final IfThenStmnt ifThenStmnt, final SysDepGraph sdg, final boolean isNested,
+	    final boolean isLoopBody) {
 	// Condition
 	final Expression condition = ifThenStmnt.getCondition();
 	final Vertex condVtx = new Vertex(VertexType.COND, condition.toString());
@@ -213,6 +217,29 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	final List<Vertex> result = ctrlStructureTrue(condVtx, body, sdg, isDoStmnt, null, isNested, isLoopBody);
 	// Data dependencies
 	dataDependencies(condVtx, condition.getReadingVars(), sdg, isNested);
+	return result;
+    }
+
+    @Override
+    public List<Vertex> switchStmnt(final SwitchStmnt switchStmnt, final SysDepGraph sdg, final boolean isNested,
+	    final boolean isLoopBody) {
+	final List<Vertex> result = new ArrayList<>();
+	final String switchExpr = switchStmnt.getExpr().toString();
+	final List<SwitchBlockStmntGroup> blocks = switchStmnt.getBlocks();
+	final List<String> labels = new ArrayList<>();
+	for (final SwitchBlockStmntGroup b : blocks) {
+	    labels.addAll(b.getSwitchLabels());
+	    final String vtxLabel = labels.stream().map(l -> switchExpr + "==" + l).collect(Collectors.joining("||"));
+	    final Vertex condVtx = new Vertex(VertexType.COND, vtxLabel);
+	    sdg.addVertex(condVtx);
+	    result.addAll(ctrlStructureTrue(condVtx, b.getBlockStmnts(), sdg, isNested, isLoopBody));
+	    for (final Statement stmnt : b.getBlockStmnts()) {
+		if (stmnt instanceof BreakStmnt) {
+		    labels.clear();
+		    break;
+		}
+	    }
+	}
 	return result;
     }
 
@@ -516,5 +543,4 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	    sdg.addEdge(source, v, EdgeType.CTRL_FALSE);
 	}
     }
-
 }

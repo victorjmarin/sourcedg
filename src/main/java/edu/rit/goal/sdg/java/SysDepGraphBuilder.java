@@ -23,6 +23,7 @@ import edu.rit.goal.sdg.java.statement.control.DoStmnt;
 import edu.rit.goal.sdg.java.statement.control.EnhancedForStmnt;
 import edu.rit.goal.sdg.java.statement.control.IfThenElseStmnt;
 import edu.rit.goal.sdg.java.statement.control.IfThenStmnt;
+import edu.rit.goal.sdg.java.statement.control.SwitchStmnt;
 import edu.rit.goal.sdg.java.statement.control.WhileStmnt;
 
 /**
@@ -48,6 +49,9 @@ public interface SysDepGraphBuilder {
 
     List<Vertex> doStmnt(DoStmnt doStmnt, SysDepGraph sdg, boolean isNested);
 
+    List<Vertex> switchStmnt(SwitchStmnt switchStmnt, SysDepGraph sdg, boolean isNested, boolean isLoopBody);
+
+    
     List<Vertex> variableDeclaration(VariableDecl variableDecl, SysDepGraph sdg, boolean isNested,
 	    List<Statement> scope, boolean isForStmntHeader);
 

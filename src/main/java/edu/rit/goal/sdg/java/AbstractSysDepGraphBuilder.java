@@ -41,6 +41,7 @@ import edu.rit.goal.sdg.java.statement.control.DoStmnt;
 import edu.rit.goal.sdg.java.statement.control.EnhancedForStmnt;
 import edu.rit.goal.sdg.java.statement.control.IfThenElseStmnt;
 import edu.rit.goal.sdg.java.statement.control.IfThenStmnt;
+import edu.rit.goal.sdg.java.statement.control.SwitchStmnt;
 import edu.rit.goal.sdg.java.statement.control.WhileStmnt;
 import edu.rit.goal.sdg.java.visitor.ClassBodyVisitor;
 
@@ -118,6 +119,9 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 		    result.addAll(vtcs);
 		} else if (s instanceof DoStmnt) {
 		    final List<Vertex> vtcs = doStmnt((DoStmnt) s, sdg, isNested);
+		    result.addAll(vtcs);
+		} else if (s instanceof SwitchStmnt) {
+		    final List<Vertex> vtcs = switchStmnt((SwitchStmnt) s, sdg, isNested, isLoopBody);
 		    result.addAll(vtcs);
 		} else if (s instanceof VariableDecl) {
 		    final List<Vertex> vtcs = variableDeclaration((VariableDecl) s, sdg, isNested, scope,
