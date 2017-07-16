@@ -292,7 +292,7 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     @Override
     public List<Vertex> methodInvocation(final MethodInvocation methodInvocation, final SysDepGraph sdg,
 	    final boolean isNested) {
-	final Vertex invocationVtx = new Vertex(VertexType.CALL_SITE, methodInvocation.toString());
+	final Vertex invocationVtx = new Vertex(VertexType.CALL, methodInvocation.toString());
 	sdg.addVertex(invocationVtx);
 	if (!isNested) {
 	    // Method entry dependency
