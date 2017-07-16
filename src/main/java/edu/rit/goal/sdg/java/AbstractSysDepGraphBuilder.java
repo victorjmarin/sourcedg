@@ -63,7 +63,8 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 	final Java8Parser parser = new Java8Parser(tokens);
 	final ClassBodyVisitor visitor = new ClassBodyVisitor();
 	stmnts = visitor.visit(parser.compilationUnit());
-	final SysDepGraph result = build(stmnts);
+	stmnts.forEach(s -> System.out.println(s.getClass()));
+	final SysDepGraph result = _build(stmnts);
 	return result;
     }
 
@@ -75,18 +76,18 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 	return sb.toString();
     }
 
-    private SysDepGraph build(final List<Statement> stmnts) {
+    private SysDepGraph _build(final List<Statement> stmnts) {
 	final SysDepGraph result = new SysDepGraph();
 	final List<Statement> methods = stmnts.stream().filter(s -> s instanceof MethodSignature)
 		.collect(Collectors.toList());
 	// Process methods first so that they are available for reference
 	methods.forEach(m -> methodSignature((MethodSignature) m, result));
-	_build(stmnts, result, false, false, false);
+	build(stmnts, result, false, false, false);
 	doFinally(result);
 	return result;
     }
 
-    protected List<Vertex> _build(final List<Statement> stmnts, final SysDepGraph sdg, final boolean isNested,
+    protected List<Vertex> build(final List<Statement> stmnts, final SysDepGraph sdg, final boolean isNested,
 	    final boolean isForStmntHeader, final boolean isLoopBody) {
 	final List<Statement> scope = stmnts;
 	final List<Vertex> result = new ArrayList<>();

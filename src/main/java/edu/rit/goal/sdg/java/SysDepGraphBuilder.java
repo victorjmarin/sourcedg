@@ -37,11 +37,25 @@ public interface SysDepGraphBuilder {
 
     void methodSignature(MethodSignature methodSignature, SysDepGraph sdg);
 
+    List<Vertex> assignment(Assignment assignment, SysDepGraph sdg, boolean isNested, List<Statement> scope,
+	    boolean isForStmntHeader, boolean isLoopBody);
+
+    List<Vertex> arrayAccessAssignment(ArrayAccessAssignment arrayAccessAssignment, SysDepGraph sdg, boolean isNested,
+	    List<Statement> scope, boolean isForStmntHeader);
+
     List<Vertex> basicForStmnt(BasicForStmnt basicForStmnt, SysDepGraph sdg, boolean isNested);
+
+    List<Vertex> breakStmnt(BreakStmnt breakStmnt, SysDepGraph sdg, boolean isNested);
+
+    List<Vertex> continueStmnt(ContinueStmnt continueStmnt, SysDepGraph sdg, boolean isNested);
+
+    List<Vertex> variableDeclaration(VariableDecl variableDecl, SysDepGraph sdg, boolean isNested,
+	    List<Statement> scope, boolean isForStmntHeader);
 
     List<Vertex> enhancedForStmnt(EnhancedForStmnt enhancedForStmnt, SysDepGraph sdg, boolean isNested);
 
-    List<Vertex> ifThenElseStmnt(IfThenElseStmnt ifThenElseStmnt, SysDepGraph sdg, boolean isNested, boolean isLoopBody);
+    List<Vertex> ifThenElseStmnt(IfThenElseStmnt ifThenElseStmnt, SysDepGraph sdg, boolean isNested,
+	    boolean isLoopBody);
 
     List<Vertex> ifThenStmnt(IfThenStmnt ifThenStmnt, SysDepGraph sdg, boolean isNested, boolean isLoopBody);
 
@@ -51,24 +65,10 @@ public interface SysDepGraphBuilder {
 
     List<Vertex> switchStmnt(SwitchStmnt switchStmnt, SysDepGraph sdg, boolean isNested, boolean isLoopBody);
 
-    
-    List<Vertex> variableDeclaration(VariableDecl variableDecl, SysDepGraph sdg, boolean isNested,
-	    List<Statement> scope, boolean isForStmntHeader);
-
-    List<Vertex> arrayAccessAssignment(ArrayAccessAssignment arrayAccessAssignment, SysDepGraph sdg, boolean isNested,
-	    List<Statement> scope, boolean isForStmntHeader);
-
-    List<Vertex> assignment(Assignment assignment, SysDepGraph sdg, boolean isNested, List<Statement> scope,
-	    boolean isForStmntHeader, boolean isLoopBody);
-
     List<Vertex> methodInvocation(MethodInvocation methodInvocation, SysDepGraph sdg, boolean isNested);
 
     List<Vertex> methodInvocationAssignment(MethodInvocationAssignment methodInvocationAssignment, SysDepGraph sdg,
 	    boolean isNested);
-
-    List<Vertex> breakStmnt(BreakStmnt breakStmnt, SysDepGraph sdg, boolean isNested);
-
-    List<Vertex> continueStmnt(ContinueStmnt continueStmnt, SysDepGraph sdg, boolean isNested);
 
     List<Vertex> postIncrementExpr(PostIncrementExpr postIncrementExpr, SysDepGraph sdg, boolean isNested,
 	    boolean isForStmntHeader, boolean isLoopBody);

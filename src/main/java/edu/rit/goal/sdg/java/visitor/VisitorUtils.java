@@ -2,6 +2,7 @@ package edu.rit.goal.sdg.java.visitor;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -13,6 +14,8 @@ import edu.rit.goal.sdg.java.antlr.Java8Parser.MethodNameContext;
 import edu.rit.goal.sdg.java.exception.AssignmentGuardException;
 import edu.rit.goal.sdg.java.exception.InvocationArgException;
 import edu.rit.goal.sdg.java.exception.MultipleExitPointsException;
+import edu.rit.goal.sdg.java.statement.Assignment;
+import edu.rit.goal.sdg.java.statement.Expression;
 
 public class VisitorUtils {
 
@@ -118,6 +121,16 @@ public class VisitorUtils {
 	default:
 	    return false;
 	}
+    }
+
+    public static boolean isSelfAssignment(final Assignment assignment) {
+	final String operator = assignment.getOperator();
+	if (isShortHandOperator(operator))
+	    return true;
+	final String outVar = assignment.getOutVar();
+	final Expression expr = assignment.getRightHandSide();
+	final Set<String> readingVars = expr.getReadingVars();
+	return readingVars.contains(outVar);
     }
 
 }
