@@ -335,6 +335,8 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	// Invocation vertex
 	final List<Vertex> invocationVtxLst = methodInvocation(methodInvocationAssignment, sdg, isNested);
 	final Vertex invocationVtx = invocationVtxLst.get(0);
+	// Set adequate type
+	invocationVtx.setType(VertexType.ASSIGN);
 	final String methodName = methodInvocationAssignment.getMethodName();
 	final String outVar = methodInvocationAssignment.getOutVar();
 	// Actual out
@@ -493,7 +495,8 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	    result = bodyVtcs;
 	} else {
 	    result.add(conditionVtx);
-	    // Add extra control edges if do stmnt because the body will execute at least once
+	    // Add extra control edges if do stmnt because the body will execute at least
+	    // once
 	    // no matter the condition.
 	    if (isDoStmnt) {
 		result.addAll(bodyVtcs);
