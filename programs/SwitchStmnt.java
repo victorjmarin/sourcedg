@@ -14,7 +14,7 @@ public class SwitchStmnt {
 	// if (s == 0 || s == 1) {
 	// System.out.println(1);
 	// }
-	// if (s == 0 || s == 1 || s == 2) {
+	// if (s == 0 || s == 1 || s == 2 || s == DEFAULT) {
 	// System.out.println(2);
 	// }
     }

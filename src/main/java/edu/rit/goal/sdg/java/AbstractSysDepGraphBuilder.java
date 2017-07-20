@@ -63,7 +63,6 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 	final Java8Parser parser = new Java8Parser(tokens);
 	final ClassBodyVisitor visitor = new ClassBodyVisitor();
 	stmnts = visitor.visit(parser.compilationUnit());
-	stmnts.forEach(s -> System.out.println(s.getClass()));
 	final SysDepGraph result = _build(stmnts);
 	return result;
     }

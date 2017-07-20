@@ -8,22 +8,20 @@ import org.jgrapht.ext.ExportException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import edu.rit.goal.TestUtils;
 import edu.rit.goal.sdg.java.SysDepGraphBuilder;
 import edu.rit.goal.sdg.java.SysDepGraphBuilderFactory;
 import edu.rit.goal.sdg.java.SysDepGraphBuilderFactory.BuildStrategy;
 import edu.rit.goal.sdg.java.graph.SysDepGraph;
 
-public class SwitchTest {
+public class EnhancedForTest {
 
     private static SysDepGraph sdg;
 
     @BeforeClass
     public static void parseTestProgram() throws IOException, ExportException {
-	final String program = new String(Files.readAllBytes(Paths.get("programs/SwitchStmnt.java")));
+	final String program = new String(Files.readAllBytes(Paths.get("programs/EnhancedForStmnt.java")));
 	final SysDepGraphBuilder builder = SysDepGraphBuilderFactory.using(BuildStrategy.MARIN);
 	sdg = builder.fromSource(program);
-	TestUtils.exportAsDot(sdg, "switch");
 	System.out.println(sdg);
     }
 

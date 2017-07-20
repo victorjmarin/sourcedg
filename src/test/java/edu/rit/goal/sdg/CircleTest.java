@@ -1,6 +1,5 @@
 package edu.rit.goal.sdg;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -8,9 +7,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.jgrapht.ext.ComponentNameProvider;
 import org.jgrapht.ext.ExportException;
-import org.jgrapht.ext.GraphMLExporter;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -32,24 +29,6 @@ public class CircleTest {
 	final String program = new String(Files.readAllBytes(Paths.get("programs/Circle.java")));
 	final SysDepGraphBuilder builder = SysDepGraphBuilderFactory.using(BuildStrategy.MARIN);
 	sdg = builder.fromSource(program);
-	final GraphMLExporter<Vertex, Edge> exporter = new GraphMLExporter<Vertex, Edge>();
-	exporter.setEdgeLabelAttributeName("label");
-	exporter.setVertexLabelAttributeName("label");
-	exporter.setEdgeLabelProvider(new ComponentNameProvider<Edge>() {
-	    @Override
-	    public String getName(final Edge edge) {
-		return edge.toString();
-	    }
-	});
-	exporter.setVertexLabelProvider(new ComponentNameProvider<Vertex>() {
-
-	    @Override
-	    public String getName(final Vertex vtx) {
-		return vtx.toString();
-	    }
-	});
-	final String path = "/Users/goal/Desktop/sdg";
-	exporter.exportGraph(sdg, new File(path + ".graphml"));
     }
 
     @Test
