@@ -12,6 +12,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import edu.rit.goal.TestUtils;
 import edu.rit.goal.sdg.java.SysDepGraphBuilder;
 import edu.rit.goal.sdg.java.SysDepGraphBuilderFactory;
 import edu.rit.goal.sdg.java.SysDepGraphBuilderFactory.BuildStrategy;
@@ -29,6 +30,7 @@ public class CircleTest {
 	final String program = new String(Files.readAllBytes(Paths.get("programs/Circle.java")));
 	final SysDepGraphBuilder builder = SysDepGraphBuilderFactory.using(BuildStrategy.MARIN);
 	sdg = builder.fromSource(program);
+	TestUtils.exportAsDot(sdg, "circle");
     }
 
     @Test

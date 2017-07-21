@@ -20,6 +20,10 @@ public class Vertex {
 	this.lookupId = lookupId;
     }
 
+    public void setType(final VertexType type) {
+	this.type = type;
+    }
+
     public VertexType getType() {
 	return type;
     }
