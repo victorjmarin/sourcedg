@@ -15,8 +15,8 @@ import edu.rit.goal.sdg.graph.VertexType;
 import edu.rit.goal.sdg.java8.visitor.VisitorUtils;
 import edu.rit.goal.sdg.statement.ArrayAccessAssignment;
 import edu.rit.goal.sdg.statement.Assignment;
-import edu.rit.goal.sdg.statement.BreakStmnt;
-import edu.rit.goal.sdg.statement.ContinueStmnt;
+import edu.rit.goal.sdg.statement.BreakStmt;
+import edu.rit.goal.sdg.statement.ContinueStmt;
 import edu.rit.goal.sdg.statement.Expr;
 import edu.rit.goal.sdg.statement.FormalParameter;
 import edu.rit.goal.sdg.statement.MethodInvocation;
@@ -26,17 +26,17 @@ import edu.rit.goal.sdg.statement.PostDecrementExpr;
 import edu.rit.goal.sdg.statement.PostIncrementExpr;
 import edu.rit.goal.sdg.statement.PreDecrementExpr;
 import edu.rit.goal.sdg.statement.PreIncrementExpr;
-import edu.rit.goal.sdg.statement.ReturnStmnt;
+import edu.rit.goal.sdg.statement.ReturnStmt;
 import edu.rit.goal.sdg.statement.Stmt;
 import edu.rit.goal.sdg.statement.VariableDecl;
-import edu.rit.goal.sdg.statement.control.BasicForStmnt;
-import edu.rit.goal.sdg.statement.control.DoStmnt;
-import edu.rit.goal.sdg.statement.control.EnhancedForStmnt;
-import edu.rit.goal.sdg.statement.control.IfThenElseStmnt;
-import edu.rit.goal.sdg.statement.control.IfThenStmnt;
-import edu.rit.goal.sdg.statement.control.SwitchBlockStmntGroup;
-import edu.rit.goal.sdg.statement.control.SwitchStmnt;
-import edu.rit.goal.sdg.statement.control.WhileStmnt;
+import edu.rit.goal.sdg.statement.control.BasicForStmt;
+import edu.rit.goal.sdg.statement.control.DoStmt;
+import edu.rit.goal.sdg.statement.control.EnhancedForStmt;
+import edu.rit.goal.sdg.statement.control.IfThenElseStmt;
+import edu.rit.goal.sdg.statement.control.IfThenStmt;
+import edu.rit.goal.sdg.statement.control.SwitchBlockStmtGroup;
+import edu.rit.goal.sdg.statement.control.SwitchStmt;
+import edu.rit.goal.sdg.statement.control.WhileStmt;
 
 /**
  * Implementation of features not described in the paper by Horwitz and Reps.
@@ -56,12 +56,12 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	    final String resultOutVtxName = getResultOutVtxName(methodName);
 	    final Vertex resultOutVtx = new Vertex(VertexType.FORMAL_OUT, resultOutVtxName, resultOutVtxName);
 	    sdg.addVertex(resultOutVtx);
-	    notNestedStmntEdge(enterVtx, resultOutVtx, sdg);
+	    notNestedStmtEdge(enterVtx, resultOutVtx, sdg);
 	    // Result in
 	    final String resultInVtxName = getResultInVtxName(methodName);
 	    final Vertex resultInVtx = new Vertex(VertexType.FORMAL_IN, resultInVtxName, resultInVtxName);
 	    sdg.addVertex(resultInVtx);
-	    notNestedStmntEdge(enterVtx, resultInVtx, sdg);
+	    notNestedStmtEdge(enterVtx, resultInVtx, sdg);
 	}
 	// Create formal parameter vertices
 	final List<FormalParameter> params = methodSignature.getParams();
@@ -73,43 +73,43 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 		// Keep mapping method -> {params}
 		putFormalParameter(methodName, formalParamVtx);
 		// Control edge from method to parameter
-		notNestedStmntEdge(enterVtx, formalParamVtx, sdg);
+		notNestedStmtEdge(enterVtx, formalParamVtx, sdg);
 	    }
 	}
     }
 
     @Override
     public List<Vertex> variableDeclaration(final VariableDecl variableDecl, final SysDepGraph sdg,
-	    final boolean isNested, final List<Stmt> scope, final boolean isForStmntHeader) {
+	    final boolean isNested, final List<Stmt> scope, final boolean isForStmtHeader) {
 	final String varName = variableDecl.getVariableDeclaratorId();
 	final Expr varInit = variableDecl.getVariableInitializer();
 	final Vertex declVtx = new Vertex(VertexType.DECL, variableDecl.toString(), lookupId(varName));
 	sdg.addVertex(declVtx);
-	putVarWriting(declVtx, isForStmntHeader);
+	putVarWriting(declVtx, isForStmtHeader);
 	dataDependencies(declVtx, varInit.getReadingVars(), sdg, isNested);
 	if (!isNested) {
 	    // Method entry dependency
-	    notNestedStmntEdge(declVtx, sdg);
+	    notNestedStmtEdge(declVtx, sdg);
 	}
 	return list(declVtx);
     }
 
     @Override
-    public List<Vertex> basicForStmnt(final BasicForStmnt basicForStmnt, final SysDepGraph sdg,
+    public List<Vertex> basicForStmt(final BasicForStmt basicForStmt, final SysDepGraph sdg,
 	    final boolean isNested) {
-	final List<Stmt> init = basicForStmnt.getInit();
-	final Expr cond = basicForStmnt.getCondition();
-	final List<Stmt> update = basicForStmnt.getUpdate();
-	final List<Stmt> body = basicForStmnt.getBody();
-	return forStmnt(init, cond, update, body, sdg, isNested);
+	final List<Stmt> init = basicForStmt.getInit();
+	final Expr cond = basicForStmt.getCondition();
+	final List<Stmt> update = basicForStmt.getUpdate();
+	final List<Stmt> body = basicForStmt.getBody();
+	return forStmt(init, cond, update, body, sdg, isNested);
     }
 
     @Override
-    public List<Vertex> enhancedForStmnt(final EnhancedForStmnt enhancedForStmnt, final SysDepGraph sdg,
+    public List<Vertex> enhancedForStmt(final EnhancedForStmt enhancedForStmt, final SysDepGraph sdg,
 	    final boolean isNested) {
-	final String var = enhancedForStmnt.getVar();
+	final String var = enhancedForStmt.getVar();
 	// Condition
-	final Expr iterable = enhancedForStmnt.getIterable();
+	final Expr iterable = enhancedForStmt.getIterable();
 	final Vertex condVtx = new Vertex(VertexType.COND, iterable.toString());
 	sdg.addVertex(condVtx);
 	// Update. Needs to be executed after updating the control stack, so we pass it as
@@ -122,14 +122,14 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	};
 	// Body
 	final boolean isLoopBody = true;
-	final List<Stmt> body = enhancedForStmnt.getBody();
+	final List<Stmt> body = enhancedForStmt.getBody();
 	final List<Vertex> result = ctrlStructureTrue(condVtx, body, sdg, f, isNested, isLoopBody);
 	// Loop
 	sdg.addEdge(condVtx, condVtx, EdgeType.CTRL_TRUE);
 	return result;
     }
 
-    public List<Vertex> forStmnt(final List<Stmt> init, final Expr cond, final List<Stmt> update,
+    public List<Vertex> forStmt(final List<Stmt> init, final Expr cond, final List<Stmt> update,
 	    final List<Stmt> body, final SysDepGraph sdg, final boolean isNested) {
 	// Condition
 	final Vertex condVtx = new Vertex(VertexType.COND, cond.toString());
@@ -138,15 +138,15 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	sdg.addEdge(condVtx, condVtx, EdgeType.CTRL_TRUE);
 	final List<Vertex> updateVtcs = new ArrayList<>();
 	final Function<Void, Void> f = arg -> {
-	    final boolean isForStmntHeader = true;
+	    final boolean isForStmtHeader = true;
 	    // Initialization. Needs to be executed after updating the control stack so
 	    // that
 	    // the mapping ctrlVtxVarDeclMap is correct.
-	    build(init, sdg, isNested, isForStmntHeader, false);
+	    build(init, sdg, isNested, isForStmtHeader, false);
 	    // Update. Setting isNested to true will prevent a CTRL_TRUE edge from the
 	    // outer conditional vertex to the update vertex, which depends on the
 	    // conditional vertex of this for.
-	    updateVtcs.addAll(build(update, sdg, true, isForStmntHeader, false));
+	    updateVtcs.addAll(build(update, sdg, true, isForStmtHeader, false));
 	    // Data dependencies
 	    dataDependencies(condVtx, cond.getReadingVars(), sdg, isNested);
 	    return null;
@@ -158,17 +158,17 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     }
 
     @Override
-    public List<Vertex> ifThenElseStmnt(final IfThenElseStmnt ifThenElseStmnt, final SysDepGraph sdg,
+    public List<Vertex> ifThenElseStmt(final IfThenElseStmt ifThenElseStmt, final SysDepGraph sdg,
 	    final boolean isNested, final boolean isLoopBody) {
 	// Condition
-	final Expr condition = ifThenElseStmnt.getCondition();
+	final Expr condition = ifThenElseStmt.getCondition();
 	final Vertex condVtx = new Vertex(VertexType.COND, condition.toString());
 	sdg.addVertex(condVtx);
 	// Then branch
-	final List<Stmt> thenBranch = ifThenElseStmnt.getThenBranch();
+	final List<Stmt> thenBranch = ifThenElseStmt.getThenBranch();
 	final List<Vertex> result = ctrlStructureTrue(condVtx, thenBranch, sdg, isNested, isLoopBody);
 	// Else branch
-	final List<Stmt> elseBranch = ifThenElseStmnt.getElseBranch();
+	final List<Stmt> elseBranch = ifThenElseStmt.getElseBranch();
 	final List<Vertex> elseVtcs = build(elseBranch, sdg, true, false, isLoopBody);
 	ctrlFalseEdges(condVtx, elseVtcs, sdg);
 	// Data dependencies
@@ -177,14 +177,14 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     }
 
     @Override
-    public List<Vertex> ifThenStmnt(final IfThenStmnt ifThenStmnt, final SysDepGraph sdg, final boolean isNested,
+    public List<Vertex> ifThenStmt(final IfThenStmt ifThenStmt, final SysDepGraph sdg, final boolean isNested,
 	    final boolean isLoopBody) {
 	// Condition
-	final Expr condition = ifThenStmnt.getCondition();
+	final Expr condition = ifThenStmt.getCondition();
 	final Vertex condVtx = new Vertex(VertexType.COND, condition.toString());
 	sdg.addVertex(condVtx);
 	// Then branch
-	final List<Stmt> thenBranch = ifThenStmnt.getThenBranch();
+	final List<Stmt> thenBranch = ifThenStmt.getThenBranch();
 	final List<Vertex> result = ctrlStructureTrue(condVtx, thenBranch, sdg, isNested, isLoopBody);
 	// Data dependencies
 	dataDependencies(condVtx, condition.getReadingVars(), sdg, isNested);
@@ -192,9 +192,9 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     }
 
     @Override
-    public List<Vertex> whileStmnt(final WhileStmnt whileStmnt, final SysDepGraph sdg, final boolean isNested) {
-	final Expr condition = whileStmnt.getCondition();
-	final List<Stmt> body = whileStmnt.getBody();
+    public List<Vertex> whileStmt(final WhileStmt whileStmt, final SysDepGraph sdg, final boolean isNested) {
+	final Expr condition = whileStmt.getCondition();
+	final List<Stmt> body = whileStmt.getBody();
 	final Vertex condVtx = new Vertex(VertexType.COND, condition.toString());
 	sdg.addVertex(condVtx);
 	final boolean isLoopBody = true;
@@ -205,36 +205,36 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     }
 
     @Override
-    public List<Vertex> doStmnt(final DoStmnt doStmnt, final SysDepGraph sdg, final boolean isNested) {
+    public List<Vertex> doStmt(final DoStmt doStmt, final SysDepGraph sdg, final boolean isNested) {
 	// Condition
-	final Expr condition = doStmnt.getCondition();
+	final Expr condition = doStmt.getCondition();
 	final Vertex condVtx = new Vertex(VertexType.COND, condition.toString());
 	sdg.addVertex(condVtx);
 	// Body
-	final List<Stmt> body = doStmnt.getBody();
-	final boolean isDoStmnt = true;
+	final List<Stmt> body = doStmt.getBody();
+	final boolean isDoStmt = true;
 	final boolean isLoopBody = true;
-	final List<Vertex> result = ctrlStructureTrue(condVtx, body, sdg, isDoStmnt, null, isNested, isLoopBody);
+	final List<Vertex> result = ctrlStructureTrue(condVtx, body, sdg, isDoStmt, null, isNested, isLoopBody);
 	// Data dependencies
 	dataDependencies(condVtx, condition.getReadingVars(), sdg, isNested);
 	return result;
     }
 
     @Override
-    public List<Vertex> switchStmnt(final SwitchStmnt switchStmnt, final SysDepGraph sdg, final boolean isNested,
+    public List<Vertex> switchStmt(final SwitchStmt switchStmt, final SysDepGraph sdg, final boolean isNested,
 	    final boolean isLoopBody) {
 	final List<Vertex> result = new ArrayList<>();
-	final String switchExpr = switchStmnt.getExpr().toString();
-	final List<SwitchBlockStmntGroup> blocks = switchStmnt.getBlocks();
+	final String switchExpr = switchStmt.getExpr().toString();
+	final List<SwitchBlockStmtGroup> blocks = switchStmt.getBlocks();
 	final List<String> labels = new ArrayList<>();
-	for (final SwitchBlockStmntGroup b : blocks) {
+	for (final SwitchBlockStmtGroup b : blocks) {
 	    labels.addAll(b.getSwitchLabels());
 	    final String vtxLabel = labels.stream().map(l -> switchExpr + "==" + l).collect(Collectors.joining("||"));
 	    final Vertex condVtx = new Vertex(VertexType.COND, vtxLabel);
 	    sdg.addVertex(condVtx);
-	    result.addAll(ctrlStructureTrue(condVtx, b.getBlockStmnts(), sdg, isNested, isLoopBody));
-	    for (final Stmt stmnt : b.getBlockStmnts()) {
-		if (stmnt instanceof BreakStmnt) {
+	    result.addAll(ctrlStructureTrue(condVtx, b.getBlockStmts(), sdg, isNested, isLoopBody));
+	    for (final Stmt stmt : b.getBlockStmts()) {
+		if (stmt instanceof BreakStmt) {
 		    labels.clear();
 		    break;
 		}
@@ -245,25 +245,25 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 
     @Override
     public List<Vertex> arrayAccessAssignment(final ArrayAccessAssignment arrayAccessAssignment, final SysDepGraph sdg,
-	    final boolean isNested, final List<Stmt> scope, final boolean isForStmntHeader) {
+	    final boolean isNested, final List<Stmt> scope, final boolean isForStmtHeader) {
 	final String assignedVar = arrayAccessAssignment.getExpressionName();
 	final Vertex assignVtx = new Vertex(VertexType.ASSIGN, arrayAccessAssignment.toString(), lookupId(assignedVar));
 	sdg.addVertex(assignVtx);
-	putVarWriting(assignVtx, isForStmntHeader);
+	putVarWriting(assignVtx, isForStmtHeader);
 	final List<Expr> exprs = new ArrayList<>();
 	exprs.add(arrayAccessAssignment.getIndex());
 	exprs.add(arrayAccessAssignment.getRightHandSide());
 	dataDependencies(assignVtx, exprs, sdg, isNested);
 	if (!isNested) {
 	    // Method entry dependency
-	    notNestedStmntEdge(assignVtx, sdg);
+	    notNestedStmtEdge(assignVtx, sdg);
 	}
 	return list(assignVtx);
     }
 
     @Override
     public List<Vertex> assignment(final Assignment assignment, final SysDepGraph sdg, final boolean isNested,
-	    final List<Stmt> scope, final boolean isForStmntHeader, final boolean isLoopBody) {
+	    final List<Stmt> scope, final boolean isForStmtHeader, final boolean isLoopBody) {
 	final String outVar = assignment.getOutVar();
 	final Vertex assignVtx = new Vertex(VertexType.ASSIGN, assignment.toString(), lookupId(outVar));
 	final Set<String> inVars = assignment.getInVars();
@@ -271,12 +271,12 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	// Data dependencies. Depending on if it is a for header, swap the order of
 	// function calls. It ensures correct flow dependencies.
 	// Check this example -> for (int i = 0; i < 10; i += 1) {i += 4;}
-	if (isForStmntHeader) {
-	    putVarWriting(assignVtx, isForStmntHeader);
+	if (isForStmtHeader) {
+	    putVarWriting(assignVtx, isForStmtHeader);
 	    dataDependencies(assignVtx, inVars, sdg, isNested);
 	} else {
 	    dataDependencies(assignVtx, inVars, sdg, isNested);
-	    putVarWriting(assignVtx, isForStmntHeader);
+	    putVarWriting(assignVtx, isForStmtHeader);
 	}
 	// Loop-carried flow dependence
 	if (isLoopBody && VisitorUtils.isSelfAssignment(assignment)) {
@@ -284,7 +284,7 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	}
 	if (!isNested) {
 	    // Method entry dependency
-	    notNestedStmntEdge(assignVtx, sdg);
+	    notNestedStmtEdge(assignVtx, sdg);
 	}
 	return list(assignVtx);
     }
@@ -296,7 +296,7 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	sdg.addVertex(invocationVtx);
 	if (!isNested) {
 	    // Method entry dependency
-	    notNestedStmntEdge(invocationVtx, sdg);
+	    notNestedStmtEdge(invocationVtx, sdg);
 	}
 	final String methodName = methodInvocation.getMethodName();
 	final Vertex methodVertex = sdg.getFirstVertexByLabel(methodName);
@@ -356,7 +356,7 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     }
 
     @Override
-    public List<Vertex> breakStmnt(final BreakStmnt breakStmnt, final SysDepGraph sdg, final boolean isNested) {
+    public List<Vertex> breakStmt(final BreakStmt breakStmt, final SysDepGraph sdg, final boolean isNested) {
 	final Vertex breakVtx = new Vertex(VertexType.BREAK, "break");
 	sdg.addVertex(breakVtx);
 	// Get outer control vertex
@@ -366,7 +366,7 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     }
 
     @Override
-    public List<Vertex> continueStmnt(final ContinueStmnt continueStmnt, final SysDepGraph sdg,
+    public List<Vertex> continueStmt(final ContinueStmt continueStmt, final SysDepGraph sdg,
 	    final boolean isNested) {
 	final Vertex continueVtx = new Vertex(VertexType.CONTINUE, "continue");
 	sdg.addVertex(continueVtx);
@@ -377,41 +377,41 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 
     @Override
     public List<Vertex> postIncrementExpr(final PostIncrementExpr postIncrementExpr, final SysDepGraph sdg,
-	    final boolean isNested, final boolean isForStmntHeader, final boolean isLoopBody) {
-	return shortHandExpr(postIncrementExpr, sdg, isNested, isForStmntHeader, isLoopBody);
+	    final boolean isNested, final boolean isForStmtHeader, final boolean isLoopBody) {
+	return shortHandExpr(postIncrementExpr, sdg, isNested, isForStmtHeader, isLoopBody);
     }
 
     @Override
     public List<Vertex> postDecrementExpr(final PostDecrementExpr postDecrementExpr, final SysDepGraph sdg,
-	    final boolean isNested, final boolean isForStmntHeader, final boolean isLoopBody) {
-	return shortHandExpr(postDecrementExpr, sdg, isNested, isForStmntHeader, isLoopBody);
+	    final boolean isNested, final boolean isForStmtHeader, final boolean isLoopBody) {
+	return shortHandExpr(postDecrementExpr, sdg, isNested, isForStmtHeader, isLoopBody);
 
     }
 
     @Override
     public List<Vertex> preIncrementExpr(final PreIncrementExpr preIncrementExpr, final SysDepGraph sdg,
-	    final boolean isNested, final boolean isForStmntHeader, final boolean isLoopBody) {
-	return shortHandExpr(preIncrementExpr, sdg, isNested, isForStmntHeader, isLoopBody);
+	    final boolean isNested, final boolean isForStmtHeader, final boolean isLoopBody) {
+	return shortHandExpr(preIncrementExpr, sdg, isNested, isForStmtHeader, isLoopBody);
 
     }
 
     @Override
     public List<Vertex> preDecrementExpr(final PreDecrementExpr preDecrementExpr, final SysDepGraph sdg,
-	    final boolean isNested, final boolean isForStmntHeader, final boolean isLoopBody) {
-	return shortHandExpr(preDecrementExpr, sdg, isNested, isForStmntHeader, isLoopBody);
+	    final boolean isNested, final boolean isForStmtHeader, final boolean isLoopBody) {
+	return shortHandExpr(preDecrementExpr, sdg, isNested, isForStmtHeader, isLoopBody);
 
     }
 
     @Override
-    public List<Vertex> returnStmnt(final ReturnStmnt returnStmnt, final SysDepGraph sdg, final boolean isNested) {
-	final Expr returnedExpr = returnStmnt.getReturnedExpr();
+    public List<Vertex> returnStmt(final ReturnStmt returnStmt, final SysDepGraph sdg, final boolean isNested) {
+	final Expr returnedExpr = returnStmt.getReturnedExpr();
 	final Vertex returnVtx = new Vertex(VertexType.RETURN, returnedExpr.toString());
 	sdg.addVertex(returnVtx);
 	// Data dependencies
 	dataDependencies(returnVtx, returnedExpr.getReadingVars(), sdg, isNested);
 	if (!isNested) {
 	    // Method entry dependency
-	    notNestedStmntEdge(returnVtx, sdg);
+	    notNestedStmtEdge(returnVtx, sdg);
 	}
 	// Edge from RETURN vertex to FORMAL_OUT result vertex
 	sdg.addEdge(returnVtx, getCurrentResultVertex(), EdgeType.FLOW);
@@ -433,13 +433,13 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     // Helper methods
 
     private List<Vertex> shortHandExpr(final Expr expr, final SysDepGraph sdg, final boolean isNested,
-	    final boolean isForStmntHeader, final boolean isLoopBody) {
+	    final boolean isForStmtHeader, final boolean isLoopBody) {
 	final String lookupId = expr.getReadingVars().iterator().next();
 	final Vertex vtx = new Vertex(VertexType.ASSIGN, expr.toString(), lookupId(lookupId));
 	sdg.addVertex(vtx);
 	if (!isNested) {
 	    // Method entry dependency
-	    notNestedStmntEdge(vtx, sdg);
+	    notNestedStmtEdge(vtx, sdg);
 	}
 	// Data dependencies
 	dataDependencies(vtx, expr.getReadingVars(), sdg, isNested);
@@ -447,16 +447,16 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	if (isLoopBody) {
 	    sdg.addEdge(vtx, vtx, EdgeType.FLOW);
 	}
-	putVarWriting(vtx, isForStmntHeader);
+	putVarWriting(vtx, isForStmtHeader);
 	return list(vtx);
     }
 
-    private void notNestedStmntEdge(final Vertex vertex, final SysDepGraph sdg) {
+    private void notNestedStmtEdge(final Vertex vertex, final SysDepGraph sdg) {
 	final Vertex enterVtx = getCurrentEnterVertex();
-	notNestedStmntEdge(enterVtx, vertex, sdg);
+	notNestedStmtEdge(enterVtx, vertex, sdg);
     }
 
-    private void notNestedStmntEdge(final Vertex enterVtx, final Vertex vertex, final SysDepGraph sdg) {
+    private void notNestedStmtEdge(final Vertex enterVtx, final Vertex vertex, final SysDepGraph sdg) {
 	sdg.addEdge(enterVtx, vertex, EdgeType.CTRL_TRUE);
     }
 
@@ -471,7 +471,7 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     }
 
     protected List<Vertex> ctrlStructureTrue(final Vertex conditionVtx, final List<Stmt> body,
-	    final SysDepGraph sdg, final boolean isDoStmnt, final Function<Void, Void> f, final boolean isNested,
+	    final SysDepGraph sdg, final boolean isDoStmt, final Function<Void, Void> f, final boolean isNested,
 	    final boolean isLoopBody) {
 	List<Vertex> result = new ArrayList<>();
 	List<Vertex> bodyVtcs = new ArrayList<>();
@@ -480,25 +480,25 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 	if (f != null)
 	    f.apply(null);
 	// Will be used to generate data dependencies
-	if (isDoStmnt) {
-	    currentCtrlIsDoStmnt = true;
+	if (isDoStmt) {
+	    currentCtrlIsDoStmt = true;
 	}
-	final boolean isForStmntHeader = false;
-	bodyVtcs = build(body, sdg, true, isForStmntHeader, isLoopBody);
-	currentCtrlIsDoStmnt = false;
+	final boolean isForStmtHeader = false;
+	bodyVtcs = build(body, sdg, true, isForStmtHeader, isLoopBody);
+	currentCtrlIsDoStmt = false;
 	// System.out.println(ctrlVtxVarDeclMap);
 	final Vertex currentCtrlVtx = ctrlStack.pollLast();
 	removeScopedVarDecl(currentCtrlVtx);
 	if (!isNested) {
 	    // Method entry dependency
-	    notNestedStmntEdge(conditionVtx, sdg);
+	    notNestedStmtEdge(conditionVtx, sdg);
 	    result = bodyVtcs;
 	} else {
 	    result.add(conditionVtx);
-	    // Add extra control edges if do stmnt because the body will execute at least
+	    // Add extra control edges if do stmt because the body will execute at least
 	    // once
 	    // no matter the condition.
-	    if (isDoStmnt) {
+	    if (isDoStmt) {
 		result.addAll(bodyVtcs);
 	    }
 	}
@@ -534,7 +534,7 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
 		sdg.addEdge(initialStateVtx, vertex, EdgeType.FLOW);
 		if (!isNested) {
 		    // Method entry dependency
-		    notNestedStmntEdge(initialStateVtx, sdg);
+		    notNestedStmtEdge(initialStateVtx, sdg);
 		}
 	    }
 	}

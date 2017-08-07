@@ -19,7 +19,7 @@ public class MethodDeclaratorVisitor extends Java8BaseVisitor<MethodSignature> {
 	final TerminalNode identifier = ctx.Identifier();
 	final String methodName = identifier.getText();
 	currentMethodName = methodName;
-	final FormalParameterListVisitor parameterVisitor = new FormalParameterListVisitor();
+	final FormalParamListVisitor parameterVisitor = new FormalParamListVisitor();
 	final FormalParameterListContext formalParamListCtx = ctx.formalParameterList();
 	List<FormalParameter> params = null;
 	if (formalParamListCtx != null) {

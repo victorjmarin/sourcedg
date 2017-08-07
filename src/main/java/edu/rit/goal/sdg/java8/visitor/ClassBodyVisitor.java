@@ -47,7 +47,7 @@ public class ClassBodyVisitor extends Java8BaseVisitor<List<Stmt>> {
 		    final BlockStatementsContext blockStatementsCtx = blockCtx.blockStatements();
 		    // Not empty method
 		    if (blockStatementsCtx != null) {
-			final BlockStatementsVisitor visitor = new BlockStatementsVisitor();
+			final BlockStmtsVisitor visitor = new BlockStmtsVisitor();
 			final List<Stmt> blockStmnts = visitor.visit(blockStatementsCtx);
 			result.addAll(blockStmnts);
 		    }

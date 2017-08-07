@@ -16,11 +16,11 @@ public class ForInitVisitor extends Java8BaseVisitor<List<Stmt>> {
 	if (ctx == null)
 	    return result;
 	if (isLocalVarDecl(ctx)) {
-	    final LocalVariableDeclarationVisitor visitor = new LocalVariableDeclarationVisitor();
+	    final LocalVarDeclVisitor visitor = new LocalVarDeclVisitor();
 	    final List<Stmt> stmnts = visitor.visit(ctx.localVariableDeclaration());
 	    result.addAll(stmnts);
 	} else {
-	    final StatementExpressionListVisitor visitor = new StatementExpressionListVisitor();
+	    final StmtExprListVisitor visitor = new StmtExprListVisitor();
 	    final List<Stmt> stmnts = visitor.visit(ctx.statementExpressionList());
 	    result.addAll(stmnts);
 	}

@@ -15,26 +15,26 @@ import edu.rit.goal.sdg.graph.Vertex;
 import edu.rit.goal.sdg.graph.VertexType;
 import edu.rit.goal.sdg.statement.ArrayAccessAssignment;
 import edu.rit.goal.sdg.statement.Assignment;
-import edu.rit.goal.sdg.statement.BreakStmnt;
-import edu.rit.goal.sdg.statement.ContinueStmnt;
+import edu.rit.goal.sdg.statement.BreakStmt;
+import edu.rit.goal.sdg.statement.ContinueStmt;
 import edu.rit.goal.sdg.statement.MethodInvocation;
 import edu.rit.goal.sdg.statement.MethodInvocationAssignment;
 import edu.rit.goal.sdg.statement.MethodSignature;
-import edu.rit.goal.sdg.statement.NotImplementedStmnt;
+import edu.rit.goal.sdg.statement.NotImplementedStmt;
 import edu.rit.goal.sdg.statement.PostDecrementExpr;
 import edu.rit.goal.sdg.statement.PostIncrementExpr;
 import edu.rit.goal.sdg.statement.PreDecrementExpr;
 import edu.rit.goal.sdg.statement.PreIncrementExpr;
-import edu.rit.goal.sdg.statement.ReturnStmnt;
+import edu.rit.goal.sdg.statement.ReturnStmt;
 import edu.rit.goal.sdg.statement.Stmt;
 import edu.rit.goal.sdg.statement.VariableDecl;
-import edu.rit.goal.sdg.statement.control.BasicForStmnt;
-import edu.rit.goal.sdg.statement.control.DoStmnt;
-import edu.rit.goal.sdg.statement.control.EnhancedForStmnt;
-import edu.rit.goal.sdg.statement.control.IfThenElseStmnt;
-import edu.rit.goal.sdg.statement.control.IfThenStmnt;
-import edu.rit.goal.sdg.statement.control.SwitchStmnt;
-import edu.rit.goal.sdg.statement.control.WhileStmnt;
+import edu.rit.goal.sdg.statement.control.BasicForStmt;
+import edu.rit.goal.sdg.statement.control.DoStmt;
+import edu.rit.goal.sdg.statement.control.EnhancedForStmt;
+import edu.rit.goal.sdg.statement.control.IfThenElseStmt;
+import edu.rit.goal.sdg.statement.control.IfThenStmt;
+import edu.rit.goal.sdg.statement.control.SwitchStmt;
+import edu.rit.goal.sdg.statement.control.WhileStmt;
 
 public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 
@@ -43,34 +43,34 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
     protected final Map<String, List<Vertex>> formalParameters = new HashMap<>();
     protected Deque<Vertex> ctrlStack = new ArrayDeque<>();
     protected Map<Vertex, List<Vertex>> ctrlVtxVarDeclMap = new HashMap<>();
-    protected boolean currentCtrlIsDoStmnt;
-    private List<Stmt> stmnts;
+    protected boolean currentCtrlIsDoStmt;
+    private List<Stmt> stmts;
 
     @Override
     public SysDepGraph from(final String source) {
 	// Transform representation
-	stmnts = StatementsBuilder.from(source);
+	stmts = StmtsBuilder.from(source);
 	// Build graph
-	final SysDepGraph result = _build(stmnts);
+	final SysDepGraph result = _build(stmts);
 	return result;
     }
 
-    private SysDepGraph _build(final List<Stmt> stmnts) {
+    private SysDepGraph _build(final List<Stmt> stmts) {
 	final SysDepGraph result = new SysDepGraph();
-	final List<Stmt> methods = stmnts.stream().filter(s -> s instanceof MethodSignature)
+	final List<Stmt> methods = stmts.stream().filter(s -> s instanceof MethodSignature)
 		.collect(Collectors.toList());
 	// Process methods first so that they are available for reference
 	methods.forEach(m -> methodSignature((MethodSignature) m, result));
-	build(stmnts, result, false, false, false);
+	build(stmts, result, false, false, false);
 	doFinally(result);
 	return result;
     }
 
-    protected List<Vertex> build(final List<Stmt> stmnts, final SysDepGraph sdg, final boolean isNested,
-	    final boolean isForStmntHeader, final boolean isLoopBody) {
-	final List<Stmt> scope = stmnts;
+    protected List<Vertex> build(final List<Stmt> stmts, final SysDepGraph sdg, final boolean isNested,
+	    final boolean isForStmtHeader, final boolean isLoopBody) {
+	final List<Stmt> scope = stmts;
 	final List<Vertex> result = new ArrayList<>();
-	for (final Stmt s : stmnts) {
+	for (final Stmt s : stmts) {
 	    if (s != null) {
 		if (s instanceof MethodSignature) {
 		    ctrlStack.clear();
@@ -82,37 +82,37 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 		    ctrlVtxVarDeclMap.put(currentEnterVertex, formalParameters.get(methodName));
 		    ctrlStack.add(currentEnterVertex);
 		    currentResultOutVertex = sdg.getFirstVertexByLabel(getResultOutVtxName(methodName));
-		} else if (s instanceof BasicForStmnt) {
-		    final List<Vertex> vtcs = basicForStmnt((BasicForStmnt) s, sdg, isNested);
+		} else if (s instanceof BasicForStmt) {
+		    final List<Vertex> vtcs = basicForStmt((BasicForStmt) s, sdg, isNested);
 		    result.addAll(vtcs);
-		} else if (s instanceof EnhancedForStmnt) {
-		    final List<Vertex> vtcs = enhancedForStmnt((EnhancedForStmnt) s, sdg, isNested);
+		} else if (s instanceof EnhancedForStmt) {
+		    final List<Vertex> vtcs = enhancedForStmt((EnhancedForStmt) s, sdg, isNested);
 		    result.addAll(vtcs);
-		} else if (s instanceof IfThenElseStmnt) {
-		    final List<Vertex> vtcs = ifThenElseStmnt((IfThenElseStmnt) s, sdg, isNested, isLoopBody);
+		} else if (s instanceof IfThenElseStmt) {
+		    final List<Vertex> vtcs = ifThenElseStmt((IfThenElseStmt) s, sdg, isNested, isLoopBody);
 		    result.addAll(vtcs);
-		} else if (s instanceof IfThenStmnt) {
-		    final List<Vertex> vtcs = ifThenStmnt((IfThenStmnt) s, sdg, isNested, isLoopBody);
+		} else if (s instanceof IfThenStmt) {
+		    final List<Vertex> vtcs = ifThenStmt((IfThenStmt) s, sdg, isNested, isLoopBody);
 		    result.addAll(vtcs);
-		} else if (s instanceof WhileStmnt) {
-		    final List<Vertex> vtcs = whileStmnt((WhileStmnt) s, sdg, isNested);
+		} else if (s instanceof WhileStmt) {
+		    final List<Vertex> vtcs = whileStmt((WhileStmt) s, sdg, isNested);
 		    result.addAll(vtcs);
-		} else if (s instanceof DoStmnt) {
-		    final List<Vertex> vtcs = doStmnt((DoStmnt) s, sdg, isNested);
+		} else if (s instanceof DoStmt) {
+		    final List<Vertex> vtcs = doStmt((DoStmt) s, sdg, isNested);
 		    result.addAll(vtcs);
-		} else if (s instanceof SwitchStmnt) {
-		    final List<Vertex> vtcs = switchStmnt((SwitchStmnt) s, sdg, isNested, isLoopBody);
+		} else if (s instanceof SwitchStmt) {
+		    final List<Vertex> vtcs = switchStmt((SwitchStmt) s, sdg, isNested, isLoopBody);
 		    result.addAll(vtcs);
 		} else if (s instanceof VariableDecl) {
 		    final List<Vertex> vtcs = variableDeclaration((VariableDecl) s, sdg, isNested, scope,
-			    isForStmntHeader);
+			    isForStmtHeader);
 		    result.addAll(vtcs);
 		} else if (s instanceof ArrayAccessAssignment) {
 		    final List<Vertex> vtcs = arrayAccessAssignment((ArrayAccessAssignment) s, sdg, isNested, scope,
-			    isForStmntHeader);
+			    isForStmtHeader);
 		    result.addAll(vtcs);
 		} else if (s instanceof Assignment) {
-		    final List<Vertex> vtcs = assignment((Assignment) s, sdg, isNested, scope, isForStmntHeader,
+		    final List<Vertex> vtcs = assignment((Assignment) s, sdg, isNested, scope, isForStmtHeader,
 			    isLoopBody);
 		    result.addAll(vtcs);
 		    // Has to be called before MethodInvocation because
@@ -123,33 +123,33 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 		} else if (s instanceof MethodInvocation) {
 		    final List<Vertex> vtcs = methodInvocation((MethodInvocation) s, sdg, isNested);
 		    result.addAll(vtcs);
-		} else if (s instanceof ReturnStmnt) {
-		    final List<Vertex> vtcs = returnStmnt((ReturnStmnt) s, sdg, isNested);
+		} else if (s instanceof ReturnStmt) {
+		    final List<Vertex> vtcs = returnStmt((ReturnStmt) s, sdg, isNested);
 		    result.addAll(vtcs);
-		} else if (s instanceof BreakStmnt) {
-		    final List<Vertex> vtcs = breakStmnt((BreakStmnt) s, sdg, isNested);
+		} else if (s instanceof BreakStmt) {
+		    final List<Vertex> vtcs = breakStmt((BreakStmt) s, sdg, isNested);
 		    result.addAll(vtcs);
-		} else if (s instanceof ContinueStmnt) {
-		    final List<Vertex> vtcs = continueStmnt((ContinueStmnt) s, sdg, isNested);
+		} else if (s instanceof ContinueStmt) {
+		    final List<Vertex> vtcs = continueStmt((ContinueStmt) s, sdg, isNested);
 		    result.addAll(vtcs);
 		} else if (s instanceof PostIncrementExpr) {
-		    final List<Vertex> vtcs = postIncrementExpr((PostIncrementExpr) s, sdg, isNested, isForStmntHeader,
+		    final List<Vertex> vtcs = postIncrementExpr((PostIncrementExpr) s, sdg, isNested, isForStmtHeader,
 			    isLoopBody);
 		    result.addAll(vtcs);
 		} else if (s instanceof PostDecrementExpr) {
-		    final List<Vertex> vtcs = postDecrementExpr((PostDecrementExpr) s, sdg, isNested, isForStmntHeader,
+		    final List<Vertex> vtcs = postDecrementExpr((PostDecrementExpr) s, sdg, isNested, isForStmtHeader,
 			    isLoopBody);
 		    result.addAll(vtcs);
 		} else if (s instanceof PreIncrementExpr) {
-		    final List<Vertex> vtcs = preIncrementExpr((PreIncrementExpr) s, sdg, isNested, isForStmntHeader,
+		    final List<Vertex> vtcs = preIncrementExpr((PreIncrementExpr) s, sdg, isNested, isForStmtHeader,
 			    isLoopBody);
 		    result.addAll(vtcs);
 		} else if (s instanceof PreDecrementExpr) {
-		    final List<Vertex> vtcs = preDecrementExpr((PreDecrementExpr) s, sdg, isNested, isForStmntHeader,
+		    final List<Vertex> vtcs = preDecrementExpr((PreDecrementExpr) s, sdg, isNested, isForStmtHeader,
 			    isLoopBody);
 		    result.addAll(vtcs);
-		} else if (s instanceof NotImplementedStmnt) {
-		    notImplementedStmnt((NotImplementedStmnt) s, sdg);
+		} else if (s instanceof NotImplementedStmt) {
+		    notImplementedStmt((NotImplementedStmt) s, sdg);
 		}
 	    }
 	}
@@ -197,8 +197,8 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 	return currentEnterVertex;
     }
 
-    private void notImplementedStmnt(final NotImplementedStmnt notImplementedStmnt, final SysDepGraph sdg) {
-	System.out.println(notImplementedStmnt.toString());
+    private void notImplementedStmt(final NotImplementedStmt notImplementedStmt, final SysDepGraph sdg) {
+	System.out.println(notImplementedStmt.toString());
     }
 
     public Vertex getCurrentResultVertex() {
@@ -236,17 +236,17 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 	return result;
     }
 
-    protected void putVarWriting(final Vertex vtx, final boolean isForStmntHeader) {
+    protected void putVarWriting(final Vertex vtx, final boolean isForStmtHeader) {
 	// System.out.println("putting var: " + vtx);
 	final Vertex currCtrlVtx = ctrlStack.getLast();
-	putVarWriting(vtx, currCtrlVtx, isForStmntHeader);
-	if (currentCtrlIsDoStmnt) {
+	putVarWriting(vtx, currCtrlVtx, isForStmtHeader);
+	if (currentCtrlIsDoStmt) {
 	    final Vertex outerCtrlVtx = getOuterCtrlVtx();
-	    putVarWriting(vtx, outerCtrlVtx, isForStmntHeader);
+	    putVarWriting(vtx, outerCtrlVtx, isForStmtHeader);
 	}
     }
 
-    private void putVarWriting(final Vertex vtx, final Vertex ctrlVtx, final boolean isForStmntHeader) {
+    private void putVarWriting(final Vertex vtx, final Vertex ctrlVtx, final boolean isForStmtHeader) {
 	List<Vertex> vtcs = ctrlVtxVarDeclMap.get(ctrlVtx);
 	if (vtcs == null) {
 	    vtcs = new ArrayList<>();
@@ -254,7 +254,7 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 	}
 	final String lookupId = vtx.getLookupId();
 	// Keep both the initialization and update vertices in for statements.
-	if (!isForStmntHeader) {
+	if (!isForStmtHeader) {
 	    final List<Vertex> olderRefs = vtcs.stream().filter(v -> lookupId.equals(v.getLookupId()))
 		    .collect(Collectors.toList());
 	    vtcs.removeAll(olderRefs);
@@ -285,15 +285,15 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 	}
     }
 
-    protected Vertex createDeclVtx(final String label, final String lookupId, final boolean isForStmntHeader) {
+    protected Vertex createDeclVtx(final String label, final String lookupId, final boolean isForStmtHeader) {
 	final Vertex result = new Vertex(VertexType.DECL, label, lookupId);
-	putVarWriting(result, isForStmntHeader);
+	putVarWriting(result, isForStmtHeader);
 	return result;
     }
 
-    protected Vertex createAssignVtx(final String label, final String lookupId, final boolean isForStmntHeader) {
+    protected Vertex createAssignVtx(final String label, final String lookupId, final boolean isForStmtHeader) {
 	final Vertex result = new Vertex(VertexType.ASSIGN, label, lookupId);
-	putVarWriting(result, isForStmntHeader);
+	putVarWriting(result, isForStmtHeader);
 	return result;
     }
 
