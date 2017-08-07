@@ -10,9 +10,9 @@ import org.jgrapht.ext.DOTExporter;
 import org.jgrapht.ext.ExportException;
 import org.jgrapht.ext.IntegerComponentNameProvider;
 
-import edu.rit.goal.sdg.java.graph.Edge;
-import edu.rit.goal.sdg.java.graph.SysDepGraph;
-import edu.rit.goal.sdg.java.graph.Vertex;
+import edu.rit.goal.sdg.graph.Edge;
+import edu.rit.goal.sdg.graph.SysDepGraph;
+import edu.rit.goal.sdg.graph.Vertex;
 
 public class TestUtils {
 
