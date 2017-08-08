@@ -1,0 +1,7 @@
+stages:
+  - deploy
+
+Git MIRROR:
+  stage: deploy
+  script:
+    - git push --mirror https://$GITHUB_USERNAME:$GITHUB_PASSWORD@github.com/victorjmarin/sdg.git
