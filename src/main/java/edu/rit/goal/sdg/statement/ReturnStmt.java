@@ -1,7 +1,5 @@
 package edu.rit.goal.sdg.statement;
 
-import java.util.List;
-
 public class ReturnStmt implements Stmt {
 
     private final Expr returnedExpr;
@@ -24,12 +22,6 @@ public class ReturnStmt implements Stmt {
 	    sb.append(returnedExpr);
 	}
 	return sb.toString();
-    }
-
-    @Override
-    public List<Stmt> expandScope() {
-	// TODO Auto-generated method stub
-	return null;
     }
 
 }

@@ -1,7 +1,5 @@
 package edu.rit.goal.sdg.statement;
 
-import java.util.List;
-
 import org.antlr.v4.runtime.ParserRuleContext;
 
 public class NotImplementedStmt implements Stmt {
@@ -19,12 +17,6 @@ public class NotImplementedStmt implements Stmt {
     @Override
     public String toString() {
 	return msg;
-    }
-
-    @Override
-    public List<Stmt> expandScope() {
-	// TODO Auto-generated method stub
-	return null;
     }
 
 }

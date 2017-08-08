@@ -35,10 +35,5 @@ public class IfThenElseStmt implements Stmt {
     public String toString() {
 	return "if " + condition + " then " + thenBranch.toString() + " else " + elseBranch.toString();
     }
-
-    @Override
-    public List<Stmt> expandScope() {
-	// TODO Auto-generated method stub
-	return null;
-    }
+    
 }

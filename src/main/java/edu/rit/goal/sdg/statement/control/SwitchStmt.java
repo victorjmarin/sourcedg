@@ -16,12 +16,6 @@ public class SwitchStmt implements Stmt {
 	this.blocks = blocks;
     }
 
-    @Override
-    public List<Stmt> expandScope() {
-	// TODO Auto-generated method stub
-	return null;
-    }
-
     public Expr getExpr() {
 	return expr;
     }

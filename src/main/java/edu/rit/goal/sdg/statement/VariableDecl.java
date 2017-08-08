@@ -1,8 +1,5 @@
 package edu.rit.goal.sdg.statement;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class VariableDecl implements Stmt {
 
     private final String variableDeclaratorId;
@@ -25,13 +22,6 @@ public class VariableDecl implements Stmt {
     @Override
     public String toString() {
 	return variableDeclaratorId + "=" + variableInitializer;
-    }
-
-    @Override
-    public List<Stmt> expandScope() {
-	final List<Stmt> result = new ArrayList<>();
-	result.add(this);
-	return result;
     }
 
 }

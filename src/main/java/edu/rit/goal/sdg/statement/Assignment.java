@@ -1,6 +1,5 @@
 package edu.rit.goal.sdg.statement;
 
-import java.util.List;
 import java.util.Set;
 
 public class Assignment implements Stmt {
@@ -35,12 +34,6 @@ public class Assignment implements Stmt {
     @Override
     public String toString() {
 	return outVar + operator + rightHandSide;
-    }
-
-    @Override
-    public List<Stmt> expandScope() {
-	// TODO Auto-generated method stub
-	return null;
     }
 
 }

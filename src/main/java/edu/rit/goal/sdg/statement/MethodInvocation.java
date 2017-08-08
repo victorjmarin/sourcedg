@@ -41,10 +41,4 @@ public class MethodInvocation implements Stmt {
 	return sb.toString();
     }
 
-    @Override
-    public List<Stmt> expandScope() {
-	// TODO Auto-generated method stub
-	return null;
-    }
-
 }

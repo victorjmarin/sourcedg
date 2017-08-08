@@ -1,7 +1,5 @@
 package edu.rit.goal.sdg.statement;
 
-import java.util.List;
-
 public class ArrayAccessAssignment implements Stmt {
 
     private final String expressionName;
@@ -45,12 +43,6 @@ public class ArrayAccessAssignment implements Stmt {
 	sb.append(" ");
 	sb.append(rightHandSide);
 	return sb.toString();
-    }
-
-    @Override
-    public List<Stmt> expandScope() {
-	// TODO Auto-generated method stub
-	return null;
     }
 
 }

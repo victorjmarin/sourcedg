@@ -156,25 +156,6 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 	return result;
     }
 
-    private boolean isOuterScope(final List<Stmt> sc1, final List<Stmt> sc2) {
-	boolean result = false;
-	if (expandScope(sc1).containsAll(sc2)) {
-	    result = true;
-	}
-	return result;
-    }
-
-    private List<Stmt> expandScope(final List<Stmt> scope) {
-	final List<Stmt> result = new ArrayList<>();
-	for (final Stmt s : scope) {
-	    final List<Stmt> expanded = s.expandScope();
-	    if (expanded != null) {
-		result.addAll(expanded);
-	    }
-	}
-	return result;
-    }
-
     protected Vertex getFormalParameter(final String methodName, final int paramIdx) {
 	Vertex result = null;
 	final List<Vertex> params = formalParameters.get(methodName);
