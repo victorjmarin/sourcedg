@@ -1,5 +1,6 @@
 package edu.rit.goal.sdg.interpreter;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -36,6 +37,11 @@ import edu.rit.goal.sdg.statement.Stmt;
 public class Interpreter {
 
     public static final boolean PRINT_RULES = true;
+    public static final String[] RULES = { "defRule", "voidDefRule", "seqSkipRule", "seqDeferRule", "seqSeqDeferRule",
+	    "seqRule", "assignCallRule", "assignRule", "ctrlEdgeCtrlEdgeTrueRule", "ctrlEdgeCtrlEdgeFalseRule",
+	    "ctrlEdgeSeqRule", "ctrlEdgeSkipRule", "ctrlEdgeDeferRule", "ctrlEdgeRule", "ifThenElseRule", "whileRule",
+	    "callRule", "paramActualInRule", "paramActualOutRule", "paramFormalRule", "vcRule", "deferRule",
+	    "callEdgeRule", "paramInOobRule", "paramInRule", "paramOutRule" };
 
     public static Stmt horwitzProgram() {
 	// final Assign l1 = new Assign("P", "3.14");
@@ -92,7 +98,12 @@ public class Interpreter {
 	final Def easy = new Def(false, "m2", ifThenElse);
 	final Program program = new Program(Programs.simpleDef());
 	final Program result = interpret(program);
-	System.out.println(result.s);
+	System.out.println(result.s + "\n");
+	final Set<String> allRules = new HashSet<String>(Arrays.asList(RULES));
+	System.out.println(execRules.size() + "/" + allRules.size() + " rules were executed to interpret the program.");
+	allRules.removeAll(execRules);
+	System.out.println("The following rules were not executed:");
+	System.out.println(allRules);
     }
 
     public static Program interpret(final Program program) {
@@ -214,7 +225,10 @@ public class Interpreter {
 	return result;
     }
 
+    static Set<String> execRules = new HashSet<>();
+
     private static void printRule(final String rule) {
+	execRules.add(rule);
 	if (PRINT_RULES)
 	    System.out.println(rule);
     }
@@ -358,8 +372,10 @@ public class Interpreter {
 	final Call s = (Call) program.s;
 	final Vertex vc = new Vertex(VertexType.CALL, s.toString());
 	program.sdg.addVertex(vc);
-	program.Vc.add(vc);
-	return new Program(program.sdg, program.Vc, program.P, new Skip());
+	final Seq seq2 = new Seq(new Vc(vc), new Defer(new CallEdge(vc, s.x)));
+	final Param param = new Param(s.x, VertexType.ACTUAL_IN, s.p);
+	final Seq seq = new Seq(new CtrlEdge(true, vc, param), seq2);
+	return new Program(program.sdg, program.Vc, program.P, seq);
     }
 
     private static Program paramActualInRule(final Program program) {
