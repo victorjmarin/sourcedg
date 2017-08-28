@@ -1,6 +1,6 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
-import edu.rit.goal.sdg.interpreter.params.NoParam;
+import edu.rit.goal.sdg.interpreter.params.EmptyParam;
 import edu.rit.goal.sdg.interpreter.params.Param;
 import edu.rit.goal.sdg.statement.Stmt;
 
@@ -16,7 +16,7 @@ public class Def implements Stmt {
 	super();
 	this.b = b;
 	this.x = x;
-	p = new NoParam();
+	p = new EmptyParam();
 	this.s = s;
     }
 

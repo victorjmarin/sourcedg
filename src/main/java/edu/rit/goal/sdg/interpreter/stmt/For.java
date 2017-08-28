@@ -4,20 +4,20 @@ import edu.rit.goal.sdg.statement.Stmt;
 
 public class For implements Stmt {
 
-    public String i, c, u;
+    public Stmt si, sc, su;
     public Stmt s;
 
-    public For(final String i, final String c, final String u, final Stmt s) {
+    public For(final Stmt si, final Stmt sc, final Stmt su, final Stmt s) {
 	super();
-	this.i = i;
-	this.c = c;
-	this.u = u;
+	this.si = si;
+	this.sc = sc;
+	this.su = su;
 	this.s = s;
     }
 
     @Override
     public String toString() {
-	return "for (" + i + ";" + c + ";u) {" + s + "}";
+	return "for (" + si + ";" + sc + ";" + su + ") {" + s + "}";
     }
 
 }

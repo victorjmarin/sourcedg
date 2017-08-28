@@ -2,12 +2,12 @@ package edu.rit.goal.sdg.interpreter.stmt;
 
 import edu.rit.goal.sdg.statement.Stmt;
 
-public class While implements Stmt {
+public class DoWhile implements Stmt {
 
     public Expr e;
     public Stmt s;
 
-    public While(final Expr e, final Stmt s) {
+    public DoWhile(final Expr e, final Stmt s) {
 	super();
 	this.e = e;
 	this.s = s;
@@ -15,7 +15,7 @@ public class While implements Stmt {
 
     @Override
     public String toString() {
-	return "while (" + e + ") {" + s + "}";
+	return "do {" + e + "} while (" + s + ")";
     }
 
 }
