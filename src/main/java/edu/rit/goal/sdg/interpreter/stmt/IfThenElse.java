@@ -4,11 +4,11 @@ import edu.rit.goal.sdg.statement.Stmt;
 
 public class IfThenElse implements Stmt {
 
-    public String e;
+    public Expr e;
     public Stmt s1;
     public Stmt s2;
 
-    public IfThenElse(final String e, final Stmt s1, final Stmt s2) {
+    public IfThenElse(final Expr e, final Stmt s1, final Stmt s2) {
 	super();
 	this.e = e;
 	this.s1 = s1;

@@ -43,6 +43,7 @@ import edu.rit.goal.sdg.interpreter.stmt.PreOp;
 import edu.rit.goal.sdg.interpreter.stmt.Ret;
 import edu.rit.goal.sdg.interpreter.stmt.Seq;
 import edu.rit.goal.sdg.interpreter.stmt.Skip;
+import edu.rit.goal.sdg.interpreter.stmt.Str;
 import edu.rit.goal.sdg.interpreter.stmt.Vc;
 import edu.rit.goal.sdg.interpreter.stmt.While;
 import edu.rit.goal.sdg.interpreter.stmt.sw.DefaultCase;
@@ -100,7 +101,7 @@ public class Interpreter {
     }
 
     public static void main(final String[] args) {
-	final Program program = Programs.horwitz();
+	final Program program = Programs.nestedContinue();
 	final Program result = interpret(program);
 	if (PRINT)
 	    System.out.println(result.s + "\n");
@@ -211,7 +212,7 @@ public class Interpreter {
 	    result = breakRule(program);
 	} else if (s instanceof BreakEdge) {
 	    final BreakEdge s2 = (BreakEdge) s;
-	    final CtrlType ct = s2.cv.ct;
+	    final CtrlType ct = s2.ct;
 	    if (CtrlType.LOOP.equals(ct)) {
 		printRule("breakEdgeLoopRule");
 		result = breakEdgeLoopRule(program);
@@ -228,7 +229,7 @@ public class Interpreter {
 	    if (CtrlType.LOOP.equals(ct)) {
 		printRule("continueEdgeLoopRule");
 		result = continueEdgeLoopRule(program);
-	    } else if (CtrlType.SEQ.equals(ct) && program.C.size() > 1) {
+	    } else if (CtrlType.SEQ.equals(ct)) {
 		printRule("continueEdgeSequentialRule");
 		result = continueEdgeSequentialRule(program);
 	    }
@@ -367,7 +368,8 @@ public class Interpreter {
 	final CtrlEdge ctrledge = (CtrlEdge) program.s;
 	final Stmt s = ctrledge.s;
 	final Program p = small(new Program(program.sdg, program.Vc, program.P, program.C, s));
-	return new Program(p.sdg, p.Vc, program.P, program.C, new CtrlEdge(ctrledge.B, ctrledge.N, p.s));
+	final CtrlEdge ctrlEdge = new CtrlEdge(ctrledge.B, ctrledge.N, p.s);
+	return new Program(p.sdg, p.Vc, program.P, program.C, ctrlEdge);
     }
 
     private static Program ctrlEdgeSkipRule(final Program program) {
@@ -385,7 +387,7 @@ public class Interpreter {
 
     private static Program ifThenElseRule(final Program program) {
 	final IfThenElse s = (IfThenElse) program.s;
-	final Vertex v = new Vertex(VertexType.COND, s.e);
+	final Vertex v = new Vertex(VertexType.COND, s.e.toString());
 	program.sdg.addVertex(v);
 	program.Vc.clear();
 	final CtrlVertex cv = new CtrlVertex(v, CtrlType.SEQ);
@@ -465,7 +467,7 @@ public class Interpreter {
 	final Switch s = (Switch) program.s;
 	final SingleSwitch ss = (SingleSwitch) s.sb;
 	final String x = largeCsCond(s.e, ss.cs);
-	final IfThenElse ifThenElse = new IfThenElse(x, ss.s, new Skip());
+	final IfThenElse ifThenElse = new IfThenElse(new Str(x), ss.s, new Skip());
 	return new Program(program.sdg, program.Vc, program.P, program.C, ifThenElse);
     }
 
@@ -485,21 +487,22 @@ public class Interpreter {
 	final CtrlVertex cv = program.C.pop();
 	final Deque<CtrlVertex> S = new ArrayDeque<CtrlVertex>(program.C);
 	S.add(cv);
-	final BreakEdge breakEdge = new BreakEdge(cv, S);
+	final BreakEdge breakEdge = new BreakEdge(cv.ct, v, S);
 	return new Program(program.sdg, program.Vc, program.P, program.C, breakEdge);
     }
 
     private static Program breakEdgeLoopRule(final Program program) {
 	final BreakEdge s = (BreakEdge) program.s;
 	final CtrlVertex cv = program.C.pop();
-	final CtrlEdge ctrlEdge = new CtrlEdge(true, cv.v, new Skip());
-	return new Program(program.sdg, program.Vc, program.P, s.S, ctrlEdge);
+	final Vertex v1 = cv.v;
+	program.sdg.addEdge(s.v, v1, EdgeType.CTRL_TRUE);
+	return new Program(program.sdg, program.Vc, program.P, s.S, new Skip());
     }
 
     private static Program breakEdgeSequentialRule(final Program program) {
 	final BreakEdge s = (BreakEdge) program.s;
 	final CtrlVertex cv = program.C.pop();
-	final BreakEdge breakEdge = new BreakEdge(cv, s.S);
+	final BreakEdge breakEdge = new BreakEdge(cv.ct, s.v, s.S);
 	return new Program(program.sdg, program.Vc, program.P, program.C, breakEdge);
     }
 
@@ -510,20 +513,20 @@ public class Interpreter {
 	final CtrlVertex cv = program.C.pop();
 	final Deque<CtrlVertex> S = new ArrayDeque<CtrlVertex>(program.C);
 	S.add(cv);
-	final ContEdge contEdge = new ContEdge(cv, S);
+	final ContEdge contEdge = new ContEdge(cv, v, S);
 	return new Program(program.sdg, program.Vc, program.P, program.C, contEdge);
     }
 
     private static Program continueEdgeLoopRule(final Program program) {
 	final ContEdge s = (ContEdge) program.s;
-	final CtrlEdge ctrlEdge = new CtrlEdge(true, s.cv.v, new Skip());
-	return new Program(program.sdg, program.Vc, program.P, s.S, ctrlEdge);
+	program.sdg.addEdge(s.v, s.cv.v, EdgeType.CTRL_TRUE);
+	return new Program(program.sdg, program.Vc, program.P, s.S, new Skip());
     }
 
     private static Program continueEdgeSequentialRule(final Program program) {
 	final ContEdge s = (ContEdge) program.s;
 	final CtrlVertex cv = program.C.pop();
-	final ContEdge contEdge = new ContEdge(cv, s.S);
+	final ContEdge contEdge = new ContEdge(cv, s.v, s.S);
 	return new Program(program.sdg, program.Vc, program.P, program.C, contEdge);
     }
 

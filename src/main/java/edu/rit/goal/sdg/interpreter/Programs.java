@@ -5,13 +5,16 @@ import edu.rit.goal.sdg.interpreter.params.EmptyParam;
 import edu.rit.goal.sdg.interpreter.params.Param;
 import edu.rit.goal.sdg.interpreter.params.Params;
 import edu.rit.goal.sdg.interpreter.stmt.Assign;
+import edu.rit.goal.sdg.interpreter.stmt.Break;
 import edu.rit.goal.sdg.interpreter.stmt.Call;
+import edu.rit.goal.sdg.interpreter.stmt.Continue;
 import edu.rit.goal.sdg.interpreter.stmt.Def;
 import edu.rit.goal.sdg.interpreter.stmt.IfThenElse;
 import edu.rit.goal.sdg.interpreter.stmt.Ret;
 import edu.rit.goal.sdg.interpreter.stmt.Seq;
 import edu.rit.goal.sdg.interpreter.stmt.Skip;
 import edu.rit.goal.sdg.interpreter.stmt.Str;
+import edu.rit.goal.sdg.interpreter.stmt.While;
 import edu.rit.goal.sdg.statement.Stmt;
 
 public class Programs {
@@ -25,10 +28,24 @@ public class Programs {
 	return result;
     }
 
+    public static Program nestedBreak() {
+	final IfThenElse ifThenElse = new IfThenElse(new Str("true"), new Break(), new Skip());
+	final While whileStmt = new While(new Str("true"), ifThenElse);
+	final Def result = new Def(false, "m", whileStmt);
+	return new Program(result);
+    }
+
+    public static Program nestedContinue() {
+	final IfThenElse ifThenElse = new IfThenElse(new Str("true"), new Continue(), new Skip());
+	final While whileStmt = new While(new Str("true"), ifThenElse);
+	final Def result = new Def(false, "m", whileStmt);
+	return new Program(result);
+    }
+
     public static Program horwitz() {
 	final Assign l1 = new Assign("P", new Str("3.14"));
 	final Assign l2 = new Assign("rad", new Str("3"));
-	final IfThenElse l3 = new IfThenElse("DEBUG", new Assign("rad", new Str("4")), new Skip());
+	final IfThenElse l3 = new IfThenElse(new Str("DEBUG"), new Assign("rad", new Str("4")), new Skip());
 	final edu.rit.goal.sdg.interpreter.params.Param args1 = new Params("P",
 		new Params("rad", new Params("rad", new EmptyParam())));
 	final edu.rit.goal.sdg.interpreter.params.Param args2 = new Params("2",
@@ -41,8 +58,8 @@ public class Programs {
 	final Def main = new Def(false, "main", mainBody);
 	// Mult3 function
 	final Ret mult3Body = new Ret("op1*op2*op3");
-	final Def mult3 = new Def(true, "mult3", new Params("op1", new Params("op2", new Params("op3", new EmptyParam()))),
-		mult3Body);
+	final Def mult3 = new Def(true, "mult3",
+		new Params("op1", new Params("op2", new Params("op3", new EmptyParam()))), mult3Body);
 	final Stmt program = new Seq(main, mult3);
 	return new Program(program);
     }
