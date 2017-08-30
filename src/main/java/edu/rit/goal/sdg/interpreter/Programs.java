@@ -19,13 +19,13 @@ import edu.rit.goal.sdg.statement.Stmt;
 
 public class Programs {
 
-    public static Stmt simpleDef() {
+    public static Program simpleDef() {
 	final Param args = new Params("p1", new Params("p2", new EmptyParam()));
 	final Assign assign = new Assign("res", new Call("m1", new Params("1", new Params("2", new EmptyParam()))));
 	final Def main = new Def(false, "main", assign);
 	final Def m1 = new Def(true, "m1", args, new Skip());
 	final Stmt result = new Seq(main, m1);
-	return result;
+	return new Program(result);
     }
 
     public static Program returningMethod() {

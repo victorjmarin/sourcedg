@@ -15,7 +15,7 @@ public class Seq implements Stmt {
 
     @Override
     public String toString() {
-	return "[" + s1 + " ; " + s2 + "]";
+	return "{" + s1 + " ; " + s2 + "}";
     }
 
 }

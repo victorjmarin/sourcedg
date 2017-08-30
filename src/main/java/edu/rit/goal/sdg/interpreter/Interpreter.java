@@ -59,7 +59,7 @@ import edu.rit.goal.sdg.statement.Stmt;
 
 public class Interpreter {
 
-    public static Program PROGRAM = Programs.returningMethod();
+    public static Program PROGRAM = Programs.simpleDef();
 
     public static final boolean PRINT = true;
     public static final boolean PRINT_RULES = true;
@@ -651,8 +651,11 @@ public class Interpreter {
 
     private static Program ctrlEdgeDeferRule(final Program program) {
 	final CtrlEdge s = (CtrlEdge) program.s;
-	return new Program(program.sdg, program.Vc, program.P, program.C,
-		new Seq(new CtrlEdge(true, s.N, new Skip()), s.s));
+	final Defer d = (Defer) s.s;
+	final Defer defer = new Defer(new CtrlEdge(s.B, s.N, d.s));
+	final CtrlEdge ctrlEdge = new CtrlEdge(s.B, s.N, new Skip());
+	final Seq seq = new Seq(ctrlEdge, defer);
+	return new Program(program.sdg, program.Vc, program.P, program.C, seq);
     }
 
     // Large-step
