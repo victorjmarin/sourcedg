@@ -2,9 +2,12 @@ package edu.rit.goal.sdg.graph;
 
 public class Edge {
 
-    private final Vertex source;
-    private final Vertex target;
-    private final EdgeType type;
+    private Vertex source;
+    private Vertex target;
+    private EdgeType type;
+
+    public Edge() {
+    }
 
     public Edge(final Vertex source, final Vertex target, final EdgeType type) {
 	this.source = source;

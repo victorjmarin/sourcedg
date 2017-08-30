@@ -102,6 +102,10 @@ public class VisitorUtils {
 	methodNameReturnCount.put(methodName, true);
     }
 
+    public static void resetExitPoints() {
+	methodNameReturnCount = new HashMap<>();
+    }
+
     public static boolean isShortHandOperator(final String operator) {
 	switch (operator) {
 	case "=":

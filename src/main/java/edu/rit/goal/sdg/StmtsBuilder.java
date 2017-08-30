@@ -13,6 +13,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import edu.rit.goal.sdg.java8.antlr.Java8Lexer;
 import edu.rit.goal.sdg.java8.antlr.Java8Parser;
 import edu.rit.goal.sdg.java8.visitor.ClassBodyVisitor;
+import edu.rit.goal.sdg.java8.visitor.VisitorUtils;
 import edu.rit.goal.sdg.python3.antlr.Python3Lexer;
 import edu.rit.goal.sdg.python3.antlr.Python3Parser;
 import edu.rit.goal.sdg.python3.walker.FileInputVisitor;
@@ -20,11 +21,14 @@ import edu.rit.goal.sdg.statement.Stmt;
 
 public class StmtsBuilder {
 
+    private static boolean notWrapped = true;
+
     private enum Language {
 	JAVA, PYTHON
     }
 
     public static List<Stmt> from(final String source) {
+
 	List<Stmt> result = null;
 	final Lexer lexer;
 	CommonTokenStream tokens;
@@ -51,6 +55,12 @@ public class StmtsBuilder {
 	    result = visitor.visit(tree);
 	    break;
 	}
+	if (result == null && notWrapped) {
+	    notWrapped = false;
+	    result = from(wrap(source));
+	}
+	notWrapped = true;
+	VisitorUtils.resetExitPoints();
 	return result;
     }
 
@@ -63,7 +73,7 @@ public class StmtsBuilder {
 	return result;
     }
 
-    private String wrap(final String source) {
+    public static String wrap(final String source) {
 	final String cls = "public class WrapperClass {";
 	final StringBuilder sb = new StringBuilder(cls);
 	sb.append(source);

@@ -59,6 +59,8 @@ import edu.rit.goal.sdg.statement.Stmt;
 
 public class Interpreter {
 
+    public static Program PROGRAM = Programs.returningMethod();
+
     public static final boolean PRINT = true;
     public static final boolean PRINT_RULES = true;
 
@@ -101,8 +103,7 @@ public class Interpreter {
     }
 
     public static void main(final String[] args) {
-	final Program program = Programs.nestedContinue();
-	final Program result = interpret(program);
+	final Program result = interpret(PROGRAM);
 	if (PRINT)
 	    System.out.println(result.s + "\n");
 	final Set<String> allRules = new HashSet<String>(Arrays.asList(RULES));
@@ -294,7 +295,7 @@ public class Interpreter {
 
     private static Program defRule(final Program program) {
 	final Def s = (Def) program.s;
-	final Vertex v = new Vertex(VertexType.ENTER, s.x);
+	final Vertex v = new Vertex(VertexType.ENTRY, s.x);
 	program.sdg.addVertex(v);
 	final Param param1 = new Param(s.x, VertexType.FORMAL_OUT, new Params(s.x + "ResultOut", new EmptyParam()));
 	final Param param2 = new Param(s.x, VertexType.FORMAL_IN, new Params(s.x + "ResultIn", s.p));
@@ -306,7 +307,7 @@ public class Interpreter {
 
     private static Program voidDefRule(final Program program) {
 	final Def s = (Def) program.s;
-	final Vertex v = new Vertex(VertexType.ENTER, s.x);
+	final Vertex v = new Vertex(VertexType.ENTRY, s.x);
 	program.sdg.addVertex(v);
 	final Param param = new Param(s.x, VertexType.FORMAL_IN, s.p);
 	final Seq seq = new Seq(param, new Seq(s.s, new PopCtrl()));
@@ -622,7 +623,7 @@ public class Interpreter {
     private static Program callEdgeRule(final Program program) {
 	final CallEdge callEdge = (CallEdge) program.s;
 	final Optional<Vertex> ve = program.sdg.vertexSet().stream()
-		.filter(v -> v.getType().equals(VertexType.ENTER) && v.getLabel().equals(callEdge.x)).findFirst();
+		.filter(v -> v.getType().equals(VertexType.ENTRY) && v.getLabel().equals(callEdge.x)).findFirst();
 	if (!ve.isPresent())
 	    System.out.println("[WARN] Cannot find ENTER vertex for method '" + callEdge.x + "'");
 	else

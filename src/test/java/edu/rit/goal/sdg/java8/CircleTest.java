@@ -36,7 +36,7 @@ public class CircleTest {
     @Test
     public void enterShouldBeParsed() {
 	final Set<Vertex> vertices = sdg.vertexSet();
-	final List<Vertex> enterVtcs = vertices.stream().filter(v -> v.getType().equals(VertexType.ENTER))
+	final List<Vertex> enterVtcs = vertices.stream().filter(v -> v.getType().equals(VertexType.ENTRY))
 		.collect(Collectors.toList());
 	System.out.println("Enter vertices");
 	System.out.println("  " + enterVtcs);

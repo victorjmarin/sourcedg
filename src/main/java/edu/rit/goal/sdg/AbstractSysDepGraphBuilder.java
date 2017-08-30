@@ -45,16 +45,14 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
     protected Map<Vertex, List<Vertex>> ctrlVtxVarDeclMap = new HashMap<>();
     protected boolean currentCtrlIsDoStmt;
     private List<Stmt> stmts;
-    private Set<String> methods;
 
     @Override
     public SysDepGraph from(final String source) {
+	SysDepGraph result;
 	// Transform representation
 	stmts = StmtsBuilder.from(source);
 	// Build graph
-	final SysDepGraph result = _build(stmts);
-	methods = result.vertexSet().stream().filter(v -> v.getType().equals("ENTER")).map(v -> v.getLabel())
-		.collect(Collectors.toSet());
+	result = _build(stmts);
 	return result;
     }
 

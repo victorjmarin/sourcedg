@@ -47,7 +47,7 @@ public class MarinSysDepGraphBuilder extends AbstractSysDepGraphBuilder {
     public void methodSignature(final MethodSignature methodSignature, final SysDepGraph sdg) {
 	// Create ENTER vertex
 	final String methodName = methodSignature.getName();
-	final Vertex enterVtx = new Vertex(VertexType.ENTER, methodName, methodName);
+	final Vertex enterVtx = new Vertex(VertexType.ENTRY, methodName, methodName);
 	sdg.addVertex(enterVtx);
 	// Result vertex placeholder
 	final PrimitiveType returnType = methodSignature.getReturnType();

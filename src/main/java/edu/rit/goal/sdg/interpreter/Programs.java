@@ -28,6 +28,11 @@ public class Programs {
 	return result;
     }
 
+    public static Program returningMethod() {
+	final Def result = new Def(true, "m", new Params("p1", new EmptyParam()), new Skip());
+	return new Program(result);
+    }
+
     public static Program nestedBreak() {
 	final IfThenElse ifThenElse = new IfThenElse(new Str("true"), new Break(), new Skip());
 	final While whileStmt = new While(new Str("true"), ifThenElse);
