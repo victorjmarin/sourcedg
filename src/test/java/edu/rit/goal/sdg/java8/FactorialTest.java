@@ -72,7 +72,7 @@ public class FactorialTest {
 	final Set<Vertex> vertices = sdg.vertexSet();
 	final Vertex enterVtx = vertices.stream().filter(v -> v.getLabel().equals("getFactorial")).findFirst().get();
 	final Set<Edge> outgoingEdges = sdg.outgoingEdgesOf(enterVtx);
-	final Vertex cond = outgoingEdges.stream().filter(e -> e.getTarget().getType().equals(VertexType.COND))
+	final Vertex cond = outgoingEdges.stream().filter(e -> e.getTarget().getType().equals(VertexType.CTRL))
 		.findFirst().get().getTarget();
 	final Set<Edge> edges = sdg.outgoingEdgesOf(cond);
 	System.out.println("getFactorial loop control edges");
@@ -87,7 +87,7 @@ public class FactorialTest {
 	final Set<Vertex> vertices = sdg.vertexSet();
 	final Vertex enterVtx = vertices.stream().filter(v -> v.getLabel().equals("escLAB3P1V1")).findFirst().get();
 	final Set<Edge> outgoingEdges = sdg.outgoingEdgesOf(enterVtx);
-	final Vertex cond = outgoingEdges.stream().filter(e -> e.getTarget().getType().equals(VertexType.COND))
+	final Vertex cond = outgoingEdges.stream().filter(e -> e.getTarget().getType().equals(VertexType.CTRL))
 		.findFirst().get().getTarget();
 	final Set<Edge> edges = sdg.outgoingEdgesOf(cond);
 	System.out.println("escLAB3P1V1 loop control edges");
@@ -127,9 +127,9 @@ public class FactorialTest {
 	final Set<Vertex> vertices = sdg.vertexSet();
 	final Vertex enterVtx = vertices.stream().filter(v -> v.getLabel().equals("getFactorial")).findFirst().get();
 	final Set<Edge> outgoingEdges = sdg.outgoingEdgesOf(enterVtx);
-	final Vertex cond = outgoingEdges.stream().filter(e -> e.getTarget().getType().equals(VertexType.COND))
+	final Vertex cond = outgoingEdges.stream().filter(e -> e.getTarget().getType().equals(VertexType.CTRL))
 		.findFirst().get().getTarget();
-	final Set<Edge> edges = sdg.incomingEdgesOf(cond).stream().filter(e -> e.getType().equals(EdgeType.FLOW))
+	final Set<Edge> edges = sdg.incomingEdgesOf(cond).stream().filter(e -> e.getType().equals(EdgeType.DATA))
 		.collect(Collectors.toSet());
 	System.out.println("getFactorial loop data edges");
 	edges.forEach(e -> {
@@ -143,9 +143,9 @@ public class FactorialTest {
 	final Set<Vertex> vertices = sdg.vertexSet();
 	final Vertex enterVtx = vertices.stream().filter(v -> v.getLabel().equals("escLAB3P1V1")).findFirst().get();
 	final Set<Edge> outgoingEdges = sdg.outgoingEdgesOf(enterVtx);
-	final Vertex cond = outgoingEdges.stream().filter(e -> e.getTarget().getType().equals(VertexType.COND))
+	final Vertex cond = outgoingEdges.stream().filter(e -> e.getTarget().getType().equals(VertexType.CTRL))
 		.findFirst().get().getTarget();
-	final Set<Edge> edges = sdg.incomingEdgesOf(cond).stream().filter(e -> e.getType().equals(EdgeType.FLOW))
+	final Set<Edge> edges = sdg.incomingEdgesOf(cond).stream().filter(e -> e.getType().equals(EdgeType.DATA))
 		.collect(Collectors.toSet());
 	System.out.println("escLAB3P1V1 loop data edges");
 	edges.forEach(e -> {

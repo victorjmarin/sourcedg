@@ -103,7 +103,7 @@ public class VisitorUtils {
     }
 
     public static void resetExitPoints() {
-	methodNameReturnCount = new HashMap<>();
+	methodNameReturnCount.clear();
     }
 
     public static boolean isShortHandOperator(final String operator) {

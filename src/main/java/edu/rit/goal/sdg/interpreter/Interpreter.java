@@ -59,8 +59,9 @@ import edu.rit.goal.sdg.statement.Stmt;
 
 public class Interpreter {
 
-    public static Program PROGRAM = Programs.simpleDef();
+    public static int VTX_ID;
 
+    public static final Program PROGRAM = Programs.simpleDef();
     public static final boolean PRINT = true;
     public static final boolean PRINT_RULES = true;
 
@@ -103,6 +104,7 @@ public class Interpreter {
     }
 
     public static void main(final String[] args) {
+	VTX_ID = 0;
 	final Program result = interpret(PROGRAM);
 	if (PRINT)
 	    System.out.println(result.s + "\n");
@@ -295,7 +297,7 @@ public class Interpreter {
 
     private static Program defRule(final Program program) {
 	final Def s = (Def) program.s;
-	final Vertex v = new Vertex(VertexType.ENTRY, s.x);
+	final Vertex v = new Vertex(VTX_ID++, VertexType.ENTRY, s.x);
 	program.sdg.addVertex(v);
 	final Param param1 = new Param(s.x, VertexType.FORMAL_OUT, new Params(s.x + "ResultOut", new EmptyParam()));
 	final Param param2 = new Param(s.x, VertexType.FORMAL_IN, new Params(s.x + "ResultIn", s.p));
@@ -307,7 +309,7 @@ public class Interpreter {
 
     private static Program voidDefRule(final Program program) {
 	final Def s = (Def) program.s;
-	final Vertex v = new Vertex(VertexType.ENTRY, s.x);
+	final Vertex v = new Vertex(VTX_ID++, VertexType.ENTRY, s.x);
 	program.sdg.addVertex(v);
 	final Param param = new Param(s.x, VertexType.FORMAL_IN, s.p);
 	final Seq seq = new Seq(param, new Seq(s.s, new PopCtrl()));
@@ -329,7 +331,7 @@ public class Interpreter {
 
     private static Program assignRule(final Program program) {
 	final Assign assign = (Assign) program.s;
-	final Vertex va = new Vertex(VertexType.ASSIGN, assign.x + "=" + assign.e);
+	final Vertex va = new Vertex(VTX_ID++, VertexType.ASSIGN, assign.x + "=" + assign.e);
 	program.sdg.addVertex(va);
 	program.Vc.add(va);
 	return new Program(program.sdg, program.Vc, program.P, program.C, new Skip());
@@ -337,7 +339,7 @@ public class Interpreter {
 
     private static Program preOpRule(final Program program) {
 	final PreOp preOp = (PreOp) program.s;
-	final Vertex v = new Vertex(VertexType.ASSIGN, preOp.op + preOp.x);
+	final Vertex v = new Vertex(VTX_ID++, VertexType.ASSIGN, preOp.op + preOp.x);
 	program.sdg.addVertex(v);
 	program.Vc.add(v);
 	return new Program(program.sdg, program.Vc, program.P, program.C, new Skip());
@@ -345,7 +347,7 @@ public class Interpreter {
 
     private static Program postOpRule(final Program program) {
 	final PostOp postOp = (PostOp) program.s;
-	final Vertex v = new Vertex(VertexType.ASSIGN, postOp.x + postOp.op);
+	final Vertex v = new Vertex(VTX_ID++, VertexType.ASSIGN, postOp.x + postOp.op);
 	program.sdg.addVertex(v);
 	program.Vc.add(v);
 	return new Program(program.sdg, program.Vc, program.P, program.C, new Skip());
@@ -353,7 +355,7 @@ public class Interpreter {
 
     private static Program returnRule(final Program program) {
 	final Ret ret = (Ret) program.s;
-	final Vertex v = new Vertex(VertexType.RETURN, ret.e);
+	final Vertex v = new Vertex(VTX_ID++, VertexType.RETURN, ret.e);
 	program.sdg.addVertex(v);
 	program.Vc.add(v);
 	return new Program(program.sdg, program.Vc, program.P, program.C, new Skip());
@@ -388,7 +390,7 @@ public class Interpreter {
 
     private static Program ifThenElseRule(final Program program) {
 	final IfThenElse s = (IfThenElse) program.s;
-	final Vertex v = new Vertex(VertexType.COND, s.e.toString());
+	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL, s.e.toString());
 	program.sdg.addVertex(v);
 	program.Vc.clear();
 	final CtrlVertex cv = new CtrlVertex(v, CtrlType.SEQ);
@@ -401,7 +403,7 @@ public class Interpreter {
 
     private static Program whileRule(final Program program) {
 	final While s = (While) program.s;
-	final Vertex v = new Vertex(VertexType.COND, s.e.toString());
+	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL, s.e.toString());
 	program.sdg.addVertex(v);
 	program.sdg.addEdge(v, v, EdgeType.CTRL_TRUE);
 	program.Vc.clear();
@@ -414,7 +416,7 @@ public class Interpreter {
 
     private static Program doWhileRule(final Program program) {
 	final DoWhile s = (DoWhile) program.s;
-	final Vertex v = new Vertex(VertexType.COND, s.e.toString());
+	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL, s.e.toString());
 	program.sdg.addVertex(v);
 	program.sdg.addEdge(v, v, EdgeType.CTRL_TRUE);
 	program.Vc.clear();
@@ -428,7 +430,7 @@ public class Interpreter {
     private static Program ctrlEdgeDoWhileRule(final Program program) {
 	final CtrlEdge s = (CtrlEdge) program.s;
 	final DoWhile doWhile = (DoWhile) s.s;
-	final Vertex v = new Vertex(VertexType.COND, doWhile.e.toString());
+	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL, doWhile.e.toString());
 	program.sdg.addVertex(v);
 	program.Vc.clear();
 	program.Vc.add(v);
@@ -443,7 +445,7 @@ public class Interpreter {
 
     private static Program forRule(final Program program) {
 	final For s = (For) program.s;
-	final Vertex v = new Vertex(VertexType.COND, s.sc.toString());
+	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL, s.sc.toString());
 	program.sdg.addVertex(v);
 	program.sdg.addEdge(v, v, EdgeType.CTRL_TRUE);
 	program.Vc.clear();
@@ -458,7 +460,7 @@ public class Interpreter {
 
     private static Program switchEmptyRule(final Program program) {
 	final Switch s = (Switch) program.s;
-	final Vertex v = new Vertex(VertexType.COND, s.e.toString());
+	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL, s.e.toString());
 	program.sdg.addVertex(v);
 	program.Vc.add(v);
 	return new Program(program.sdg, program.Vc, program.P, program.C, new Skip());
@@ -482,7 +484,7 @@ public class Interpreter {
     }
 
     private static Program breakRule(final Program program) {
-	final Vertex v = new Vertex(VertexType.BREAK, "break");
+	final Vertex v = new Vertex(VTX_ID++, VertexType.BREAK, "break");
 	program.sdg.addVertex(v);
 	program.Vc.add(v);
 	final CtrlVertex cv = program.C.pop();
@@ -508,7 +510,7 @@ public class Interpreter {
     }
 
     private static Program continueRule(final Program program) {
-	final Vertex v = new Vertex(VertexType.CONTINUE, "continue");
+	final Vertex v = new Vertex(VTX_ID++, VertexType.CONTINUE, "continue");
 	program.sdg.addVertex(v);
 	program.Vc.add(v);
 	final CtrlVertex cv = program.C.pop();
@@ -599,7 +601,7 @@ public class Interpreter {
 
     private static Program callRule(final Program program) {
 	final Call s = (Call) program.s;
-	final Vertex vc = new Vertex(VertexType.CALL, s.toString());
+	final Vertex vc = new Vertex(VTX_ID++, VertexType.CALL, s.toString());
 	program.sdg.addVertex(vc);
 	final Seq seq2 = new Seq(new Vc(vc), new Defer(new CallEdge(vc, s.x)));
 	final Param param = new Param(s.x, VertexType.ACTUAL_IN, s.p);
@@ -610,7 +612,7 @@ public class Interpreter {
     private static Program assignCallRule(final Program program) {
 	final Assign assign = (Assign) program.s;
 	final Call call = (Call) assign.e;
-	final Vertex va = new Vertex(VertexType.ASSIGN, assign.x + "=" + call.x + call.p);
+	final Vertex va = new Vertex(VTX_ID++, VertexType.ASSIGN, assign.x + "=" + call.x + call.p);
 	program.sdg.addVertex(va);
 	final Param param1 = new Param(call.x, VertexType.ACTUAL_OUT, new Params(assign.x, new EmptyParam()));
 	final Param param2 = new Param(call.x, VertexType.ACTUAL_IN, new Params(assign.x, call.p));
@@ -667,7 +669,7 @@ public class Interpreter {
     private static LinkedHashSet<Vertex> largeParamRule(final Param param) {
 	final Params params = (Params) param.p;
 	final LinkedHashSet<Vertex> V = largeParam(new Param(param.t, params.p));
-	V.add(new Vertex(param.t, params.x));
+	V.add(new Vertex(VTX_ID++, param.t, params.x));
 	return V;
     }
 

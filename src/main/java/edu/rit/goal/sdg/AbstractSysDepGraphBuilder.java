@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import edu.rit.goal.sdg.graph.SysDepGraph;
 import edu.rit.goal.sdg.graph.Vertex;
 import edu.rit.goal.sdg.graph.VertexType;
+import edu.rit.goal.sdg.java8.visitor.VisitorUtils;
 import edu.rit.goal.sdg.statement.ArrayAccessAssignment;
 import edu.rit.goal.sdg.statement.Assignment;
 import edu.rit.goal.sdg.statement.BreakStmt;
@@ -38,6 +39,7 @@ import edu.rit.goal.sdg.statement.control.WhileStmt;
 
 public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
 
+    protected int vtxId;
     protected Vertex currentEnterVertex;
     protected Vertex currentResultOutVertex;
     protected final Map<String, List<Vertex>> formalParameters = new HashMap<>();
@@ -50,8 +52,10 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
     public SysDepGraph from(final String source) {
 	SysDepGraph result;
 	// Transform representation
-	stmts = StmtsBuilder.from(source);
+	stmts = new StmtsBuilder().from(source);
+	VisitorUtils.resetExitPoints();
 	// Build graph
+	vtxId = 0;
 	result = _build(stmts);
 	return result;
     }
@@ -268,13 +272,13 @@ public abstract class AbstractSysDepGraphBuilder implements SysDepGraphBuilder {
     }
 
     protected Vertex createDeclVtx(final String label, final String lookupId, final boolean isForStmtHeader) {
-	final Vertex result = new Vertex(VertexType.DECL, label, lookupId);
+	final Vertex result = new Vertex(vtxId++, VertexType.DECL, label, lookupId);
 	putVarWriting(result, isForStmtHeader);
 	return result;
     }
 
     protected Vertex createAssignVtx(final String label, final String lookupId, final boolean isForStmtHeader) {
-	final Vertex result = new Vertex(VertexType.ASSIGN, label, lookupId);
+	final Vertex result = new Vertex(vtxId++, VertexType.ASSIGN, label, lookupId);
 	putVarWriting(result, isForStmtHeader);
 	return result;
     }
