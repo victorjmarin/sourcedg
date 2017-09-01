@@ -1,7 +1,5 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
-import edu.rit.goal.sdg.statement.Stmt;
-
 public class IfThenElse implements Stmt {
 
     public Expr e;

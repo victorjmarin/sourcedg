@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import edu.rit.goal.sdg.graph.Vertex;
-import edu.rit.goal.sdg.statement.Stmt;
 
 public class CtrlEdge implements Stmt {
 

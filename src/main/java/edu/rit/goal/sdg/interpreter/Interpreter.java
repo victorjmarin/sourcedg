@@ -43,6 +43,7 @@ import edu.rit.goal.sdg.interpreter.stmt.PreOp;
 import edu.rit.goal.sdg.interpreter.stmt.Ret;
 import edu.rit.goal.sdg.interpreter.stmt.Seq;
 import edu.rit.goal.sdg.interpreter.stmt.Skip;
+import edu.rit.goal.sdg.interpreter.stmt.Stmt;
 import edu.rit.goal.sdg.interpreter.stmt.Str;
 import edu.rit.goal.sdg.interpreter.stmt.Vc;
 import edu.rit.goal.sdg.interpreter.stmt.While;
@@ -55,7 +56,6 @@ import edu.rit.goal.sdg.interpreter.stmt.sw.MultiSwitch;
 import edu.rit.goal.sdg.interpreter.stmt.sw.SingleCase;
 import edu.rit.goal.sdg.interpreter.stmt.sw.SingleSwitch;
 import edu.rit.goal.sdg.interpreter.stmt.sw.Switch;
-import edu.rit.goal.sdg.statement.Stmt;
 
 public class Interpreter {
 
@@ -299,7 +299,7 @@ public class Interpreter {
 	final Def s = (Def) program.s;
 	final Vertex v = new Vertex(VTX_ID++, VertexType.ENTRY, s.x);
 	program.sdg.addVertex(v);
-	final Param param1 = new Param(s.x, VertexType.FORMAL_OUT, new Params(s.x + "ResultOut", new EmptyParam()));
+	final Param param1 = new Param(s.x, VertexType.FORMAL_OUT, new Str(s.x + "ResultOut"));
 	final Param param2 = new Param(s.x, VertexType.FORMAL_IN, new Params(s.x + "ResultIn", s.p));
 	final Seq seq = new Seq(param1, new Seq(param2, new Seq(s.s, new PopCtrl())));
 	final CtrlVertex cv = new CtrlVertex(v, CtrlType.SEQ);
@@ -612,9 +612,9 @@ public class Interpreter {
     private static Program assignCallRule(final Program program) {
 	final Assign assign = (Assign) program.s;
 	final Call call = (Call) assign.e;
-	final Vertex va = new Vertex(VTX_ID++, VertexType.ASSIGN, assign.x + "=" + call.x + call.p);
+	final Vertex va = new Vertex(VTX_ID++, VertexType.ASSIGN, assign.x + "=" + call.x + "(" + call.p + ")");
 	program.sdg.addVertex(va);
-	final Param param1 = new Param(call.x, VertexType.ACTUAL_OUT, new Params(assign.x, new EmptyParam()));
+	final Param param1 = new Param(call.x, VertexType.ACTUAL_OUT, new Str(assign.x));
 	final Param param2 = new Param(call.x, VertexType.ACTUAL_IN, new Params(assign.x, call.p));
 	final Seq seq2 = new Seq(param1, param2);
 	final Seq seq3 = new Seq(new Vc(va), new Defer(new CallEdge(va, call.x)));
@@ -667,6 +667,13 @@ public class Interpreter {
     }
 
     private static LinkedHashSet<Vertex> largeParamRule(final Param param) {
+	final Str str = (Str) param.p;
+	final LinkedHashSet<Vertex> V = new LinkedHashSet<>();
+	V.add(new Vertex(VTX_ID++, param.t, str.value));
+	return V;
+    }
+
+    private static LinkedHashSet<Vertex> largeParamsRule(final Param param) {
 	final Params params = (Params) param.p;
 	final LinkedHashSet<Vertex> V = largeParam(new Param(param.t, params.p));
 	V.add(new Vertex(VTX_ID++, param.t, params.x));
@@ -678,8 +685,10 @@ public class Interpreter {
 	final edu.rit.goal.sdg.interpreter.params.Param p = (edu.rit.goal.sdg.interpreter.params.Param) param.p;
 	if (p instanceof EmptyParam) {
 	    result = largeNoParamRule(param);
-	} else {
+	} else if (p instanceof Str) {
 	    result = largeParamRule(param);
+	} else if (p instanceof Params) {
+	    result = largeParamsRule(param);
 	}
 	return result;
     }

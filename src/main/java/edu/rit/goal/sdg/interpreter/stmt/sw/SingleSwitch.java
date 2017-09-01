@@ -1,6 +1,6 @@
 package edu.rit.goal.sdg.interpreter.stmt.sw;
 
-import edu.rit.goal.sdg.statement.Stmt;
+import edu.rit.goal.sdg.interpreter.stmt.Stmt;
 
 public class SingleSwitch implements ISwitchBody {
 

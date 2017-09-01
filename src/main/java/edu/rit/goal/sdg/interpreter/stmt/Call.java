@@ -1,7 +1,6 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
 import edu.rit.goal.sdg.interpreter.params.Param;
-import edu.rit.goal.sdg.statement.Stmt;
 
 public class Call implements Stmt, Expr {
 
@@ -18,7 +17,9 @@ public class Call implements Stmt, Expr {
     public String toString() {
 	final StringBuilder sb = new StringBuilder();
 	sb.append(x);
+	sb.append("(");
 	sb.append(p.toString());
+	sb.append(")");
 	return sb.toString();
     }
 

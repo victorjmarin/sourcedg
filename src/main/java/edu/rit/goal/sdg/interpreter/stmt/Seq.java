@@ -1,7 +1,5 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
-import edu.rit.goal.sdg.statement.Stmt;
-
 public class Seq implements Stmt {
 
     public Stmt s1;

@@ -4,7 +4,6 @@ import java.util.Deque;
 
 import edu.rit.goal.sdg.graph.Vertex;
 import edu.rit.goal.sdg.interpreter.stmt.CtrlVertex.CtrlType;
-import edu.rit.goal.sdg.statement.Stmt;
 
 public class BreakEdge implements Stmt {
 

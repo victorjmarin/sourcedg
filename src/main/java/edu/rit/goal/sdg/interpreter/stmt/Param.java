@@ -1,7 +1,6 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
 import edu.rit.goal.sdg.graph.VertexType;
-import edu.rit.goal.sdg.statement.Stmt;
 
 public class Param implements Stmt {
 

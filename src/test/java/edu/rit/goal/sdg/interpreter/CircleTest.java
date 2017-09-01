@@ -98,7 +98,7 @@ public class CircleTest {
     @Test
     public void callMult3AreaNodes() {
 	final Set<Vertex> vertices = sdg.vertexSet();
-	final Vertex mult3Vtx = vertices.stream().filter(v -> v.getLabel().equals("area=mult3(P, (rad, (rad, ø)))"))
+	final Vertex mult3Vtx = vertices.stream().filter(v -> v.getLabel().equals("area=mult3(P, rad, rad)"))
 		.findFirst().get();
 	final Set<Edge> outgoingEdges = sdg.outgoingEdgesOf(mult3Vtx);
 	System.out.println("Outgoing edges of area=mult3[p, rad, rad]");
@@ -113,7 +113,7 @@ public class CircleTest {
     @Test
     public void callMult3CircNodes() {
 	final Set<Vertex> vertices = sdg.vertexSet();
-	final Vertex mult3Vtx = vertices.stream().filter(v -> v.getLabel().equals("circ=mult3(2, (P, (rad, ø)))"))
+	final Vertex mult3Vtx = vertices.stream().filter(v -> v.getLabel().equals("circ=mult3(2, P, rad)"))
 		.findFirst().get();
 	final Set<Edge> outgoingEdges = sdg.outgoingEdgesOf(mult3Vtx);
 	System.out.println("Outgoing edges of circ=mult3[2, p, rad]");
@@ -253,7 +253,8 @@ public class CircleTest {
     @Test
     public void areaOutput() {
 	final Set<Vertex> vertices = sdg.vertexSet();
-	final Vertex paramVtx = vertices.stream().filter(v -> v.toString().equals("CALL-output(area, ø)")).findFirst()
+	final Vertex paramVtx = vertices.stream()
+		.filter(v -> v.getType().equals(VertexType.CALL) && v.getLabel().equals("output(area)")).findFirst()
 		.get();
 	final Set<Edge> incomingEdges = sdg.incomingEdgesOf(paramVtx);
 	System.out.println("Area output");
@@ -268,7 +269,8 @@ public class CircleTest {
     @Test
     public void circOutput() {
 	final Set<Vertex> vertices = sdg.vertexSet();
-	final Vertex paramVtx = vertices.stream().filter(v -> v.toString().equals("CALL-output(circ, ø)")).findFirst()
+	final Vertex paramVtx = vertices.stream()
+		.filter(v -> v.getType().equals(VertexType.CALL) && v.getLabel().equals("output(circ)")).findFirst()
 		.get();
 	final Set<Edge> incomingEdges = sdg.incomingEdgesOf(paramVtx);
 	System.out.println("Circ output");

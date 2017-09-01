@@ -13,7 +13,7 @@ public class Params implements Param {
 
     @Override
     public String toString() {
-	return "(" + x + ", " + p + ")";
+	return x + ", " + p;
     }
 
 }

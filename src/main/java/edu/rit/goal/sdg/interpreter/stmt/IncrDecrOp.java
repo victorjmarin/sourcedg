@@ -1,7 +1,5 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
-import edu.rit.goal.sdg.statement.Stmt;
-
 public abstract class IncrDecrOp implements Stmt {
 
     public String x;

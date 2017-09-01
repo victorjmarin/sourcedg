@@ -2,7 +2,6 @@ package edu.rit.goal.sdg.interpreter.stmt;
 
 import edu.rit.goal.sdg.interpreter.params.EmptyParam;
 import edu.rit.goal.sdg.interpreter.params.Param;
-import edu.rit.goal.sdg.statement.Stmt;
 
 public class Def implements Stmt {
 

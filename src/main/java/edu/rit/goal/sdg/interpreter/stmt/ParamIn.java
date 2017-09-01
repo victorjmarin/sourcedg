@@ -3,7 +3,6 @@ package edu.rit.goal.sdg.interpreter.stmt;
 import java.util.LinkedHashSet;
 
 import edu.rit.goal.sdg.graph.Vertex;
-import edu.rit.goal.sdg.statement.Stmt;
 
 public class ParamIn implements Stmt {
 
