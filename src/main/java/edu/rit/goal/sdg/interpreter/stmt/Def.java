@@ -29,7 +29,7 @@ public class Def implements Stmt {
 
     @Override
     public String toString() {
-	return "def " + b + " " + x + " " + p + ": " + s;
+	return "def " + b + " " + x + " (" + p + "): " + s;
     }
 
 }

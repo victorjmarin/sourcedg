@@ -66,14 +66,15 @@ public class ClassBodyVisitor extends JavaParserBaseVisitor<Stmt> {
 		// Not abstract method
 		final List<Stmt> stmts = new LinkedList<>();
 		if (blockCtx != null) {
-		    final List<BlockStatementContext> blockStatementsCtx = blockCtx.blockStatement();
+		    final List<BlockStatementContext> blockStmtCtx = blockCtx.blockStatement();
 		    // Not empty method
-		    if (blockStatementsCtx != null) {
-			for (final BlockStatementContext bsc : blockStatementsCtx) {
-
+		    if (blockStmtCtx != null) {
+			for (final BlockStatementContext bsc : blockStmtCtx) {
+			    final BlockStmtVisitor visitor = new BlockStmtVisitor();
+			    final List<Stmt> blockStmts = visitor.visit(bsc);
+			    stmts.addAll(blockStmts);
 			}
 		    }
-
 		}
 		final Def def = new Def(b, x, param(params), seq(stmts));
 		defStmts.add(def);

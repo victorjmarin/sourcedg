@@ -18,7 +18,7 @@ public class Call implements Stmt, Expr {
 	final StringBuilder sb = new StringBuilder();
 	sb.append(x);
 	sb.append("(");
-	sb.append(p.toString());
+	sb.append(p);
 	sb.append(")");
 	return sb.toString();
     }
