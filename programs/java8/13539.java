@@ -1,1 +1,0 @@
-/*13539*/void assignment1(int[] a) {int odd = 1;int even = 0;int i = 0;while (i < a.length) {if (i % 2 == 0)odd *= a[i];if (i % 2 == 1)even += a[i];i++;}System.out.println(odd + "," + even);}
