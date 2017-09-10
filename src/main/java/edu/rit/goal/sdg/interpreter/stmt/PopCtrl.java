@@ -1,6 +1,6 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
-public class PopCtrl implements Stmt {
+public class PopCtrl extends Stmt {
 
     @Override
     public String toString() {

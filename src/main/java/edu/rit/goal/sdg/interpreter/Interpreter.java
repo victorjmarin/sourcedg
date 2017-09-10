@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import edu.rit.goal.sdg.DefUsesUtils;
 import edu.rit.goal.sdg.graph.EdgeType;
 import edu.rit.goal.sdg.graph.SysDepGraph;
 import edu.rit.goal.sdg.graph.Vertex;
@@ -40,7 +41,7 @@ import edu.rit.goal.sdg.interpreter.stmt.ParamOut;
 import edu.rit.goal.sdg.interpreter.stmt.PopCtrl;
 import edu.rit.goal.sdg.interpreter.stmt.PostOp;
 import edu.rit.goal.sdg.interpreter.stmt.PreOp;
-import edu.rit.goal.sdg.interpreter.stmt.Ret;
+import edu.rit.goal.sdg.interpreter.stmt.Return;
 import edu.rit.goal.sdg.interpreter.stmt.Seq;
 import edu.rit.goal.sdg.interpreter.stmt.Skip;
 import edu.rit.goal.sdg.interpreter.stmt.Stmt;
@@ -62,7 +63,7 @@ public class Interpreter {
     public static int VTX_ID;
 
     public static final Program PROGRAM = Programs.simpleDef();
-    public static final boolean PRINT = true;
+    public static final boolean PRINT = false;
     public static final boolean PRINT_RULES = true;
 
     private static Set<String> execRules = new HashSet<>();
@@ -282,7 +283,7 @@ public class Interpreter {
 	} else if (s instanceof ParamOut) {
 	    printRule("paramOutRule");
 	    result = paramOutRule(program);
-	} else if (s instanceof Ret) {
+	} else if (s instanceof Return) {
 	    printRule("returnRule");
 	    result = returnRule(program);
 	} else if (s instanceof PreOp) {
@@ -332,6 +333,8 @@ public class Interpreter {
     private static Program assignRule(final Program program) {
 	final Assign assign = (Assign) program.s;
 	final Vertex va = new Vertex(VTX_ID++, VertexType.ASSIGN, assign.x + "=" + assign.e);
+	va.setAssignedVariable(assign.getDef());
+	va.setReadingVariables(assign.getUses());
 	program.sdg.addVertex(va);
 	program.Vc.add(va);
 	return new Program(program.sdg, program.Vc, program.P, program.C, new Skip());
@@ -354,8 +357,9 @@ public class Interpreter {
     }
 
     private static Program returnRule(final Program program) {
-	final Ret ret = (Ret) program.s;
+	final Return ret = (Return) program.s;
 	final Vertex v = new Vertex(VTX_ID++, VertexType.RETURN, ret.e);
+	v.setReadingVariables(ret.getUses());
 	program.sdg.addVertex(v);
 	program.Vc.add(v);
 	return new Program(program.sdg, program.Vc, program.P, program.C, new Skip());
@@ -390,7 +394,9 @@ public class Interpreter {
 
     private static Program ifThenElseRule(final Program program) {
 	final IfThenElse s = (IfThenElse) program.s;
-	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL, s.e.toString());
+	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL_IF, s.e.toString());
+	v.setAssignedVariable(s.getDef());
+	v.setReadingVariables(s.getUses());
 	program.sdg.addVertex(v);
 	program.Vc.clear();
 	final CtrlVertex cv = new CtrlVertex(v, CtrlType.SEQ);
@@ -403,7 +409,7 @@ public class Interpreter {
 
     private static Program whileRule(final Program program) {
 	final While s = (While) program.s;
-	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL, s.e.toString());
+	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL_WHILE, s.e.toString());
 	program.sdg.addVertex(v);
 	program.sdg.addEdge(v, v, EdgeType.CTRL_TRUE);
 	program.Vc.clear();
@@ -416,7 +422,7 @@ public class Interpreter {
 
     private static Program doWhileRule(final Program program) {
 	final DoWhile s = (DoWhile) program.s;
-	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL, s.e.toString());
+	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL_DO, s.e.toString());
 	program.sdg.addVertex(v);
 	program.sdg.addEdge(v, v, EdgeType.CTRL_TRUE);
 	program.Vc.clear();
@@ -430,7 +436,7 @@ public class Interpreter {
     private static Program ctrlEdgeDoWhileRule(final Program program) {
 	final CtrlEdge s = (CtrlEdge) program.s;
 	final DoWhile doWhile = (DoWhile) s.s;
-	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL, doWhile.e.toString());
+	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL_DO, doWhile.e.toString());
 	program.sdg.addVertex(v);
 	program.Vc.clear();
 	program.Vc.add(v);
@@ -445,7 +451,7 @@ public class Interpreter {
 
     private static Program forRule(final Program program) {
 	final For s = (For) program.s;
-	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL, s.sc.toString());
+	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL_FOR, s.sc.toString());
 	program.sdg.addVertex(v);
 	program.sdg.addEdge(v, v, EdgeType.CTRL_TRUE);
 	program.Vc.clear();
@@ -460,7 +466,7 @@ public class Interpreter {
 
     private static Program switchEmptyRule(final Program program) {
 	final Switch s = (Switch) program.s;
-	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL, s.e.toString());
+	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL_IF, s.e.toString());
 	program.sdg.addVertex(v);
 	program.Vc.add(v);
 	return new Program(program.sdg, program.Vc, program.P, program.C, new Skip());
@@ -471,6 +477,7 @@ public class Interpreter {
 	final SingleSwitch ss = (SingleSwitch) s.sb;
 	final String x = largeCsCond(s.e, ss.cs);
 	final IfThenElse ifThenElse = new IfThenElse(new Str(x), ss.s, new Skip());
+	ifThenElse.setUses(s.getUses());
 	return new Program(program.sdg, program.Vc, program.P, program.C, ifThenElse);
     }
 
@@ -602,6 +609,8 @@ public class Interpreter {
     private static Program callRule(final Program program) {
 	final Call s = (Call) program.s;
 	final Vertex vc = new Vertex(VTX_ID++, VertexType.CALL, s.toString());
+	vc.setAssignedVariable(s.getDef());
+	vc.setReadingVariables(s.getUses());
 	program.sdg.addVertex(vc);
 	final Seq seq2 = new Seq(new Vc(vc), new Defer(new CallEdge(vc, s.x)));
 	final Param param = new Param(s.x, VertexType.ACTUAL_IN, s.p);
@@ -612,7 +621,9 @@ public class Interpreter {
     private static Program assignCallRule(final Program program) {
 	final Assign assign = (Assign) program.s;
 	final Call call = (Call) assign.e;
-	final Vertex va = new Vertex(VTX_ID++, VertexType.ASSIGN, assign.x + "=" + call.x + "(" + call.p + ")");
+	final Vertex va = new Vertex(VTX_ID++, VertexType.CALL, assign.x + "=" + call.x + "(" + call.p + ")");
+	va.setAssignedVariable(assign.getDef());
+	va.setReadingVariables(assign.getUses());
 	program.sdg.addVertex(va);
 	final Param param1 = new Param(call.x, VertexType.ACTUAL_OUT, new Str(assign.x));
 	final Param param2 = new Param(call.x, VertexType.ACTUAL_IN, new Params(assign.x, call.p));
@@ -669,14 +680,24 @@ public class Interpreter {
     private static LinkedHashSet<Vertex> largeParamRule(final Param param) {
 	final Str str = (Str) param.p;
 	final LinkedHashSet<Vertex> V = new LinkedHashSet<>();
-	V.add(new Vertex(VTX_ID++, param.t, str.value));
+	final Vertex v = new Vertex(VTX_ID++, param.t, str.value);
+	// Def and uses for data dependencies
+	v.setAssignedVariable(str.getDef());
+	v.setReadingVariables(str.getUses());
+	DefUsesUtils.paramsDefUses(v, str.value);
+	V.add(v);
 	return V;
     }
 
     private static LinkedHashSet<Vertex> largeParamsRule(final Param param) {
 	final Params params = (Params) param.p;
 	final LinkedHashSet<Vertex> V = largeParam(new Param(param.t, params.p));
-	V.add(new Vertex(VTX_ID++, param.t, params.x));
+	final Vertex v = new Vertex(VTX_ID++, param.t, params.x);
+	// Def and uses for data dependencies
+	v.setAssignedVariable(params.getDef());
+	v.setReadingVariables(params.getUses());
+	DefUsesUtils.paramsDefUses(v, params.x);
+	V.add(v);
 	return V;
     }
 

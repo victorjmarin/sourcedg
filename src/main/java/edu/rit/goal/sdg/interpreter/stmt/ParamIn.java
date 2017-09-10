@@ -4,7 +4,7 @@ import java.util.LinkedHashSet;
 
 import edu.rit.goal.sdg.graph.Vertex;
 
-public class ParamIn implements Stmt {
+public class ParamIn extends Stmt {
 
     public String x;
     public int i;

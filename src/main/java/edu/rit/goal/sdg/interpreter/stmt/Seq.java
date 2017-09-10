@@ -1,6 +1,6 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
-public class Seq implements Stmt {
+public class Seq extends Stmt {
 
     public Stmt s1;
     public Stmt s2;

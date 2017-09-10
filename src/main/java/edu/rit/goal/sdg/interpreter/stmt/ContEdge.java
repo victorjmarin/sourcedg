@@ -4,7 +4,7 @@ import java.util.Deque;
 
 import edu.rit.goal.sdg.graph.Vertex;
 
-public class ContEdge implements Stmt {
+public class ContEdge extends Stmt {
 
     public CtrlVertex cv;
     public Vertex v;

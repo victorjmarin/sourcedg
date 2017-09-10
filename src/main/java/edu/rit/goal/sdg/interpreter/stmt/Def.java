@@ -3,7 +3,7 @@ package edu.rit.goal.sdg.interpreter.stmt;
 import edu.rit.goal.sdg.interpreter.params.EmptyParam;
 import edu.rit.goal.sdg.interpreter.params.Param;
 
-public class Def implements Stmt {
+public class Def extends Stmt {
 
     // Flag indicating if the function returns other than void
     public boolean b;

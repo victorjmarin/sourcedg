@@ -1,6 +1,6 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
-public class DoWhile implements Stmt {
+public class DoWhile extends Stmt {
 
     public Expr e;
     public Stmt s;

@@ -5,7 +5,7 @@ import java.util.Deque;
 import edu.rit.goal.sdg.graph.Vertex;
 import edu.rit.goal.sdg.interpreter.stmt.CtrlVertex.CtrlType;
 
-public class BreakEdge implements Stmt {
+public class BreakEdge extends Stmt {
 
     public CtrlType ct;
     public Vertex v;

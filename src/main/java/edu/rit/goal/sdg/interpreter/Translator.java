@@ -1,6 +1,9 @@
 package edu.rit.goal.sdg.interpreter;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
@@ -10,15 +13,20 @@ import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 import org.antlr.v4.runtime.tree.ParseTree;
 
+import edu.rit.goal.sdg.DefUsesUtils;
 import edu.rit.goal.sdg.interpreter.params.EmptyParam;
 import edu.rit.goal.sdg.interpreter.params.Param;
 import edu.rit.goal.sdg.interpreter.params.Params;
+import edu.rit.goal.sdg.interpreter.stmt.Call;
 import edu.rit.goal.sdg.interpreter.stmt.Seq;
 import edu.rit.goal.sdg.interpreter.stmt.Skip;
 import edu.rit.goal.sdg.interpreter.stmt.Stmt;
 import edu.rit.goal.sdg.interpreter.stmt.Str;
+import edu.rit.goal.sdg.java8.JavaUtils;
 import edu.rit.goal.sdg.java8.antlr.JavaLexer;
 import edu.rit.goal.sdg.java8.antlr.JavaParser;
+import edu.rit.goal.sdg.java8.antlr.JavaParser.ExpressionContext;
+import edu.rit.goal.sdg.java8.antlr.JavaParser.ExpressionListContext;
 import edu.rit.goal.sdg.java8.visitor.ClassBodyVisitor;
 
 public class Translator {
@@ -74,15 +82,34 @@ public class Translator {
 	return sb.toString();
     }
 
-    public static Param param(final List<Str> params) {
+    public static Param param(final List<Str> params, final boolean isFormal) {
 	Param result = null;
 	if (params.isEmpty()) {
 	    result = new EmptyParam();
 	} else if (params.size() == 1) {
 	    result = params.remove(0);
+	    DefUsesUtils.strDefUses((Str) result, isFormal);
 	} else {
-	    final String x = params.remove(0).value;
-	    result = new Params(x, param(params));
+	    final Str str = params.remove(0);
+	    final String x = str.value;
+	    result = new Params(x, param(params, isFormal));
+	    DefUsesUtils.paramInDefUses((Params) result, str, isFormal);
+	}
+	return result;
+    }
+
+    // TODO: Make more complete conversion. There will be cases in which there will be
+    // nested calls as an argument, for example. This will not work in such cases.
+    public static List<Str> params(final ParseTree ctx) {
+	final List<Str> result = new ArrayList<>();
+	if (ctx.getChildCount() == 0 && !",".equals(ctx.getText())) {
+	    final Str str = new Str(ctx);
+	    result.add(str);
+	    return result;
+	}
+	for (int i = 0; i < ctx.getChildCount(); i++) {
+	    final ParseTree child = ctx.getChild(i);
+	    result.addAll(params(child));
 	}
 	return result;
     }
@@ -98,6 +125,22 @@ public class Translator {
 	    result = new Seq(s, seq(stmts));
 	}
 	return result;
+    }
+
+    public static Call call(final ExpressionContext ctx) {
+	final List<ExpressionContext> exprCtxLst = ctx.expression();
+	final String x = exprCtxLst.stream().map(c -> c.getText()).collect(Collectors.joining());
+	final ExpressionListContext exprLstCtx = ctx.expressionList();
+	final List<Str> params = Translator.params(exprLstCtx);
+	final Param p = Translator.param(params, false);
+	final Call result = new Call(x, p);
+	final Set<String> uses = JavaUtils.uses(exprLstCtx);
+	result.setUses(uses);
+	return result;
+    }
+
+    public static void unsupported(final ParseTree ctx) {
+	System.out.println("Unsupported stmt: " + ctx.getText());
     }
 
 }

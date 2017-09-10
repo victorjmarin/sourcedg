@@ -10,7 +10,6 @@ import edu.rit.goal.sdg.interpreter.stmt.Stmt;
 import edu.rit.goal.sdg.interpreter.stmt.Str;
 import edu.rit.goal.sdg.java8.antlr.JavaParser;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.BlockContext;
-import edu.rit.goal.sdg.java8.antlr.JavaParser.BlockStatementContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.ClassBodyDeclarationContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.FormalParameterContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.FormalParameterListContext;
@@ -53,26 +52,16 @@ public class ClassBodyVisitor extends JavaParserBaseVisitor<Stmt> {
 		final FormalParameterListContext formalParamListCtx = formalParamsCtx.formalParameterList();
 		if (formalParamListCtx != null) {
 		    for (final FormalParameterContext formalParamCtx : formalParamListCtx.formalParameter()) {
-			final Str str = new Str(formalParamCtx.variableDeclaratorId().getText());
+			final Str str = new Str(formalParamCtx.variableDeclaratorId().IDENTIFIER());
 			params.add(str);
 		    }
 		}
 		// Method body
 		final BlockContext blockCtx = methodBodyCtx.block();
-		// Not abstract method
-		final List<Stmt> stmts = new LinkedList<>();
-		if (blockCtx != null) {
-		    final List<BlockStatementContext> blockStmtCtx = blockCtx.blockStatement();
-		    // Not empty method
-		    if (blockStmtCtx != null) {
-			for (final BlockStatementContext bsc : blockStmtCtx) {
-			    final BlockStmtVisitor visitor = new BlockStmtVisitor();
-			    final List<Stmt> blockStmts = visitor.visit(bsc);
-			    stmts.addAll(blockStmts);
-			}
-		    }
-		}
-		final Def def = new Def(b, x, Translator.param(params), Translator.seq(stmts));
+		Stmt s = null;
+		final BlockContextVisitor visitor = new BlockContextVisitor();
+		s = visitor.visit(blockCtx);
+		final Def def = new Def(b, x, Translator.param(params, true), s);
 		defStmts.add(def);
 	    }
 	}

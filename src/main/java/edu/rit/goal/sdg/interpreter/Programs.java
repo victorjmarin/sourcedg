@@ -10,7 +10,7 @@ import edu.rit.goal.sdg.interpreter.stmt.Call;
 import edu.rit.goal.sdg.interpreter.stmt.Continue;
 import edu.rit.goal.sdg.interpreter.stmt.Def;
 import edu.rit.goal.sdg.interpreter.stmt.IfThenElse;
-import edu.rit.goal.sdg.interpreter.stmt.Ret;
+import edu.rit.goal.sdg.interpreter.stmt.Return;
 import edu.rit.goal.sdg.interpreter.stmt.Seq;
 import edu.rit.goal.sdg.interpreter.stmt.Skip;
 import edu.rit.goal.sdg.interpreter.stmt.Stmt;
@@ -60,7 +60,7 @@ public class Programs {
 	final Stmt mainBody = new Seq(l1, new Seq(l2, new Seq(l3, new Seq(l4, new Seq(l5, new Seq(l6, l7))))));
 	final Def main = new Def(false, "main", mainBody);
 	// Mult3 function
-	final Ret mult3Body = new Ret("op1*op2*op3");
+	final Return mult3Body = new Return("op1*op2*op3");
 	final Def mult3 = new Def(true, "mult3",
 		new Params("op1", new Params("op2", new Params("op3", new EmptyParam()))), mult3Body);
 	final Stmt program = new Seq(main, mult3);

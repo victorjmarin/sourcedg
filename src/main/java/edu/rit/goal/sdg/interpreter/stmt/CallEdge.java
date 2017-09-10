@@ -2,7 +2,7 @@ package edu.rit.goal.sdg.interpreter.stmt;
 
 import edu.rit.goal.sdg.graph.Vertex;
 
-public class CallEdge implements Stmt {
+public class CallEdge extends Stmt {
 
     public Vertex v;
     public String x;

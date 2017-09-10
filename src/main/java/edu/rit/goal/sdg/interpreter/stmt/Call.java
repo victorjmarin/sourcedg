@@ -2,7 +2,7 @@ package edu.rit.goal.sdg.interpreter.stmt;
 
 import edu.rit.goal.sdg.interpreter.params.Param;
 
-public class Call implements Stmt, Expr {
+public class Call extends Stmt implements Expr {
 
     public String x;
     public Param p;

@@ -2,7 +2,7 @@ package edu.rit.goal.sdg.interpreter.stmt;
 
 import edu.rit.goal.sdg.graph.Vertex;
 
-public class ParamOut implements Stmt {
+public class ParamOut extends Stmt {
 
     public Vertex v;
     public String x;

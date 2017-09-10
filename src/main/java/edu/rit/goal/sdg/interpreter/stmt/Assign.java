@@ -1,6 +1,6 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
-public class Assign implements Stmt {
+public class Assign extends Stmt {
 
     public String x;
     public Expr e;

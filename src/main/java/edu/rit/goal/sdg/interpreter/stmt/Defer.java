@@ -1,6 +1,6 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
-public class Defer implements Stmt {
+public class Defer extends Stmt {
 
     public Stmt s;
 

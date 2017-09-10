@@ -3,7 +3,7 @@ package edu.rit.goal.sdg.interpreter.stmt.sw;
 import edu.rit.goal.sdg.interpreter.stmt.Expr;
 import edu.rit.goal.sdg.interpreter.stmt.Stmt;
 
-public class Switch implements Stmt {
+public class Switch extends Stmt {
 
     public Expr e;
     public ISwitchBody sb;
