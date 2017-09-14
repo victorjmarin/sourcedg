@@ -1,25 +1,18 @@
-import java.util.Scanner;
 
 public class DataTest {
 
     void m(int p1, int p2) {
 	int a = 1;
-	if (a == 2) {
-	    a = 2;
-	} else if (a > 3) {
-	    a = 3;
-	} else {
-	    a = 4;
-	    if (true) {
-		a = 5;
-	    } else {
-		a = 6;
+	while (a > 0) {
+	    if (a == 1) {
+		a++;
 	    }
 	}
+	a = 3;
     }
 
-    void m2() {
-	int z = 1;
+    void m2(int p3) {
+	int a = p3;
     }
 
 }

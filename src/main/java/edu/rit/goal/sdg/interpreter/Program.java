@@ -19,10 +19,14 @@ import edu.rit.goal.sdg.interpreter.stmt.Stmt;
 public class Program {
 
     SysDepGraph sdg;
+    // Temporal CFG
     DefaultDirectedGraph<Vertex, Edge> cfg;
     Set<Vertex> Vc;
     Map<String, LinkedHashSet<Vertex>> P;
     Deque<CtrlVertex> C;
+    String m;
+    // Mapping from method name to CFG
+    Map<String, DefaultDirectedGraph<Vertex, Edge>> F;
     Stmt s;
 
     public Program(final Stmt s) {
@@ -31,6 +35,7 @@ public class Program {
 	Vc = new HashSet<>();
 	P = new HashMap<>();
 	C = new ArrayDeque<CtrlVertex>();
+	F = new HashMap<>();
 	this.s = s;
     }
 
@@ -46,14 +51,28 @@ public class Program {
     }
 
     public Program(final SysDepGraph sdg, final DefaultDirectedGraph<Vertex, Edge> cfg, final Set<Vertex> Vc,
-	    final Map<String, LinkedHashSet<Vertex>> P, final Deque<CtrlVertex> C, final Stmt s) {
+	    final Map<String, LinkedHashSet<Vertex>> P, final Map<String, DefaultDirectedGraph<Vertex, Edge>> F,
+	    final Deque<CtrlVertex> C, final String m, final Stmt s) {
 	super();
 	this.sdg = sdg;
 	this.cfg = cfg;
 	this.Vc = Vc;
 	this.P = P;
+	this.F = F;
 	this.C = C;
+	this.m = m;
 	this.s = s;
+    }
+
+    public DefaultDirectedGraph<Vertex, Edge> clonedCfg() {
+	final DefaultDirectedGraph<Vertex, Edge> result = new DefaultDirectedGraph<>(Edge.class);
+	for (final Vertex v : cfg.vertexSet()) {
+	    result.addVertex(v);
+	}
+	for (final Edge e : cfg.edgeSet()) {
+	    result.addEdge(e.getSource(), e.getTarget(), new Edge(e.getSource(), e.getTarget(), e.getType()));
+	}
+	return result;
     }
 
 }

@@ -200,11 +200,12 @@ public class StmtVisitor {
     public Stmt ret(final StatementContext ctx) {
 	final List<ExpressionContext> expr = ctx.expression();
 	String e = "";
+	Set<String> uses = new HashSet<>();
 	if (expr.size() == 1) {
 	    e = expr.get(0).getText();
+	    uses = JavaUtils.uses(expr.get(0));
 	}
 	final Return result = new Return(e);
-	final Set<String> uses = JavaUtils.uses(expr.get(0));
 	result.setUses(uses);
 	return result;
     }

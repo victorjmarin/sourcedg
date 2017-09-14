@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.jgrapht.DirectedGraph;
+import org.jgrapht.graph.DefaultDirectedGraph;
 
 import edu.rit.goal.TestUtils;
 import edu.rit.goal.sdg.graph.Edge;
@@ -27,7 +28,8 @@ public class Main {
 	final Map<String, DirectedGraph<Vertex, Edge>> methodSubgraphs = sdg.getMethodSubgraphs();
 	System.out.println(System.currentTimeMillis() - t + " ms. to build the PDG");
 	System.out.println(sdg);
-	TestUtils.exportAsDot(p.cfg, "und");
+	final DefaultDirectedGraph<Vertex, Edge> und = p.F.get("m");
+	TestUtils.exportAsDot(und, "und");
 	for (final Entry<String, DirectedGraph<Vertex, Edge>> e : methodSubgraphs.entrySet()) {
 	    final DirectedGraph<Vertex, Edge> g = e.getValue();
 	    TestUtils.exportAsDot(g, e.getKey() + "Flow");

@@ -273,10 +273,12 @@ public class Interpreter {
 	program.sdg.addVertex(v);
 	final Param param1 = new Param(s.x, VertexType.FORMAL_OUT, new Str(s.x + "ResultOut"));
 	final Param param2 = new Param(s.x, VertexType.FORMAL_IN, new Params(s.x + "ResultIn", s.p));
-	final Seq seq = new Seq(param1, new Seq(param2, new Seq(s.s, new PopCtrl())));
+	final Seq seq1 = new Seq(param1, new Seq(param2, s.s));
+	final CtrlEdge ctrlEdge = new CtrlEdge(true, v, seq1);
+	final Seq seq2 = new Seq(ctrlEdge, new PopCtrl());
 	final CtrlVertex cv = new CtrlVertex(v, CtrlType.SEQ);
 	program.C.push(cv);
-	return new Program(program.sdg, program.Vc, program.P, program.C, new CtrlEdge(true, v, seq));
+	return new Program(program.sdg, program.Vc, program.P, program.C, new CtrlEdge(true, v, seq2));
     }
 
     private static Program voidDefRule(final Program program) {
@@ -284,10 +286,12 @@ public class Interpreter {
 	final Vertex v = new Vertex(VTX_ID++, VertexType.ENTRY, s.x);
 	program.sdg.addVertex(v);
 	final Param param = new Param(s.x, VertexType.FORMAL_IN, s.p);
-	final Seq seq = new Seq(param, new Seq(s.s, new PopCtrl()));
+	final Seq seq1 = new Seq(param, s.s);
+	final CtrlEdge ctrlEdge = new CtrlEdge(true, v, seq1);
+	final Seq seq2 = new Seq(ctrlEdge, new PopCtrl());
 	final CtrlVertex cv = new CtrlVertex(v, CtrlType.SEQ);
 	program.C.push(cv);
-	return new Program(program.sdg, program.Vc, program.P, program.C, new CtrlEdge(true, v, seq));
+	return new Program(program.sdg, program.Vc, program.P, program.C, new CtrlEdge(true, v, seq2));
     }
 
     protected static Program seqRule(final Program program) {
