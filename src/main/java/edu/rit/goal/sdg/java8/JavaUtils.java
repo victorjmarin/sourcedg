@@ -12,6 +12,8 @@ public class JavaUtils {
 
     public static Set<String> uses(final ParseTree ctx) {
 	final Set<String> result = new HashSet<>();
+	if (ctx == null)
+	    return result;
 	final int childCount = ctx.getChildCount();
 	if (ctx instanceof TerminalNodeImpl) {
 	    // Currently only works for local variable definitions. Will not work properly

@@ -17,7 +17,6 @@ import edu.rit.goal.sdg.graph.Edge;
 import edu.rit.goal.sdg.graph.SysDepGraph;
 import edu.rit.goal.sdg.graph.Vertex;
 import edu.rit.goal.sdg.graph.VertexType;
-import edu.rit.goal.sdg.interpreter.Interpreter.Program;
 
 public class CircleTest {
 

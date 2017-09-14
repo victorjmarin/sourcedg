@@ -84,7 +84,7 @@ public class Translator {
 
     public static Param param(final List<Str> params, final boolean isFormal) {
 	Param result = null;
-	if (params.isEmpty()) {
+	if (params == null || params.isEmpty()) {
 	    result = new EmptyParam();
 	} else if (params.size() == 1) {
 	    result = params.remove(0);
@@ -102,6 +102,8 @@ public class Translator {
     // nested calls as an argument, for example. This will not work in such cases.
     public static List<Str> params(final ParseTree ctx) {
 	final List<Str> result = new ArrayList<>();
+	if (ctx == null)
+	    return result;
 	if (ctx.getChildCount() == 0 && !",".equals(ctx.getText())) {
 	    final Str str = new Str(ctx);
 	    result.add(str);
@@ -141,6 +143,38 @@ public class Translator {
 
     public static void unsupported(final ParseTree ctx) {
 	System.out.println("Unsupported stmt: " + ctx.getText());
+    }
+
+    public static boolean isShortHandOperator(final String operator) {
+	switch (operator) {
+	case "=":
+	    return false;
+	case "*=":
+	case "/=":
+	case "%=":
+	case "+=":
+	case "-=":
+	case "<<=":
+	case ">>=":
+	case ">>>=":
+	case "&=":
+	case "^=":
+	case "|=":
+	    return true;
+	default:
+	    return false;
+	}
+    }
+
+    public static boolean isEmptyArgCall(final ExpressionContext ctx) {
+	boolean result = false;
+	if (ctx.getChildCount() > 2) {
+	    final String leftParen = ctx.getChild(1).getText();
+	    final String rightParen = ctx.getChild(2).getText();
+	    if ("(".equals(leftParen) && ")".equals(rightParen))
+		result = true;
+	}
+	return result;
     }
 
 }

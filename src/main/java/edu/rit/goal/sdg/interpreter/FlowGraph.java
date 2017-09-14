@@ -2,13 +2,10 @@ package edu.rit.goal.sdg.interpreter;
 
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.jgrapht.DirectedGraph;
@@ -16,13 +13,10 @@ import org.jgrapht.graph.DefaultDirectedGraph;
 
 import edu.rit.goal.sdg.graph.Edge;
 import edu.rit.goal.sdg.graph.EdgeType;
-import edu.rit.goal.sdg.graph.SysDepGraph;
 import edu.rit.goal.sdg.graph.Vertex;
 import edu.rit.goal.sdg.graph.VertexType;
 
 public class FlowGraph {
-
-    private final Set<Vertex> visited = new HashSet<>();
 
     public final DirectedGraph<Vertex, Edge> graph = new DefaultDirectedGraph<>(Edge.class);
 
@@ -53,6 +47,8 @@ public class FlowGraph {
 	    return id1.compareTo(id2);
 	};
 	switch (v.getType()) {
+	case CTRL_DO:
+
 	case CTRL_IF:
 	    final Set<Edge> edgeSet = g.outgoingEdgesOf(v);
 	    final List<Vertex> ctrlTrue = edgeSet.stream().filter(e -> e.getType().equals(EdgeType.CTRL_TRUE))
@@ -134,40 +130,6 @@ public class FlowGraph {
 
     public Vertex getEntryVertex() {
 	return graph.vertexSet().stream().filter(v -> VertexType.ENTRY.equals(v.getType())).findFirst().get();
-    }
-
-    public void traverse(final SysDepGraph sdg) {
-	final List<Vertex> entryVtcs = sdg.vertexSet().stream().filter(v -> v.getType().equals(VertexType.ENTRY))
-		.collect(Collectors.toList());
-	final Comparator<Vertex> byId = (final Vertex v1, final Vertex v2) -> {
-	    final Integer id1 = v1.getId();
-	    final Integer id2 = v2.getId();
-	    return id1.compareTo(id2);
-	};
-	final Vertex mainVtx = entryVtcs.stream().min(byId).get();
-	dfs(sdg, mainVtx);
-    }
-
-    private void dfs(final SysDepGraph sdg, final Vertex v) {
-	visited.add(v);
-	if (!v.getType().isActualParam()) {
-	    System.out.println(v);
-	}
-	final Set<Edge> s = sdg.outgoingEdgesOf(v).stream().filter(e -> e.getType().isCtrl())
-		.collect(Collectors.toSet());
-	final Comparator<Edge> byId = (final Edge e1, final Edge e2) -> {
-	    final Integer id1 = e1.getTarget().getId();
-	    final Integer id2 = e2.getTarget().getId();
-	    return id1.compareTo(id2);
-	};
-	final SortedSet<Edge> ss = new TreeSet<>(byId);
-	ss.addAll(s);
-	for (final Edge e : ss) {
-	    final Vertex target = e.getTarget();
-	    if (!visited.contains(target)) {
-		dfs(sdg, target);
-	    }
-	}
     }
 
 }

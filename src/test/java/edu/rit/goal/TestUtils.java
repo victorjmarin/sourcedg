@@ -35,13 +35,15 @@ public class TestUtils {
 	    @Override
 	    public Map<String, String> getComponentAttributes(final Edge component) {
 		final Map<String, String> result = new HashMap<>();
-		switch (component.getType()) {
-		case CTRL_TRUE:
-		    result.put("splines", "line");
-		    break;
-		default:
-		    result.put("splines", "curved");
-		    break;
+		if (component.getType() != null) {
+		    switch (component.getType()) {
+		    case CTRL_TRUE:
+			result.put("splines", "line");
+			break;
+		    default:
+			result.put("splines", "curved");
+			break;
+		    }
 		}
 		return result;
 	    }

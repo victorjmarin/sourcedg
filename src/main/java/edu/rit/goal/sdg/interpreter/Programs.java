@@ -1,6 +1,5 @@
 package edu.rit.goal.sdg.interpreter;
 
-import edu.rit.goal.sdg.interpreter.Interpreter.Program;
 import edu.rit.goal.sdg.interpreter.params.EmptyParam;
 import edu.rit.goal.sdg.interpreter.params.Param;
 import edu.rit.goal.sdg.interpreter.params.Params;

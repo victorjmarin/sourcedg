@@ -9,6 +9,11 @@ public class Edge {
     public Edge() {
     }
 
+    public Edge(final Vertex source, final Vertex target) {
+	this.source = source;
+	this.target = target;
+    }
+
     public Edge(final Vertex source, final Vertex target, final EdgeType type) {
 	this.source = source;
 	this.target = target;
@@ -29,7 +34,8 @@ public class Edge {
 
     @Override
     public String toString() {
-	return type.toString();
+	final String result = type != null ? type.toString() : "";
+	return result;
     }
 
 }

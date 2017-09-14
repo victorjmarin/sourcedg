@@ -2,18 +2,18 @@ package edu.rit.goal.sdg.interpreter.stmt;
 
 public class DoWhile extends Stmt {
 
-    public Expr e;
     public Stmt s;
+    public Expr e;
 
-    public DoWhile(final Expr e, final Stmt s) {
+    public DoWhile(final Stmt s, final Expr e) {
 	super();
-	this.e = e;
 	this.s = s;
+	this.e = e;
     }
 
     @Override
     public String toString() {
-	return "do {" + e + "} while (" + s + ")";
+	return "do {" + s + "} while (" + e + ")";
     }
 
 }

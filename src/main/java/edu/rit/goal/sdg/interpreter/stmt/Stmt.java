@@ -2,7 +2,7 @@ package edu.rit.goal.sdg.interpreter.stmt;
 
 import java.util.Set;
 
-public class Stmt {
+public abstract class Stmt {
 
     private String def;
     private Set<String> uses;

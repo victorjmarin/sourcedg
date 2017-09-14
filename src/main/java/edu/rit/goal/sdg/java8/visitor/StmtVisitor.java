@@ -1,5 +1,6 @@
 package edu.rit.goal.sdg.java8.visitor;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -8,15 +9,23 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 
 import edu.rit.goal.sdg.interpreter.Translator;
 import edu.rit.goal.sdg.interpreter.stmt.Assign;
+import edu.rit.goal.sdg.interpreter.stmt.DoWhile;
 import edu.rit.goal.sdg.interpreter.stmt.Expr;
+import edu.rit.goal.sdg.interpreter.stmt.For;
 import edu.rit.goal.sdg.interpreter.stmt.IfThenElse;
+import edu.rit.goal.sdg.interpreter.stmt.PostOp;
+import edu.rit.goal.sdg.interpreter.stmt.PreOp;
 import edu.rit.goal.sdg.interpreter.stmt.Return;
 import edu.rit.goal.sdg.interpreter.stmt.Skip;
 import edu.rit.goal.sdg.interpreter.stmt.Stmt;
 import edu.rit.goal.sdg.interpreter.stmt.Str;
+import edu.rit.goal.sdg.interpreter.stmt.While;
 import edu.rit.goal.sdg.java8.JavaUtils;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.BlockContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.ExpressionContext;
+import edu.rit.goal.sdg.java8.antlr.JavaParser.ExpressionListContext;
+import edu.rit.goal.sdg.java8.antlr.JavaParser.ForControlContext;
+import edu.rit.goal.sdg.java8.antlr.JavaParser.ForInitContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.StatementContext;
 
 public class StmtVisitor {
@@ -46,11 +55,11 @@ public class StmtVisitor {
 	} else if (ifStmt != null) {
 	    result = ifThenElse(ctx);
 	} else if (forStmt != null) {
-	    Translator.unsupported(ctx);
-	} else if (whileStmt != null) {
-	    Translator.unsupported(ctx);
+	    result = _for(ctx);
 	} else if (doStmt != null) {
-	    Translator.unsupported(ctx);
+	    result = doWhile(ctx);
+	} else if (whileStmt != null) {
+	    result = _while(ctx);
 	} else if (tryStmt != null) {
 	    Translator.unsupported(ctx);
 	} else if (switchStmt != null) {
@@ -66,28 +75,83 @@ public class StmtVisitor {
 	} else if (continueStmt != null) {
 	    Translator.unsupported(ctx);
 	} else if (exprCtx != null) {
-	    // Distinguish between assignment and call
-	    final Token bop = exprCtx.bop;
-	    final boolean isMethodCall = exprCtx.expressionList() != null;
-	    if (bop != null && bop.getText().equals("=")) {
-		result = assign(ctx);
-	    } else if (isMethodCall) {
-		result = Translator.call(exprCtx);
-	    }
+	    result = expr(ctx, ctx.statementExpression);
 	} else if (identifierLbl != null) {
 	    Translator.unsupported(ctx);
 	}
 	return result;
     }
 
-    public Stmt assign(final StatementContext ctx) {
+    public Stmt _for(final StatementContext ctx) {
+	Stmt result = null;
+	final Stmt s = new StmtVisitor().visit(ctx.statement(0));
+	final ForControlContext forCtrlCtx = ctx.forControl();
+	final ForInitContext forInitCtx = forCtrlCtx.forInit();
+	// TODO: Support for initialization and update of multiple variables
+	Stmt si = new Skip();
+	Stmt sc = new Skip();
+	Stmt su = new Skip();
+	if (forInitCtx != null)
+	    si = new LocalVarDeclVisitor().visit(forInitCtx.localVariableDeclaration());
+	final ExpressionContext exprCtx = forCtrlCtx.expression();
+	if (exprCtx != null)
+	    sc = expr(ctx, exprCtx);
+	final ExpressionListContext exprListCtx = forCtrlCtx.expressionList();
+	if (exprListCtx != null)
+	    su = expr(ctx, exprListCtx.expression(0));
+	result = new For(si, sc, su, s);
+	return result;
+    }
+
+    public Stmt expr(final StatementContext ctx, final ExpressionContext exprCtx) {
+	Stmt result = null;
+	final Token bop = exprCtx.bop;
+	final boolean isMethodCall = exprCtx.expressionList() != null || Translator.isEmptyArgCall(exprCtx);
+	// Distinguish between assignment, call, pre-, post- operators
+	if (bop != null) {
+	    final boolean isShortHand = Translator.isShortHandOperator(bop.getText());
+	    final boolean isAssign = isShortHand || "=".equals(bop.getText());
+	    if (isAssign) {
+		result = assign(ctx, isShortHand);
+	    } else {
+		// TODO: Assuming a plain condition
+		result = new Str(exprCtx.getText());
+		final Set<String> uses = JavaUtils.uses(exprCtx);
+		result.setUses(uses);
+	    }
+	} else if (exprCtx.prefix != null) {
+	    final ExpressionContext exprCtx2 = exprCtx.expression(0);
+	    final String x = exprCtx2.getText();
+	    result = new PreOp(x, exprCtx.prefix.getText());
+	    result.setDef(x);
+	    final Set<String> uses = new HashSet<>();
+	    uses.add(x);
+	    result.setUses(uses);
+	} else if (exprCtx.postfix != null) {
+	    final ExpressionContext exprCtx2 = exprCtx.expression(0);
+	    final String x = exprCtx2.getText();
+	    result = new PostOp(x, exprCtx.postfix.getText());
+	    result.setDef(x);
+	    final Set<String> uses = new HashSet<>();
+	    uses.add(x);
+	    result.setUses(uses);
+	} else if (isMethodCall) {
+	    result = Translator.call(exprCtx);
+	}
+	return result;
+    }
+
+    public Stmt assign(final StatementContext ctx, final boolean isShortHand) {
 	final ExpressionContext exprCtx = ctx.expression(0);
 	final String x = exprCtx.expression(0).getText();
+	final String op = exprCtx.bop.getText();
 	final Str e = new Str(exprCtx.expression(1).getText());
-	final Assign result = new Assign(x, e);
+	final Assign result = new Assign(x, op, e);
 	final Set<String> uses = JavaUtils.uses(exprCtx.expression(1));
 	result.setDef(x);
 	result.setUses(uses);
+	if (isShortHand)
+	    result.getUses().add(x);
 	return result;
     }
 
@@ -106,6 +170,28 @@ public class StmtVisitor {
 	final ExpressionContext exprCtx = ctx.parExpression().expression();
 	final Expr e = new Str(exprCtx.getText());
 	final IfThenElse result = new IfThenElse(e, s1, s2);
+	final Set<String> uses = JavaUtils.uses(exprCtx);
+	result.setUses(uses);
+	return result;
+    }
+
+    public Stmt doWhile(final StatementContext ctx) {
+	final ExpressionContext exprCtx = ctx.parExpression().expression();
+	final Expr e = new Str(exprCtx.getText());
+	final StatementContext stmtCtx = ctx.statement(0);
+	final Stmt s = new StmtVisitor().visit(stmtCtx);
+	final DoWhile result = new DoWhile(s, e);
+	final Set<String> uses = JavaUtils.uses(exprCtx);
+	result.setUses(uses);
+	return result;
+    }
+
+    public Stmt _while(final StatementContext ctx) {
+	final ExpressionContext exprCtx = ctx.parExpression().expression();
+	final Expr e = new Str(exprCtx.getText());
+	final StatementContext stmtCtx = ctx.statement(0);
+	final Stmt s = new StmtVisitor().visit(stmtCtx);
+	final While result = new While(e, s);
 	final Set<String> uses = JavaUtils.uses(exprCtx);
 	result.setUses(uses);
 	return result;
