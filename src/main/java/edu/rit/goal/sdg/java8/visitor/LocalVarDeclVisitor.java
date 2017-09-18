@@ -30,6 +30,8 @@ public class LocalVarDeclVisitor {
 	    if (exprLstCtx != null) {
 		final Call e = Translator.call(exprCtx);
 		final Assign assign = new Assign(x, e);
+		assign.setDef(x);
+		assign.setUses(e.getUses());
 		result.add(assign);
 	    }
 	    // Regular assignment

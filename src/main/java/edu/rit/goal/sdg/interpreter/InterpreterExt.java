@@ -796,7 +796,7 @@ public class InterpreterExt {
 	final Call call = (Call) assign.e;
 	final Vertex va = new Vertex(VTX_ID++, VertexType.CALL, assign.x + assign.op + call.x + "(" + call.p + ")");
 	va.setAssignedVariable(assign.getDef());
-	va.setReadingVariables(assign.getUses());
+	va.setReadingVariables(call.getUses());
 	program.sdg.addVertex(va);
 	program.cfg.addVertex(va);
 	program.defers.add(new CallEdge(va, call.x));
