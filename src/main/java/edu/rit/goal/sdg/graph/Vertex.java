@@ -83,7 +83,10 @@ public class Vertex {
 
     @Override
     public String toString() {
-	return id + "-" + type + "-" + label;
+	String result = id + "-" + type;
+	if (label != null && label != "")
+	    result += "-" + label;
+	return result;
     }
 
 }

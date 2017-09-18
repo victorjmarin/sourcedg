@@ -100,18 +100,13 @@ public class Translator {
 
     // TODO: Make more complete conversion. There will be cases in which there will be
     // nested calls as an argument, for example. This will not work in such cases.
-    public static List<Str> params(final ParseTree ctx) {
+    public static List<Str> params(final ExpressionListContext ctx) {
 	final List<Str> result = new ArrayList<>();
 	if (ctx == null)
 	    return result;
-	if (ctx.getChildCount() == 0 && !",".equals(ctx.getText())) {
-	    final Str str = new Str(ctx);
+	for (final ExpressionContext exprCtx : ctx.expression()) {
+	    final Str str = new Str(exprCtx);
 	    result.add(str);
-	    return result;
-	}
-	for (int i = 0; i < ctx.getChildCount(); i++) {
-	    final ParseTree child = ctx.getChild(i);
-	    result.addAll(params(child));
 	}
 	return result;
     }

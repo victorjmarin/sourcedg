@@ -9,6 +9,8 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 
 import edu.rit.goal.sdg.interpreter.Translator;
 import edu.rit.goal.sdg.interpreter.stmt.Assign;
+import edu.rit.goal.sdg.interpreter.stmt.Break;
+import edu.rit.goal.sdg.interpreter.stmt.Continue;
 import edu.rit.goal.sdg.interpreter.stmt.DoWhile;
 import edu.rit.goal.sdg.interpreter.stmt.Expr;
 import edu.rit.goal.sdg.interpreter.stmt.For;
@@ -40,11 +42,11 @@ public class StmtVisitor {
 	final TerminalNode doStmt = ctx.DO();
 	final TerminalNode tryStmt = ctx.TRY();
 	final TerminalNode switchStmt = ctx.SWITCH();
-	final TerminalNode syncStmt = ctx.ASSERT();
+	final TerminalNode syncStmt = ctx.SYNCHRONIZED();
 	final TerminalNode returnStmt = ctx.RETURN();
-	final TerminalNode throwStmt = ctx.ASSERT();
-	final TerminalNode breakStmt = ctx.ASSERT();
-	final TerminalNode continueStmt = ctx.ASSERT();
+	final TerminalNode throwStmt = ctx.THROW();
+	final TerminalNode breakStmt = ctx.BREAK();
+	final TerminalNode continueStmt = ctx.CONTINUE();
 	final ExpressionContext exprCtx = ctx.statementExpression;
 	final Token identifierLbl = ctx.identifierLabel;
 	if (blockLabel != null) {
@@ -71,9 +73,9 @@ public class StmtVisitor {
 	} else if (throwStmt != null) {
 	    Translator.unsupported(ctx);
 	} else if (breakStmt != null) {
-	    Translator.unsupported(ctx);
+	    result = new Break();
 	} else if (continueStmt != null) {
-	    Translator.unsupported(ctx);
+	    result = new Continue();
 	} else if (exprCtx != null) {
 	    result = expr(ctx, ctx.statementExpression);
 	} else if (identifierLbl != null) {

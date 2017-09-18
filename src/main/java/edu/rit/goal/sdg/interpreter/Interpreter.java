@@ -62,7 +62,7 @@ public class Interpreter {
     public static int VTX_ID;
 
     public static final Program PROGRAM = Programs.simpleDef();
-    public static final boolean PRINT = false;
+    public static final boolean PRINT = true;
     public static final boolean PRINT_RULES = true;
 
     private static Set<String> execRules = new HashSet<>();
@@ -191,7 +191,7 @@ public class Interpreter {
 	    if (CtrlType.LOOP.equals(ct)) {
 		printRule("breakEdgeLoopRule");
 		result = breakEdgeLoopRule(program);
-	    } else if (CtrlType.SEQ.equals(ct) && program.C.size() > 1) {
+	    } else if (CtrlType.SEQ.equals(ct) && !program.C.isEmpty()) {
 		printRule("breakEdgeSequentialRule");
 		result = breakEdgeSequentialRule(program);
 	    }
@@ -354,6 +354,8 @@ public class Interpreter {
 	final CtrlEdge ctrledge = (CtrlEdge) program.s;
 	final Stmt s = ctrledge.s;
 	final Program p = small(new Program(program.sdg, program.Vc, program.P, program.C, s));
+	if (p == null)
+	    System.out.println(p);
 	final CtrlEdge ctrlEdge = new CtrlEdge(ctrledge.B, ctrledge.N, p.s);
 	return new Program(p.sdg, p.Vc, program.P, program.C, ctrlEdge);
     }
@@ -480,7 +482,7 @@ public class Interpreter {
 	program.Vc.add(v);
 	final CtrlVertex cv = program.C.pop();
 	final Deque<CtrlVertex> S = new ArrayDeque<CtrlVertex>(program.C);
-	S.add(cv);
+	S.push(cv);
 	final BreakEdge breakEdge = new BreakEdge(cv.ct, v, S);
 	return new Program(program.sdg, program.Vc, program.P, program.C, breakEdge);
     }

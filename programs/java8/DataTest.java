@@ -2,17 +2,11 @@
 public class DataTest {
 
     void m(int p1, int p2) {
-	int a = 1;
-	while (a > 0) {
-	    if (a == 1) {
-		a++;
-	    }
-	}
-	a = 3;
+	int z = m1(2);
     }
 
-    void m2(int p3) {
-	int a = p3;
+    int m1(int a) {
+	return 2;
     }
 
 }

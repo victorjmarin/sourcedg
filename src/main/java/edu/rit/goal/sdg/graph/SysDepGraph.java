@@ -1,7 +1,6 @@
 package edu.rit.goal.sdg.graph;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -26,6 +25,7 @@ public class SysDepGraph extends DefaultDirectedGraph<Vertex, Edge> {
 
     private boolean hasDataFlow = false;
     private final List<Vertex> vertices;
+    private Map<String, DirectedGraph<Vertex, Edge>> cfgs;
 
     public SysDepGraph() {
 	super(Edge.class);
@@ -50,11 +50,14 @@ public class SysDepGraph extends DefaultDirectedGraph<Vertex, Edge> {
 	return edge;
     }
 
+    public void setCfgs(final Map<String, DirectedGraph<Vertex, Edge>> cfgs) {
+	this.cfgs = cfgs;
+    }
+
     public void computeDataFlow() {
 	if (!hasDataFlow) {
 	    hasDataFlow = true;
-	    final Map<String, DirectedGraph<Vertex, Edge>> methodSubgraphs = getMethodSubgraphs();
-	    for (final Entry<String, DirectedGraph<Vertex, Edge>> e : methodSubgraphs.entrySet()) {
+	    for (final Entry<String, DirectedGraph<Vertex, Edge>> e : cfgs.entrySet()) {
 		final FlowGraph fg = new FlowGraph(e.getValue());
 		final Map<String, List<Vertex>> verticesByDef = fg.getVerticesByDef();
 		final Map<String, List<Vertex>> verticesByUse = fg.getVerticesByUse();
@@ -141,77 +144,6 @@ public class SysDepGraph extends DefaultDirectedGraph<Vertex, Edge> {
 	    }
 	}
 	return result;
-    }
-
-    private final Set<Vertex> visited = new HashSet<>();
-
-    public void makeUndirected(final DirectedGraph<Vertex, Edge> graph) {
-	final List<Vertex> entryVtcs = graph.vertexSet().stream().filter(v -> v.getType().equals(VertexType.ENTRY))
-		.collect(Collectors.toList());
-	final Comparator<Vertex> byId = (final Vertex v1, final Vertex v2) -> {
-	    final Integer id1 = v1.getId();
-	    final Integer id2 = v2.getId();
-	    return id1.compareTo(id2);
-	};
-	final Vertex mainVtx = entryVtcs.stream().min(byId).get();
-	_makeUndirected(graph, mainVtx);
-    }
-
-    private void _makeUndirected(final DirectedGraph<Vertex, Edge> graph, final Vertex v) {
-	visited.add(v);
-	final Set<Edge> s = graph.outgoingEdgesOf(v);
-	for (final Edge e : s) {
-	    final Vertex target = e.getTarget();
-	    graph.addEdge(target, v, new Edge(target, v, e.getType()));
-	    if (!visited.contains(target)) {
-		_makeUndirected(graph, target);
-	    }
-	}
-    }
-
-    public void dataFlow() {
-	if (!hasDataFlow) {
-	    hasDataFlow = true;
-	    final Map<String, DirectedGraph<Vertex, Edge>> methodSubgraphs = getMethodSubgraphs();
-	    for (final Entry<String, DirectedGraph<Vertex, Edge>> e : methodSubgraphs.entrySet()) {
-		final Map<String, List<Vertex>> verticesByDef = getVerticesByDef(e.getValue());
-		final Map<String, List<Vertex>> verticesByUse = getVerticesByUse(e.getValue());
-		for (final Entry<String, List<Vertex>> vbu : verticesByUse.entrySet()) {
-		    final String use = vbu.getKey();
-		    final List<Vertex> def = verticesByDef.get(use);
-		    for (final Vertex useVtx : vbu.getValue()) {
-			// No def found for use. Create initial state vtx
-			if (def == null) {
-			    final Vertex v = new Vertex(Interpreter.VTX_ID++, VertexType.INITIAL_STATE, use);
-			    v.setAssignedVariable(use);
-			    addVertex(v);
-			    addEdge(v, useVtx, new Edge(v, useVtx, EdgeType.DATA));
-			    // Add ctrl edge w.r.t. entry vtx
-			    final Vertex entryVtx = getEntryVertex(e.getValue());
-			    addEdge(entryVtx, v, new Edge(entryVtx, v, EdgeType.CTRL_TRUE));
-			} else {
-			    for (final Vertex defVtx : def) {
-				// Find all paths from the def to the use vtx
-				final DirectedGraph<Vertex, Edge> undirected = e.getValue();
-				makeUndirected(e.getValue());
-				final AllDirectedPaths<Vertex, Edge> adp = new AllDirectedPaths<>(undirected);
-				final List<GraphPath<Vertex, Edge>> paths = adp.getAllPaths(defVtx, useVtx, true,
-					Integer.MAX_VALUE);
-				// Add edge if we can find one x-clear path
-				boolean xClear = false;
-				for (final GraphPath<Vertex, Edge> p : paths) {
-				    xClear = pathIsXClear(p.getVertexList(), defVtx, useVtx, use);
-				    if (xClear) {
-					addEdge(defVtx, useVtx, new Edge(defVtx, useVtx, EdgeType.DATA));
-					break;
-				    }
-				}
-			    }
-			}
-		    }
-		}
-	    }
-	}
     }
 
     public Vertex getEntryVertex(final DirectedGraph<Vertex, Edge> graph) {

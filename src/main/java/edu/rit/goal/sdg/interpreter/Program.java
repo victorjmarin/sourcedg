@@ -5,9 +5,12 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.jgrapht.DirectedGraph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 
 import edu.rit.goal.sdg.graph.Edge;
@@ -26,8 +29,9 @@ public class Program {
     Deque<CtrlVertex> C;
     String m;
     // Mapping from method name to CFG
-    Map<String, DefaultDirectedGraph<Vertex, Edge>> F;
+    Map<String, DirectedGraph<Vertex, Edge>> F;
     Stmt s;
+    List<Stmt> defers = new LinkedList<>();
 
     public Program(final Stmt s) {
 	sdg = new SysDepGraph();
@@ -51,8 +55,8 @@ public class Program {
     }
 
     public Program(final SysDepGraph sdg, final DefaultDirectedGraph<Vertex, Edge> cfg, final Set<Vertex> Vc,
-	    final Map<String, LinkedHashSet<Vertex>> P, final Map<String, DefaultDirectedGraph<Vertex, Edge>> F,
-	    final Deque<CtrlVertex> C, final String m, final Stmt s) {
+	    final Map<String, LinkedHashSet<Vertex>> P, final Map<String, DirectedGraph<Vertex, Edge>> F,
+	    final Deque<CtrlVertex> C, final String m, final List<Stmt> defers, final Stmt s) {
 	super();
 	this.sdg = sdg;
 	this.cfg = cfg;
@@ -61,6 +65,7 @@ public class Program {
 	this.F = F;
 	this.C = C;
 	this.m = m;
+	this.defers = defers;
 	this.s = s;
     }
 
