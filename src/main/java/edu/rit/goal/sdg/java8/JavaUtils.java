@@ -7,6 +7,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNodeImpl;
 
 import edu.rit.goal.sdg.java8.antlr.JavaParser;
+import edu.rit.goal.sdg.java8.antlr.JavaParser.PrimaryContext;
 
 public class JavaUtils {
 
@@ -15,12 +16,12 @@ public class JavaUtils {
 	if (ctx == null)
 	    return result;
 	final int childCount = ctx.getChildCount();
-	if (ctx instanceof TerminalNodeImpl) {
+	if (ctx instanceof TerminalNodeImpl && ctx.getParent() instanceof PrimaryContext) {
 	    // Currently only works for local variable definitions. Will not work properly
 	    // when referencing member variables, for example (this.X)
 	    final int type = ((TerminalNodeImpl) ctx).getSymbol().getType();
-
 	    if (type == JavaParser.IDENTIFIER) {
+		System.out.println(ctx.getText());
 		result.add(ctx.getText());
 	    }
 	} else {
