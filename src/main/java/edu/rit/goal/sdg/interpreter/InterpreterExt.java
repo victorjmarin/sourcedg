@@ -69,7 +69,7 @@ public class InterpreterExt {
     public static int VTX_ID;
 
     public static final Program PROGRAM = Programs.simpleDef();
-    public static final boolean PRINT = true;
+    public static final boolean PRINT = false;
     public static final boolean PRINT_RULES = true;
 
     private static Set<String> execRules = new HashSet<>();
@@ -503,6 +503,8 @@ public class InterpreterExt {
     private static Program whileRule(final Program program) {
 	final While s = (While) program.s;
 	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL_WHILE, s.e.toString());
+	v.setAssignedVariable(s.getDef());
+	v.setReadingVariables(s.getUses());
 	program.sdg.addVertex(v);
 	program.sdg.addEdge(v, v, EdgeType.CTRL_TRUE);
 	program.cfg.addVertex(v);
@@ -523,6 +525,8 @@ public class InterpreterExt {
     private static Program doWhileRule(final Program program) {
 	final DoWhile s = (DoWhile) program.s;
 	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL_DO, s.e.toString());
+	v.setAssignedVariable(s.getDef());
+	v.setReadingVariables(s.getUses());
 	program.sdg.addVertex(v);
 	program.sdg.addEdge(v, v, EdgeType.CTRL_TRUE);
 	program.cfg.addVertex(v);
@@ -544,6 +548,8 @@ public class InterpreterExt {
 	final CtrlEdge s = (CtrlEdge) program.s;
 	final DoWhile doWhile = (DoWhile) s.s;
 	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL_DO, doWhile.e.toString());
+	v.setAssignedVariable(s.getDef());
+	v.setReadingVariables(s.getUses());
 	program.sdg.addVertex(v);
 	program.cfg.addVertex(v);
 	program.Vc.clear();

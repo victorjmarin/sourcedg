@@ -18,7 +18,7 @@ public class Main {
 
     public static void main(final String[] args) throws IOException {
 	final long t = System.currentTimeMillis();
-	final String program = new String(Files.readAllBytes(Paths.get("programs/java8/ref1.java")));
+	final String program = new String(Files.readAllBytes(Paths.get("programs/java8/DataTest.java")));
 	final Translator translator = new Translator();
 	final Stmt stmt = translator.from(program);
 	System.out.println(stmt);

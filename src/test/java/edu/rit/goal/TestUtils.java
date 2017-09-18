@@ -38,10 +38,13 @@ public class TestUtils {
 		if (component.getType() != null) {
 		    switch (component.getType()) {
 		    case CTRL_TRUE:
-			result.put("splines", "line");
+			result.put("splines", "compound");
+			break;
+		    case CALL:
+			result.put("style", "dashed");
 			break;
 		    default:
-			result.put("splines", "curved");
+			result.put("splines", "true");
 			break;
 		    }
 		}
@@ -49,7 +52,7 @@ public class TestUtils {
 	    }
 	};
 	final DOTExporter<Vertex, Edge> exporter = new DOTExporter<>(new IntegerComponentNameProvider<>(),
-		vertexLabelProvider, edgeLabelProvider, null, edgeAttrProvider);
+		vertexLabelProvider, null, null, edgeAttrProvider);
 	final String path = "/Users/goal/Desktop/" + fileName;
 	try {
 	    exporter.exportGraph(graph, new File(path + ".dot"));

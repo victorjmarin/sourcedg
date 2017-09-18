@@ -19,6 +19,7 @@ public class JavaUtils {
 	    // Currently only works for local variable definitions. Will not work properly
 	    // when referencing member variables, for example (this.X)
 	    final int type = ((TerminalNodeImpl) ctx).getSymbol().getType();
+
 	    if (type == JavaParser.IDENTIFIER) {
 		result.add(ctx.getText());
 	    }

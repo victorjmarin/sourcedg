@@ -1,12 +1,18 @@
 
 public class DataTest {
 
-    void m(int p1, int p2) {
-	int z = m1(2);
-    }
+    void assignment1(int[] a) {
+	int o = 0, e = 1, i = 0;
 
-    int m1(int a) {
-	return 2;
+	while (i < a.length) {
+	    if (i % 2 == 1)
+		o += a[i];
+	    if (i % 2 == 0)
+		e *= a[i];
+	    i++;
+	}
+
+	System.out.println(o + ", " + e);
     }
 
 }
