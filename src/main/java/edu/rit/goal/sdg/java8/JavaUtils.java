@@ -21,7 +21,6 @@ public class JavaUtils {
 	    // when referencing member variables, for example (this.X)
 	    final int type = ((TerminalNodeImpl) ctx).getSymbol().getType();
 	    if (type == JavaParser.IDENTIFIER) {
-		System.out.println(ctx.getText());
 		result.add(ctx.getText());
 	    }
 	} else {
