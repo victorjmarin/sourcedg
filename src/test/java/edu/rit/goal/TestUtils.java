@@ -52,7 +52,7 @@ public class TestUtils {
 	    }
 	};
 	final DOTExporter<Vertex, Edge> exporter = new DOTExporter<>(new IntegerComponentNameProvider<>(),
-		vertexLabelProvider, null, null, edgeAttrProvider);
+		vertexLabelProvider, edgeLabelProvider, null, edgeAttrProvider);
 	final String path = "/Users/goal/Desktop/" + fileName;
 	try {
 	    exporter.exportGraph(graph, new File(path + ".dot"));

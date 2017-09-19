@@ -33,7 +33,10 @@ import edu.rit.goal.sdg.java8.antlr.JavaParser.StatementContext;
 public class StmtVisitor {
 
     public Stmt visit(final StatementContext ctx) {
-	Stmt result = null;
+	// Returning skip currently instead of null because of semicolons. If
+	// contemplating semicolons, they override other statements like
+	// System.out.print(k);.
+	Stmt result = new Skip();
 	final BlockContext blockLabel = ctx.blockLabel;
 	final TerminalNode assertStmt = ctx.ASSERT();
 	final TerminalNode ifStmt = ctx.IF();

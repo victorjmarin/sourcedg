@@ -780,7 +780,7 @@ public class InterpreterExt {
 		System.out.println("[WARN] " + Px0 + " type is '" + Px0.getType() + "'. Expected was 'FORMAL_OUT'.");
 	    }
 	} else {
-	    System.out.println("[WARN] Cannot find parameters for method '" + paramOut.x + "'.");
+	    System.out.println("[WARN] Cannot find parameter vertices for method '" + paramOut.x + "'.");
 	}
 	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
 		program.defers, new Skip());

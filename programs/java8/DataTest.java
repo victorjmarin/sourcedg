@@ -1,29 +1,20 @@
 
 public class DataTest {
 
-    void escLAB3P2V1(int k) {
-	int i = 0;
-	while (i < k) {
-	    int low = factorial(i);
-	    int high = fibonacci(i + 1);
-	    if (low < k && k > high) {
-		System.out.print(k);
-		break;
-	    }
-	    if (currentFact > k)
-		break;
-	    i++;
-	}
-    }
+    void assignment1(int[] a) {
+	int o = 1, e = 0, i = 0;
 
-    int fibonacci(int n) {
-	int ret = 0, prev = 1, i = 1;
-	while (i <= n) {
-	    ret += n;
-	    prev = ret - prev;
+	while (i < a.length)
+	    ;
+	{
+	    if (i % 2 == 1)
+		o *= a[i];
+	    if (i % 2 == 0)
+		e += a[i];
 	    i++;
 	}
-	return ret;
+
+	System.out.println("Even: " + e + ", Odd: " + o);
     }
 
 }
