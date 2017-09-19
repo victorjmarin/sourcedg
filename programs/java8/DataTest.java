@@ -1,18 +1,25 @@
 
 public class DataTest {
 
-    void assignment1(int[] a) {
-	int o = 0, e = 1, i = 0;
-
-	while (i < a.length) {
-	    if (i % 2 == 1)
-		o += a[i];
-	    if (i % 2 == 0)
-		e *= a[i];
-	    i++;
+    void escLAB3P1V1(int k) {
+	    for (int i = 1; i <= k; i++) {
+	        int currentFact = getFactorial(i);
+	        int nextFact = getFactorial(i + 1);
+	        
+	        if (currentFact <= k && k < nextFact) {
+	            System.out.print(i);
+	            break;
+	        }
+	        
+	        if (currentFact > k)
+	            break;
+	    }
 	}
 
-	System.out.println(o + ", " + e);
-    }
-
+	int getFactorial(int n) {
+		int ret = 1;
+		for (int i = 1; i <= n; i++)
+			ret *= i;
+		return ret;
+	}
 }

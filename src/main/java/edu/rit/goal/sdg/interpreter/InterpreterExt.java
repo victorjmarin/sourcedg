@@ -417,11 +417,8 @@ public class InterpreterExt {
 	program.sdg.addVertex(v);
 	program.cfg.addVertex(v);
 	program.Vc.add(v);
-	final Set<Vertex> I = new HashSet<>();
-	I.add(v);
-	final Set<Vertex> O = new HashSet<>(I);
 	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Io(I, O));
+		program.defers, new Io(v, v));
     }
 
     private static Program postOpRule(final Program program) {
@@ -432,11 +429,8 @@ public class InterpreterExt {
 	program.sdg.addVertex(v);
 	program.cfg.addVertex(v);
 	program.Vc.add(v);
-	final Set<Vertex> I = new HashSet<>();
-	I.add(v);
-	final Set<Vertex> O = new HashSet<>(I);
 	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Io(I, O));
+		program.defers, new Io(v, v));
     }
 
     private static Program returnRule(final Program program) {
@@ -444,9 +438,10 @@ public class InterpreterExt {
 	final Vertex v = new Vertex(VTX_ID++, VertexType.RETURN, ret.e);
 	v.setReadingVariables(ret.getUses());
 	program.sdg.addVertex(v);
+	program.cfg.addVertex(v);
 	program.Vc.add(v);
 	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Skip());
+		program.defers, new Io(v, v));
     }
 
     private static Program vcRule(final Program program) {
