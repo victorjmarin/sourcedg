@@ -771,8 +771,17 @@ public class InterpreterExt {
 
     private static Program paramOutRule(final Program program) {
 	final ParamOut paramOut = (ParamOut) program.s;
-	final Vertex Px0 = vtxAtIdx(program.P.get(paramOut.x), 0);
-	program.sdg.addEdge(Px0, paramOut.v, EdgeType.PARAM_OUT);
+	final LinkedHashSet<Vertex> Px = program.P.get(paramOut.x);
+	if (Px != null && !Px.isEmpty()) {
+	    final Vertex Px0 = vtxAtIdx(program.P.get(paramOut.x), 0);
+	    if (VertexType.FORMAL_OUT.equals(Px0.getType())) {
+		program.sdg.addEdge(Px0, paramOut.v, EdgeType.PARAM_OUT);
+	    } else {
+		System.out.println("[WARN] " + Px0 + " type is '" + Px0.getType() + "'. Expected was 'FORMAL_OUT'.");
+	    }
+	} else {
+	    System.out.println("[WARN] Cannot find parameters for method '" + paramOut.x + "'.");
+	}
 	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
 		program.defers, new Skip());
     }

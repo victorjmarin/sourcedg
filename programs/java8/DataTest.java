@@ -1,25 +1,29 @@
 
 public class DataTest {
 
-    void escLAB3P1V1(int k) {
-	    for (int i = 1; i <= k; i++) {
-	        int currentFact = getFactorial(i);
-	        int nextFact = getFactorial(i + 1);
-	        
-	        if (currentFact <= k && k < nextFact) {
-	            System.out.print(i);
-	            break;
-	        }
-	        
-	        if (currentFact > k)
-	            break;
+    void escLAB3P2V1(int k) {
+	int i = 0;
+	while (i < k) {
+	    int low = factorial(i);
+	    int high = fibonacci(i + 1);
+	    if (low < k && k > high) {
+		System.out.print(k);
+		break;
 	    }
+	    if (currentFact > k)
+		break;
+	    i++;
 	}
+    }
 
-	int getFactorial(int n) {
-		int ret = 1;
-		for (int i = 1; i <= n; i++)
-			ret *= i;
-		return ret;
+    int fibonacci(int n) {
+	int ret = 0, prev = 1, i = 1;
+	while (i <= n) {
+	    ret += n;
+	    prev = ret - prev;
+	    i++;
 	}
+	return ret;
+    }
+
 }
