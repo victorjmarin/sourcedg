@@ -1,20 +1,18 @@
+public class Circle {
 
-public class DataTest {
+    void main() {
+	double p = 3.14;
+	double rad = 3.0;
+	if (debug)
+	    rad = 4.0;
+	double area = mult3(p, rad, rad);
+	double circ = mult3(2, p, rad);
+	System.out.println(area);
+	System.out.println(circ);
+    }
 
-    void assignment1(int[] a) {
-	int o = 1, e = 0, i = 0;
-
-	while (i < a.length)
-	    ;
-	{
-	    if (i % 2 == 1)
-		o *= a[i];
-	    if (i % 2 == 0)
-		e += a[i];
-	    i++;
-	}
-
-	System.out.println("Even: " + e + ", Odd: " + o);
+    double mult3(double op1, double op2, double op3) {
+	return op1 * op2 * op3;
     }
 
 }

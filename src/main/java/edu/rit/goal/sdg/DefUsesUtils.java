@@ -1,6 +1,8 @@
 package edu.rit.goal.sdg;
 
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -21,19 +23,19 @@ public class DefUsesUtils {
 	    if (type == JavaParser.IDENTIFIER)
 		str.setDef(str.value);
 	} else {
-	    final Set<TerminalNode> terminalNodes = getTerminalNodes(str.pt);
+	    final List<TerminalNode> terminalNodes = getTerminalNodes(str.pt);
 	    final Set<String> uses = new HashSet<>();
 	    for (final TerminalNode pt : terminalNodes) {
 		final int type = pt.getSymbol().getType();
 		if (type == JavaParser.IDENTIFIER)
-		    uses.add(str.value);
+		    uses.add(pt.getText());
 	    }
 	    str.setUses(uses);
 	}
     }
 
-    private static Set<TerminalNode> getTerminalNodes(final ParseTree ctx) {
-	final Set<TerminalNode> result = new HashSet<>();
+    private static List<TerminalNode> getTerminalNodes(final ParseTree ctx) {
+	final List<TerminalNode> result = new LinkedList<>();
 	if (ctx == null)
 	    return result;
 	if (ctx.getChildCount() == 0 && ctx instanceof TerminalNode)
@@ -46,15 +48,19 @@ public class DefUsesUtils {
 
     // Type is checked to leave out parameters such as numbers
     public static void paramInDefUses(final Params p, final Str str, final boolean isFormal) {
-	final int type = ((TerminalNode) str.pt).getSymbol().getType();
-	if (type == JavaParser.IDENTIFIER) {
-	    if (isFormal) {
+	final List<TerminalNode> terminalNodes = getTerminalNodes(str.pt);
+	if (isFormal) {
+	    final int type = ((TerminalNode) terminalNodes.get(0)).getSymbol().getType();
+	    if (type == JavaParser.IDENTIFIER)
 		p.setDef(p.x);
-	    } else {
-		final Set<String> uses = new HashSet<>();
-		uses.add(p.x);
-		p.setUses(uses);
+	} else {
+	    final Set<String> uses = new HashSet<>();
+	    for (final TerminalNode pt : terminalNodes) {
+		final int type = pt.getSymbol().getType();
+		if (type == JavaParser.IDENTIFIER)
+		    uses.add(pt.getText());
 	    }
+	    p.setUses(uses);
 	}
     }
 

@@ -16,6 +16,7 @@ import edu.rit.goal.sdg.interpreter.stmt.Stmt;
 
 public class Main {
 
+    
     public static void main(final String[] args) throws IOException {
 	final long t = System.currentTimeMillis();
 	final String program = new String(Files.readAllBytes(Paths.get("programs/java8/DataTest.java")));

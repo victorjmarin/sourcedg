@@ -28,6 +28,7 @@ import edu.rit.goal.sdg.java8.antlr.JavaParser.ExpressionContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.ExpressionListContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.ForControlContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.ForInitContext;
+import edu.rit.goal.sdg.java8.antlr.JavaParser.LocalVariableDeclarationContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.StatementContext;
 
 public class StmtVisitor {
@@ -80,7 +81,7 @@ public class StmtVisitor {
 	} else if (continueStmt != null) {
 	    result = new Continue();
 	} else if (exprCtx != null) {
-	    result = expr(ctx, ctx.statementExpression);
+	    result = expr(ctx.statementExpression);
 	} else if (identifierLbl != null) {
 	    Translator.unsupported(ctx);
 	}
@@ -96,19 +97,26 @@ public class StmtVisitor {
 	Stmt si = new Skip();
 	Stmt sc = new Skip();
 	Stmt su = new Skip();
-	if (forInitCtx != null)
-	    si = new LocalVarDeclVisitor().visit(forInitCtx.localVariableDeclaration());
+	if (forInitCtx != null) {
+	    final LocalVariableDeclarationContext lclVarDeclCtx = forInitCtx.localVariableDeclaration();
+	    if (lclVarDeclCtx != null)
+		si = new LocalVarDeclVisitor().visit(lclVarDeclCtx);
+	    else
+		// We are assumming only one expression
+		si = expr(forInitCtx.expressionList().expression(0));
+	}
 	final ExpressionContext exprCtx = forCtrlCtx.expression();
 	if (exprCtx != null)
-	    sc = expr(ctx, exprCtx);
+	    sc = expr(exprCtx);
 	final ExpressionListContext exprListCtx = forCtrlCtx.expressionList();
 	if (exprListCtx != null)
-	    su = expr(ctx, exprListCtx.expression(0));
+	    // We are assumming only one expression
+	    su = expr(exprListCtx.expression(0));
 	result = new For(si, sc, su, s);
 	return result;
     }
 
-    public Stmt expr(final StatementContext ctx, final ExpressionContext exprCtx) {
+    public Stmt expr(final ExpressionContext exprCtx) {
 	Stmt result = null;
 	final Token bop = exprCtx.bop;
 	final boolean isMethodCall = exprCtx.expressionList() != null || Translator.isEmptyArgCall(exprCtx);
@@ -117,7 +125,7 @@ public class StmtVisitor {
 	    final boolean isShortHand = Translator.isShortHandOperator(bop.getText());
 	    final boolean isAssign = isShortHand || "=".equals(bop.getText());
 	    if (isAssign) {
-		result = assign(ctx, isShortHand);
+		result = assign(exprCtx, isShortHand);
 	    } else {
 		// TODO: Assuming a plain condition
 		result = new Str(exprCtx.getText());
@@ -146,8 +154,7 @@ public class StmtVisitor {
 	return result;
     }
 
-    public Stmt assign(final StatementContext ctx, final boolean isShortHand) {
-	final ExpressionContext exprCtx = ctx.expression(0);
+    public Stmt assign(final ExpressionContext exprCtx, final boolean isShortHand) {
 	final String x = exprCtx.expression(0).getText();
 	final String op = exprCtx.bop.getText();
 	final Str e = new Str(exprCtx.expression(1).getText());
