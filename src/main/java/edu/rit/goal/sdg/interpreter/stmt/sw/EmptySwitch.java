@@ -4,7 +4,9 @@ public class EmptySwitch implements ISwitchBody {
 
     @Override
     public String toString() {
-	return "ø";
+	final int emptySetAscii = 248;
+	final Character emptySetChar = new Character((char) emptySetAscii);
+	return emptySetChar.toString();
     }
 
 }

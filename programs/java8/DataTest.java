@@ -1,18 +1,26 @@
 public class Circle {
 
-    void main() {
-	double p = 3.14;
-	double rad = 3.0;
-	if (debug)
-	    rad = 4.0;
-	double area = mult3(p, rad, rad);
-	double circ = mult3(2, p, rad);
-	System.out.println(area);
-	System.out.println(circ);
+    void countGoldMedals(int year) throws Exception {
+	int counter = 0, y = 0, p = 0, medals = 0;
+	String fn = "", ln = "", end = "";
+	java.util.Scanner s = new java.util.Scanner(
+		new java.io.File("assignments/rit-all-g-medals/summer_olympics.txt"));
+	while (s.hasNext()) {
+	    if (counter % 5 == 0)
+		fn = s.next();
+	    if (counter % 5 == 1)
+		ln = s.next();
+	    if (counter % 5 == 2)
+		y = s.nextInt();
+	    if (counter % 5 == 3)
+		p = s.nextInt();
+	    if (counter % 5 == 4)
+		end = s.next();
+	    if (counter % 5 == 4 && y == year && p == 1)
+		medals += 1;
+	    counter++;
+	}
+	s.close();
+	System.out.println(medals);
     }
-
-    double mult3(double op1, double op2, double op3) {
-	return op1 * op2 * op3;
-    }
-
 }

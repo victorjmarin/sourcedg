@@ -20,20 +20,10 @@ import edu.rit.goal.sdg.java8.antlr.JavaParser.MethodBodyContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.MethodDeclarationContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.TypeTypeContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.TypeTypeOrVoidContext;
-import edu.rit.goal.sdg.java8.antlr.JavaParserBaseVisitor;
 
-public class ClassBodyVisitor extends JavaParserBaseVisitor<Stmt> {
+public class ClassBodyVisitor {
 
-    @Override
-    protected Stmt aggregateResult(final Stmt aggregate, final Stmt nextResult) {
-	Stmt result = nextResult;
-	if (result == null)
-	    result = aggregate;
-	return result;
-    }
-
-    @Override
-    public Stmt visitClassBody(final JavaParser.ClassBodyContext ctx) {
+    public Stmt visit(final JavaParser.ClassBodyContext ctx, final String className) {
 	final List<Stmt> defStmts = new LinkedList<>();
 	for (final ClassBodyDeclarationContext clsBodyDeclCtx : ctx.classBodyDeclaration()) {
 	    final MemberDeclarationContext memberDeclCtx = clsBodyDeclCtx.memberDeclaration();
@@ -48,8 +38,8 @@ public class ClassBodyVisitor extends JavaParserBaseVisitor<Stmt> {
 		final TypeTypeContext typeCtx = typeVoidCtx.typeType();
 		// Method has return type
 		final Boolean b = typeCtx != null ? true : false;
-		// Method name
-		final String x = methodDeclCtx.IDENTIFIER().getText();
+		// Method name with format className.methodName
+		final String x = className + "." + methodDeclCtx.IDENTIFIER().getText();
 		final MethodBodyContext methodBodyCtx = methodDeclCtx.methodBody();
 		// Formal parameters
 		final List<Str> params = new ArrayList<>();

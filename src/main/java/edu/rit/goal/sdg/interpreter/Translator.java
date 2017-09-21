@@ -27,7 +27,7 @@ import edu.rit.goal.sdg.java8.antlr.JavaLexer;
 import edu.rit.goal.sdg.java8.antlr.JavaParser;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.ExpressionContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.ExpressionListContext;
-import edu.rit.goal.sdg.java8.visitor.ClassBodyVisitor;
+import edu.rit.goal.sdg.java8.visitor.CompilationUnitVisitor;
 
 public class Translator {
     private boolean notWrapped = true;
@@ -51,7 +51,7 @@ public class Translator {
 	    tokens = new CommonTokenStream(lexer);
 	    parser = new JavaParser(tokens);
 	    tree = ((JavaParser) parser).compilationUnit();
-	    visitor = new ClassBodyVisitor();
+	    visitor = new CompilationUnitVisitor();
 	    result = visitor.visit(tree);
 	    break;
 	case PYTHON:
@@ -131,7 +131,9 @@ public class Translator {
 	final List<Str> params = Translator.params(exprLstCtx);
 	final Param p = Translator.param(params, false);
 	final Call result = new Call(x, p);
-	final Set<String> uses = JavaUtils.uses(exprLstCtx);
+	// Using ctx instead of exprLstCtx to compute used because we are interested in
+	// retrieving references objects, e.g., in s.close() we want s as a use.
+	final Set<String> uses = JavaUtils.uses(ctx);
 	result.setUses(uses);
 	return result;
     }
