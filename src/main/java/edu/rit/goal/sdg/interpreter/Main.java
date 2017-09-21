@@ -23,7 +23,7 @@ public class Main {
 	final Translator translator = new Translator();
 	final Stmt stmt = translator.from(program);
 	System.out.println(stmt);
-	final Program p = InterpreterExt.interpret(new Program(stmt));
+	final Program p = InterpreterExt.interpret(new Program(stmt), false);
 	final SysDepGraph sdg = p.sdg;
 	final Map<String, DirectedGraph<Vertex, Edge>> methodSubgraphs = sdg.getMethodSubgraphs();
 	System.out.println(System.currentTimeMillis() - t + " ms. to build the PDG");

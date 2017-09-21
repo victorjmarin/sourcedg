@@ -71,6 +71,8 @@ public class InterpreterExt {
     public static final Program PROGRAM = Programs.simpleDef();
     public static final boolean PRINT = false;
     public static final boolean PRINT_RULES = true;
+    
+    private static boolean simpleControlLabels = false;
 
     private static Set<String> execRules = new HashSet<>();
     public static final String[] RULES = { "defRule", "voidDefRule", "seqSkipRule", "seqDeferRule", "seqSeqDeferRule",
@@ -87,7 +89,7 @@ public class InterpreterExt {
 
     public static void main(final String[] args) {
 	VTX_ID = 0;
-	final Program result = interpret(PROGRAM);
+	final Program result = interpret(PROGRAM, false);
 	if (PRINT)
 	    System.out.println(result.s + "\n");
 	final Set<String> allRules = new HashSet<String>(Arrays.asList(RULES));
@@ -98,7 +100,8 @@ public class InterpreterExt {
 	System.out.println(allRules);
     }
 
-    public static Program interpret(final Program program) {
+    public static Program interpret(final Program program, boolean simpleControl) {
+    simpleControlLabels = simpleControl;
 	execRules.clear();
 	Program result = program;
 	while (!(result.s instanceof Skip)) {
@@ -113,7 +116,7 @@ public class InterpreterExt {
 	if (!result.defers.isEmpty()) {
 	    final Stmt deferSeq = Translator.seq(result.defers);
 	    result.s = deferSeq;
-	    result = interpret(result);
+	    result = interpret(result, simpleControl);
 	}
 	result.sdg.setCfgs(result.F);
 	return result;
@@ -475,10 +478,10 @@ public class InterpreterExt {
 	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
 		program.defers, new Seq(new CtrlEdge(s.B, s.N, seq.s1), new CtrlEdge(s.B, s.N, seq.s2)));
     }
-
+    
     private static Program ifThenElseRule(final Program program) {
 	final IfThenElse s = (IfThenElse) program.s;
-	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL_IF, s.e.toString());
+	final Vertex v = new Vertex(VTX_ID++, (simpleControlLabels ? VertexType.CTRL : VertexType.CTRL_IF), s.e.toString());
 	v.setAssignedVariable(s.getDef());
 	v.setReadingVariables(s.getUses());
 	program.sdg.addVertex(v);
@@ -499,7 +502,7 @@ public class InterpreterExt {
 
     private static Program whileRule(final Program program) {
 	final While s = (While) program.s;
-	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL_WHILE, s.e.toString());
+	final Vertex v = new Vertex(VTX_ID++, (simpleControlLabels ? VertexType.CTRL : VertexType.CTRL_WHILE), s.e.toString());
 	v.setAssignedVariable(s.getDef());
 	v.setReadingVariables(s.getUses());
 	program.sdg.addVertex(v);
@@ -521,7 +524,7 @@ public class InterpreterExt {
 
     private static Program doWhileRule(final Program program) {
 	final DoWhile s = (DoWhile) program.s;
-	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL_DO, s.e.toString());
+	final Vertex v = new Vertex(VTX_ID++, (simpleControlLabels ? VertexType.CTRL : VertexType.CTRL_DO), s.e.toString());
 	v.setAssignedVariable(s.getDef());
 	v.setReadingVariables(s.getUses());
 	program.sdg.addVertex(v);
@@ -544,7 +547,7 @@ public class InterpreterExt {
     private static Program ctrlEdgeDoWhileRule(final Program program) {
 	final CtrlEdge s = (CtrlEdge) program.s;
 	final DoWhile doWhile = (DoWhile) s.s;
-	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL_DO, doWhile.e.toString());
+	final Vertex v = new Vertex(VTX_ID++, (simpleControlLabels ? VertexType.CTRL : VertexType.CTRL_DO), doWhile.e.toString());
 	v.setAssignedVariable(s.getDef());
 	v.setReadingVariables(s.getUses());
 	program.sdg.addVertex(v);
@@ -571,7 +574,7 @@ public class InterpreterExt {
 
     private static Program forRule(final Program program) {
 	final For s = (For) program.s;
-	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL_FOR, s.sc.toString());
+	final Vertex v = new Vertex(VTX_ID++, (simpleControlLabels ? VertexType.CTRL : VertexType.CTRL_FOR), s.sc.toString());
 	v.setAssignedVariable(s.sc.getDef());
 	v.setReadingVariables(s.sc.getUses());
 	program.sdg.addVertex(v);
@@ -596,7 +599,7 @@ public class InterpreterExt {
 
     private static Program switchEmptyRule(final Program program) {
 	final Switch s = (Switch) program.s;
-	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL_IF, s.e.toString());
+	final Vertex v = new Vertex(VTX_ID++, (simpleControlLabels ? VertexType.CTRL : VertexType.CTRL_IF), s.e.toString());
 	program.sdg.addVertex(v);
 	program.Vc.add(v);
 	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
