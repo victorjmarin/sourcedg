@@ -124,18 +124,23 @@ public class Translator {
 	return result;
     }
 
-    public static Call call(final ExpressionContext ctx) {
+    public static Call call(final ExpressionContext ctx, final String className) {
 	final List<ExpressionContext> exprCtxLst = ctx.expression();
-	final String x = exprCtxLst.stream().map(c -> c.getText()).collect(Collectors.joining());
+	final String methodName = exprCtxLst.stream().map(c -> c.getText()).collect(Collectors.joining());
 	final ExpressionListContext exprLstCtx = ctx.expressionList();
 	final List<Str> params = Translator.params(exprLstCtx);
 	final Param p = Translator.param(params, false);
+	final String x = fullMethodName(methodName, className);
 	final Call result = new Call(x, p);
 	// Using ctx instead of exprLstCtx to compute used because we are interested in
 	// retrieving references objects, e.g., in s.close() we want s as a use.
 	final Set<String> uses = JavaUtils.uses(ctx);
 	result.setUses(uses);
 	return result;
+    }
+
+    public static String fullMethodName(final String x, final String className) {
+	return className + "." + x;
     }
 
     public static void unsupported(final ParseTree ctx) {

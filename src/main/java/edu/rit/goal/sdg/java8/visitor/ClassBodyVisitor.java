@@ -23,7 +23,13 @@ import edu.rit.goal.sdg.java8.antlr.JavaParser.TypeTypeOrVoidContext;
 
 public class ClassBodyVisitor {
 
-    public Stmt visit(final JavaParser.ClassBodyContext ctx, final String className) {
+    private final String className;
+
+    public ClassBodyVisitor(final String className) {
+	this.className = className;
+    }
+
+    public Stmt visit(final JavaParser.ClassBodyContext ctx) {
 	final List<Stmt> defStmts = new LinkedList<>();
 	for (final ClassBodyDeclarationContext clsBodyDeclCtx : ctx.classBodyDeclaration()) {
 	    final MemberDeclarationContext memberDeclCtx = clsBodyDeclCtx.memberDeclaration();
@@ -39,7 +45,8 @@ public class ClassBodyVisitor {
 		// Method has return type
 		final Boolean b = typeCtx != null ? true : false;
 		// Method name with format className.methodName
-		final String x = className + "." + methodDeclCtx.IDENTIFIER().getText();
+		final String methodName = methodDeclCtx.IDENTIFIER().getText();
+		final String x = Translator.fullMethodName(methodName, className);
 		final MethodBodyContext methodBodyCtx = methodDeclCtx.methodBody();
 		// Formal parameters
 		final List<Str> params = new ArrayList<>();
@@ -54,7 +61,7 @@ public class ClassBodyVisitor {
 		// Method body
 		final BlockContext blockCtx = methodBodyCtx.block();
 		Stmt s = null;
-		final BlockContextVisitor visitor = new BlockContextVisitor();
+		final BlockContextVisitor visitor = new BlockContextVisitor(className);
 		s = visitor.visit(blockCtx);
 		final Def def = new Def(b, x, Translator.param(params, true), s);
 		defStmts.add(def);

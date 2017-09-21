@@ -33,6 +33,12 @@ import edu.rit.goal.sdg.java8.antlr.JavaParser.StatementContext;
 
 public class StmtVisitor {
 
+    private final String className;
+
+    public StmtVisitor(final String className) {
+	this.className = className;
+    }
+
     public Stmt visit(final StatementContext ctx) {
 	// Returning skip currently instead of null because of semicolons. If
 	// contemplating semicolons, they override other statements like
@@ -54,7 +60,7 @@ public class StmtVisitor {
 	final ExpressionContext exprCtx = ctx.statementExpression;
 	final Token identifierLbl = ctx.identifierLabel;
 	if (blockLabel != null) {
-	    final BlockContextVisitor visitor = new BlockContextVisitor();
+	    final BlockContextVisitor visitor = new BlockContextVisitor(className);
 	    result = visitor.visit(ctx.block());
 	} else if (assertStmt != null) {
 	    Translator.unsupported(ctx);
@@ -90,7 +96,7 @@ public class StmtVisitor {
 
     public Stmt _for(final StatementContext ctx) {
 	Stmt result = null;
-	final Stmt s = new StmtVisitor().visit(ctx.statement(0));
+	final Stmt s = new StmtVisitor(className).visit(ctx.statement(0));
 	final ForControlContext forCtrlCtx = ctx.forControl();
 	final ForInitContext forInitCtx = forCtrlCtx.forInit();
 	// TODO: Support for initialization and update of multiple variables
@@ -100,7 +106,7 @@ public class StmtVisitor {
 	if (forInitCtx != null) {
 	    final LocalVariableDeclarationContext lclVarDeclCtx = forInitCtx.localVariableDeclaration();
 	    if (lclVarDeclCtx != null)
-		si = new LocalVarDeclVisitor().visit(lclVarDeclCtx);
+		si = new LocalVarDeclVisitor(className).visit(lclVarDeclCtx);
 	    else
 		// We are assumming only one expression
 		si = expr(forInitCtx.expressionList().expression(0));
@@ -149,7 +155,7 @@ public class StmtVisitor {
 	    uses.add(x);
 	    result.setUses(uses);
 	} else if (isMethodCall) {
-	    result = Translator.call(exprCtx);
+	    result = Translator.call(exprCtx, className);
 	}
 	return result;
     }
@@ -173,11 +179,11 @@ public class StmtVisitor {
 	Stmt s2 = new Skip();
 	if (size > 0) {
 	    final StatementContext thenBranch = ctx.statement(0);
-	    s1 = new StmtVisitor().visit(thenBranch);
+	    s1 = new StmtVisitor(className).visit(thenBranch);
 	}
 	if (size > 1) {
 	    final StatementContext elseBranch = ctx.statement(1);
-	    s2 = new StmtVisitor().visit(elseBranch);
+	    s2 = new StmtVisitor(className).visit(elseBranch);
 	}
 	final ExpressionContext exprCtx = ctx.parExpression().expression();
 	final Expr e = new Str(exprCtx.getText());
@@ -191,7 +197,7 @@ public class StmtVisitor {
 	final ExpressionContext exprCtx = ctx.parExpression().expression();
 	final Expr e = new Str(exprCtx.getText());
 	final StatementContext stmtCtx = ctx.statement(0);
-	final Stmt s = new StmtVisitor().visit(stmtCtx);
+	final Stmt s = new StmtVisitor(className).visit(stmtCtx);
 	final DoWhile result = new DoWhile(s, e);
 	final Set<String> uses = JavaUtils.uses(exprCtx);
 	result.setUses(uses);
@@ -202,7 +208,7 @@ public class StmtVisitor {
 	final ExpressionContext exprCtx = ctx.parExpression().expression();
 	final Expr e = new Str(exprCtx.getText());
 	final StatementContext stmtCtx = ctx.statement(0);
-	final Stmt s = new StmtVisitor().visit(stmtCtx);
+	final Stmt s = new StmtVisitor(className).visit(stmtCtx);
 	final While result = new While(e, s);
 	final Set<String> uses = JavaUtils.uses(exprCtx);
 	result.setUses(uses);

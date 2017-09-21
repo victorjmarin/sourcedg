@@ -11,7 +11,7 @@ public class TypeDeclarationVisitor {
 	final ClassDeclarationContext clsDeclCtx = ctx.classDeclaration();
 	final ClassBodyContext clsBodyCtx = clsDeclCtx.classBody();
 	final String className = clsDeclCtx.IDENTIFIER().getText();
-	return new ClassBodyVisitor().visit(clsBodyCtx, className);
+	return new ClassBodyVisitor(className).visit(clsBodyCtx);
     }
 
 }

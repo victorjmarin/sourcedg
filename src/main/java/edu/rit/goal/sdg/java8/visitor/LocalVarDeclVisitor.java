@@ -18,6 +18,12 @@ import edu.rit.goal.sdg.java8.antlr.JavaParser.VariableDeclaratorsContext;
 
 public class LocalVarDeclVisitor {
 
+    private final String className;
+
+    public LocalVarDeclVisitor(final String className) {
+	this.className = className;
+    }
+
     public Stmt visit(final LocalVariableDeclarationContext ctx) {
 	final List<Stmt> result = new ArrayList<>();
 	final VariableDeclaratorsContext varDeclCtx = ctx.variableDeclarators();
@@ -28,7 +34,7 @@ public class LocalVarDeclVisitor {
 	    // Method call
 	    final ExpressionListContext exprLstCtx = exprCtx.expressionList();
 	    if (exprLstCtx != null) {
-		final Call e = Translator.call(exprCtx);
+		final Call e = Translator.call(exprCtx, className);
 		final Assign assign = new Assign(x, e);
 		assign.setDef(x);
 		assign.setUses(e.getUses());

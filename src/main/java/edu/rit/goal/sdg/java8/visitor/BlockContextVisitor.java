@@ -10,6 +10,12 @@ import edu.rit.goal.sdg.java8.antlr.JavaParser.BlockStatementContext;
 
 public class BlockContextVisitor {
 
+    private final String className;
+
+    public BlockContextVisitor(final String className) {
+	this.className = className;
+    }
+
     public Stmt visit(final BlockContext ctx) {
 	Stmt result = null;
 	if (ctx != null) {
@@ -18,7 +24,7 @@ public class BlockContextVisitor {
 	    // Not empty block
 	    if (blockStmtCtx != null) {
 		for (final BlockStatementContext bsc : blockStmtCtx) {
-		    final BlockStmtVisitor visitor = new BlockStmtVisitor();
+		    final BlockStmtVisitor visitor = new BlockStmtVisitor(className);
 		    final Stmt blockStmt = visitor.visit(bsc);
 		    stmts.add(blockStmt);
 		}

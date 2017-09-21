@@ -67,6 +67,11 @@ public class SysDepGraph extends DefaultDirectedGraph<Vertex, Edge> {
 		    for (final Vertex useVtx : vbu.getValue()) {
 			// No def found for use. Create initial state vtx
 			if (def == null) {
+			    // Prevent method invocations from creating initial states.
+			    // Check comment in Translator.call for the reason why method
+			    // invocations get here as dependencies
+			    if (isMethod(use))
+				return;
 			    final Vertex v = new Vertex(Interpreter.VTX_ID++, VertexType.INITIAL_STATE, use);
 			    v.setAssignedVariable(use);
 			    addVertex(v);
@@ -146,8 +151,18 @@ public class SysDepGraph extends DefaultDirectedGraph<Vertex, Edge> {
 	return result;
     }
 
-    public Vertex getEntryVertex(final DirectedGraph<Vertex, Edge> graph) {
-	return graph.vertexSet().stream().filter(v -> VertexType.ENTRY.equals(v.getType())).findFirst().get();
+    private boolean isMethod(final String use) {
+	final Set<Vertex> entryVtcs = getEntryVertices();
+	final Set<String> methodNames = entryVtcs.stream().map(v -> {
+	    final String lbl = v.getLabel();
+	    final String[] split = lbl.split("\\.");
+	    return split[1];
+	}).collect(Collectors.toSet());
+	return methodNames.contains(use);
+    }
+
+    public Set<Vertex> getEntryVertices() {
+	return vertexSet().stream().filter(v -> VertexType.ENTRY.equals(v.getType())).collect(Collectors.toSet());
     }
 
     public Map<String, DirectedGraph<Vertex, Edge>> getMethodSubgraphs() {
