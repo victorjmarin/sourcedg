@@ -143,6 +143,13 @@ public class Translator {
 	return className + "." + x;
     }
 
+    public static String removeClassName(final String fullMethodName) {
+	final int dotPos = fullMethodName.indexOf(".");
+	if (dotPos != -1)
+	    return fullMethodName.substring(dotPos + 1, fullMethodName.length());
+	return fullMethodName;
+    }
+
     public static void unsupported(final ParseTree ctx) {
 	System.out.println("Unsupported stmt: " + ctx.getText());
     }

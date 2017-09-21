@@ -29,7 +29,7 @@ public class Main {
 	System.out.println(System.currentTimeMillis() - t + " ms. to build the PDG");
 	System.out.println(sdg);
 	sdg.computeDataFlow();
-	final DirectedGraph<Vertex, Edge> und = p.F.get("escLAB3P1V1");
+	final DirectedGraph<Vertex, Edge> und = p.F.get("Circle.main");
 	TestUtils.exportAsDot(sdg, "und");
 	for (final Entry<String, DirectedGraph<Vertex, Edge>> e : methodSubgraphs.entrySet()) {
 	    final DirectedGraph<Vertex, Edge> g = e.getValue();

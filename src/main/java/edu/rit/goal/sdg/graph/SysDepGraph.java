@@ -71,7 +71,7 @@ public class SysDepGraph extends DefaultDirectedGraph<Vertex, Edge> {
 			    // Check comment in Translator.call for the reason why method
 			    // invocations get here as dependencies
 			    if (isMethod(use))
-				return;
+				continue;
 			    final Vertex v = new Vertex(Interpreter.VTX_ID++, VertexType.INITIAL_STATE, use);
 			    v.setAssignedVariable(use);
 			    addVertex(v);
@@ -153,11 +153,7 @@ public class SysDepGraph extends DefaultDirectedGraph<Vertex, Edge> {
 
     private boolean isMethod(final String use) {
 	final Set<Vertex> entryVtcs = getEntryVertices();
-	final Set<String> methodNames = entryVtcs.stream().map(v -> {
-	    final String lbl = v.getLabel();
-	    final String[] split = lbl.split("\\.");
-	    return split[1];
-	}).collect(Collectors.toSet());
+	final Set<String> methodNames = entryVtcs.stream().map(v -> v.getLabel()).collect(Collectors.toSet());
 	return methodNames.contains(use);
     }
 

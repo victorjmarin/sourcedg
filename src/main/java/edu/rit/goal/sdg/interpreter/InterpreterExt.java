@@ -350,12 +350,13 @@ public class InterpreterExt {
 
     private static Program defRule(final Program program) {
 	final Def s = (Def) program.s;
-	final Vertex v = new Vertex(VTX_ID++, VertexType.ENTRY, s.x);
+	final String methodName = Translator.removeClassName(s.x);
+	final Vertex v = new Vertex(VTX_ID++, VertexType.ENTRY, methodName);
 	program.sdg.addVertex(v);
 	program.cfg.addVertex(v);
 	program.m = s.x;
-	final Param param1 = new Param(s.x, VertexType.FORMAL_OUT, new Str(s.x + "ResultOut"));
-	final Param param2 = new Param(s.x, VertexType.FORMAL_IN, new Params(s.x + "ResultIn", s.p));
+	final Param param1 = new Param(methodName, VertexType.FORMAL_OUT, new Str(methodName + "ResultOut"));
+	final Param param2 = new Param(methodName, VertexType.FORMAL_IN, new Params(methodName + "ResultIn", s.p));
 	final Seq seq1 = new Seq(param1, new Seq(param2, s.s));
 	final CtrlEdge ctrlEdge = new CtrlEdge(true, v, seq1);
 	final Seq seq2 = new Seq(new CfgEdge(new Io(v, v), ctrlEdge), new EndDef());
@@ -367,11 +368,12 @@ public class InterpreterExt {
 
     private static Program voidDefRule(final Program program) {
 	final Def s = (Def) program.s;
-	final Vertex v = new Vertex(VTX_ID++, VertexType.ENTRY, s.x);
+	final String methodName = Translator.removeClassName(s.x);
+	final Vertex v = new Vertex(VTX_ID++, VertexType.ENTRY, methodName);
 	program.sdg.addVertex(v);
 	program.cfg.addVertex(v);
 	program.m = s.x;
-	final Param param = new Param(s.x, VertexType.FORMAL_IN, s.p);
+	final Param param = new Param(methodName, VertexType.FORMAL_IN, s.p);
 	final Seq seq1 = new Seq(param, s.s);
 	final CtrlEdge ctrlEdge = new CtrlEdge(true, v, seq1);
 	final Seq seq2 = new Seq(new CfgEdge(new Io(v, v), ctrlEdge), new EndDef());
@@ -788,14 +790,15 @@ public class InterpreterExt {
 
     private static Program callRule(final Program program) {
 	final Call s = (Call) program.s;
+	final String methodName = Translator.removeClassName(s.x);
 	final Vertex vc = new Vertex(VTX_ID++, VertexType.CALL, s.toString());
 	vc.setAssignedVariable(s.getDef());
 	vc.setReadingVariables(s.getUses());
 	program.sdg.addVertex(vc);
 	program.cfg.addVertex(vc);
-	program.defers.add(new CallEdge(vc, s.x));
+	program.defers.add(new CallEdge(vc, methodName));
 	final Seq seq2 = new Seq(new Vc(vc), new Io(vc, vc));
-	final Param param = new Param(s.x, VertexType.ACTUAL_IN, s.p);
+	final Param param = new Param(methodName, VertexType.ACTUAL_IN, s.p);
 	final Seq seq = new Seq(new CtrlEdge(true, vc, param), seq2);
 	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
 		program.defers, seq);
@@ -804,14 +807,15 @@ public class InterpreterExt {
     private static Program assignCallRule(final Program program) {
 	final Assign assign = (Assign) program.s;
 	final Call call = (Call) assign.e;
-	final Vertex va = new Vertex(VTX_ID++, VertexType.CALL, assign.x + assign.op + call.x + "(" + call.p + ")");
+	final String methodName = Translator.removeClassName(call.x);
+	final Vertex va = new Vertex(VTX_ID++, VertexType.CALL, assign.x + assign.op + call.toString());
 	va.setAssignedVariable(assign.getDef());
 	va.setReadingVariables(call.getUses());
 	program.sdg.addVertex(va);
 	program.cfg.addVertex(va);
-	program.defers.add(new CallEdge(va, call.x));
-	final Param param1 = new Param(call.x, VertexType.ACTUAL_OUT, new Str(assign.x));
-	final Param param2 = new Param(call.x, VertexType.ACTUAL_IN, new Params(assign.x, call.p));
+	program.defers.add(new CallEdge(va, methodName));
+	final Param param1 = new Param(methodName, VertexType.ACTUAL_OUT, new Str(assign.x));
+	final Param param2 = new Param(methodName, VertexType.ACTUAL_IN, new Params(assign.x, call.p));
 	final Seq seq2 = new Seq(param1, param2);
 	final Seq seq3 = new Seq(new Vc(va), new Io(va, va));
 	final Seq seq = new Seq(new CtrlEdge(true, va, seq2), seq3);
@@ -899,22 +903,6 @@ public class InterpreterExt {
 	return new Program(p.sdg, p.cfg, p.Vc, p.P, p.F, p.C, p.m, p.defers, new CfgEdge(cfgEdge.s1, p.s));
     }
 
-    private static Program cfgEdgeDeferRule(final Program program) {
-	final CfgEdge cfgEdge = (CfgEdge) program.s;
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Seq(cfgEdge.s1, cfgEdge.s2));
-    }
-
-    private static Program cfgEdgeSeqDeferRule(final Program program) {
-	final CfgEdge cfgEdge = (CfgEdge) program.s;
-	final Seq seq = (Seq) cfgEdge.s1;
-	final Defer defer = (Defer) seq.s1;
-	final Stmt s2 = seq.s2;
-	final Stmt s3 = cfgEdge.s2;
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Seq(new CfgEdge(s2, s3), defer));
-    }
-
     private static Program cfgEdgeSkipFirstRule(final Program program) {
 	final CfgEdge cfgEdge = (CfgEdge) program.s;
 	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
@@ -932,51 +920,6 @@ public class InterpreterExt {
 	final Def def = (Def) cfgEdge.s2;
 	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
 		program.defers, def);
-    }
-
-    private static Program cfgEdgeIoSeqDeferRule(final Program program) {
-	final CfgEdge cfgEdge = (CfgEdge) program.s;
-	final Seq seq = (Seq) cfgEdge.s2;
-	final Defer defer = (Defer) seq.s1;
-	final CfgEdge cfgEdge2 = new CfgEdge(cfgEdge.s1, seq.s2);
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Seq(cfgEdge2, defer));
-    }
-
-    private static Program cfgEdgeIoDeferRule(final Program program) {
-	final CfgEdge cfgEdge = (CfgEdge) program.s;
-	final Defer defer = (Defer) cfgEdge.s2;
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, defer);
-    }
-
-    private static Program cfgEdgeIoSeqCfgEdgeIoDeferRule(final Program program) {
-	final CfgEdge cfgEdge = (CfgEdge) program.s;
-	final Seq seq = (Seq) cfgEdge.s2;
-	final CfgEdge cfgEdge2 = (CfgEdge) seq.s1;
-	final Stmt s3 = seq.s2;
-	final Seq seq2 = new Seq(new CfgEdge(cfgEdge.s1, cfgEdge2.s1), new Seq(s3, cfgEdge2.s2));
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, seq2);
-    }
-
-    private static Program cfgEdgeIoSeqSeqCfgEdgeDeferRule(final Program program) {
-	final CfgEdge cfgEdge = (CfgEdge) program.s;
-	final Seq seq = (Seq) cfgEdge.s2;
-	final Seq seq2 = (Seq) seq.s1;
-	final CfgEdge cfgEdge2 = new CfgEdge(cfgEdge.s1, new Seq(seq2.s1, new Seq(seq2.s2, seq.s2)));
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, cfgEdge2);
-    }
-
-    private static Program cfgEdgeIoSeqSeqDeferRule(final Program program) {
-	final CfgEdge cfgEdge = (CfgEdge) program.s;
-	final Seq seq = (Seq) cfgEdge.s2;
-	final Seq seq2 = (Seq) seq.s1;
-	final Stmt s3 = seq2.s2;
-	final CfgEdge cfgEdge2 = new CfgEdge(cfgEdge.s1, new Seq(seq2.s1, new Seq(seq2.s2, seq.s2)));
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, cfgEdge2);
     }
 
     private static Program cfgEdgeIoCopyInRule(final Program program) {
