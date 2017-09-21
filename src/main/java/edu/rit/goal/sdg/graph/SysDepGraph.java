@@ -17,7 +17,7 @@ import org.jgrapht.alg.shortestpath.AllDirectedPaths;
 import org.jgrapht.graph.DefaultDirectedGraph;
 
 import edu.rit.goal.sdg.interpreter.FlowGraph;
-import edu.rit.goal.sdg.interpreter.Interpreter;
+import edu.rit.goal.sdg.interpreter.InterpreterExt;
 
 public class SysDepGraph extends DefaultDirectedGraph<Vertex, Edge> {
 
@@ -63,7 +63,7 @@ public class SysDepGraph extends DefaultDirectedGraph<Vertex, Edge> {
 		final Map<String, List<Vertex>> verticesByUse = fg.getVerticesByUse();
 		for (final Entry<String, List<Vertex>> vbu : verticesByUse.entrySet()) {
 		    final String use = vbu.getKey();
-		    final List<Vertex> def = verticesByDef.get(use);
+		    List<Vertex> def = verticesByDef.get(use);
 		    for (final Vertex useVtx : vbu.getValue()) {
 			// No def found for use. Create initial state vtx
 			if (def == null) {
@@ -72,15 +72,25 @@ public class SysDepGraph extends DefaultDirectedGraph<Vertex, Edge> {
 			    // invocations get here as dependencies
 			    if (isMethod(use))
 				continue;
-			    final Vertex v = new Vertex(Interpreter.VTX_ID++, VertexType.INITIAL_STATE, use);
+			    final Vertex v = new Vertex(InterpreterExt.VTX_ID++, VertexType.INITIAL_STATE, use);
 			    v.setAssignedVariable(use);
+			    final List<Vertex> initList = new LinkedList<>();
+			    initList.add(v);
+			    // Update to reuse the same initial state vertex for future
+			    // references
+			    verticesByDef.put(use, initList);
 			    addVertex(v);
+			    def = verticesByDef.get(use);
 			    addEdge(v, useVtx, new Edge(v, useVtx, EdgeType.DATA));
 			    // Add ctrl edge w.r.t. entry vtx
 			    final Vertex entryVtx = fg.getEntryVertex();
 			    addEdge(entryVtx, v, new Edge(entryVtx, v, EdgeType.CTRL_TRUE));
 			} else {
 			    for (final Vertex defVtx : def) {
+				if (VertexType.INITIAL_STATE.equals(defVtx.getType())) {
+				    addEdge(defVtx, useVtx, new Edge(defVtx, useVtx, EdgeType.DATA));
+				    continue;
+				}
 				// Find all paths from the def to the use vtx
 				final AllDirectedPaths<Vertex, Edge> adp = new AllDirectedPaths<>(fg.graph);
 				final List<GraphPath<Vertex, Edge>> paths = adp.getAllPaths(defVtx, useVtx, true,
