@@ -80,4 +80,8 @@ public class Program {
 	return result;
     }
 
+	public SysDepGraph getSdg() {
+		return sdg;
+	}
+
 }

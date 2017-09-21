@@ -74,6 +74,8 @@ public class Vertex {
     }
 
     public Set<String> getReadingVariables() {
+    	if (readingVariables == null)
+    		readingVariables = new HashSet<>();
 	return readingVariables;
     }
 
