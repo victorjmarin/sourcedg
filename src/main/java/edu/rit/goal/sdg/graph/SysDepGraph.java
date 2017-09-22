@@ -17,7 +17,6 @@ import org.jgrapht.alg.shortestpath.AllDirectedPaths;
 import org.jgrapht.graph.DefaultDirectedGraph;
 
 import edu.rit.goal.sdg.interpreter.FlowGraph;
-import edu.rit.goal.sdg.interpreter.InterpreterExt;
 
 public class SysDepGraph extends DefaultDirectedGraph<Vertex, Edge> {
 
@@ -54,7 +53,7 @@ public class SysDepGraph extends DefaultDirectedGraph<Vertex, Edge> {
 	this.cfgs = cfgs;
     }
 
-    public void computeDataFlow() {
+    public void computeDataFlow(int vtxId) {
 	if (!hasDataFlow) {
 	    hasDataFlow = true;
 	    for (final Entry<String, DirectedGraph<Vertex, Edge>> e : cfgs.entrySet()) {
@@ -72,7 +71,7 @@ public class SysDepGraph extends DefaultDirectedGraph<Vertex, Edge> {
 			    // invocations get here as dependencies
 			    if (isMethod(use))
 				continue;
-			    final Vertex v = new Vertex(InterpreterExt.VTX_ID++, VertexType.INITIAL_STATE, use);
+			    final Vertex v = new Vertex(vtxId++, VertexType.INITIAL_STATE, use);
 			    v.setAssignedVariable(use);
 			    final List<Vertex> initList = new LinkedList<>();
 			    initList.add(v);

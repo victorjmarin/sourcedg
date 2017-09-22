@@ -1,18 +1,23 @@
+import java.util.Scanner;
+
 public class Circle {
 
-    void main() {
-	double p = 3.14;
-	double rad = 3.0;
-	if (debug)
-	    rad = 4.0;
-	double area = mult3(p, rad, rad);
-	double circ = mult3(2, p, rad);
-	System.out.println(area);
-	System.out.println(circ);
-    }
+    void countGoldMedals(int year) {
+	       int i = 1, medals = 0, p = 0, y = 0;
+	       String ln = "";
+	       Scanner s = new Scanner(
+	                     new File("summer_olympics.txt"));
+	       while (s.hasNext()) {
+	              if (i % 5 == 0)                   ln = s.next();
+	              if (i % 5 == 1)                   y = s.nextInt();
+	              if (i % 5 == 2)                   p = s.nextInt();
+	              if (i % 5 == 2 && y == year
+	                                  && p == 1)                 medals++;
+	              i++;
+	       }
+	       s.close();
+	       System.out.println(medals);
+	}
 
-    double mult3(double op1, double op2, double op3) {
-	return op1 * op2 * op3;
-    }
 
 }

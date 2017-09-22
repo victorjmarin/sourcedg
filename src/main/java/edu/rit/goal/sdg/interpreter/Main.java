@@ -16,21 +16,21 @@ import edu.rit.goal.sdg.interpreter.stmt.Stmt;
 
 public class Main {
 
-    
     public static void main(final String[] args) throws IOException {
 	final long t = System.currentTimeMillis();
 	final String program = new String(Files.readAllBytes(Paths.get("programs/java8/DataTest.java")));
 	final Translator translator = new Translator();
 	final Stmt stmt = translator.from(program);
 	System.out.println(stmt);
-	final Program p = InterpreterExt.interpret(new Program(stmt), false);
+	final Interpreter intrprtr = new Interpreter(false);
+	final Program p = intrprtr.interpret(new Program(stmt));
 	final SysDepGraph sdg = p.sdg;
 	final Map<String, DirectedGraph<Vertex, Edge>> methodSubgraphs = sdg.getMethodSubgraphs();
 	System.out.println(System.currentTimeMillis() - t + " ms. to build the PDG");
 	System.out.println(sdg);
-	sdg.computeDataFlow();
+	sdg.computeDataFlow(intrprtr.vtxId);
 	final DirectedGraph<Vertex, Edge> und = p.F.get("Circle.main");
-	TestUtils.exportAsDot(sdg, "und");
+	TestUtils.exportAsDot(sdg, "count");
 	for (final Entry<String, DirectedGraph<Vertex, Edge>> e : methodSubgraphs.entrySet()) {
 	    final DirectedGraph<Vertex, Edge> g = e.getValue();
 	    TestUtils.exportAsDot(g, e.getKey() + "Flow");

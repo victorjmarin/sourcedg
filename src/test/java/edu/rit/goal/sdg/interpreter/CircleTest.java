@@ -25,7 +25,7 @@ public class CircleTest {
 
     @BeforeClass
     public static void parseTestProgram() throws IOException, ExportException {
-	final Program p = Interpreter.interpret(Programs.horwitz());
+	final Program p = SimpleInterpreter.interpret(Programs.horwitz());
 	sdg = p.sdg;
 	notUsedVtcs = new HashSet<>(sdg.vertexSet());
 	TestUtils.exportAsDot(sdg, "circle");
