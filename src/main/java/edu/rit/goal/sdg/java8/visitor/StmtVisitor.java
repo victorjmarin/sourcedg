@@ -1,5 +1,6 @@
 package edu.rit.goal.sdg.java8.visitor;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -26,9 +27,11 @@ import edu.rit.goal.sdg.interpreter.stmt.Str;
 import edu.rit.goal.sdg.interpreter.stmt.While;
 import edu.rit.goal.sdg.java8.JavaUtils;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.BlockContext;
+import edu.rit.goal.sdg.java8.antlr.JavaParser.CatchClauseContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.CreatorContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.ExpressionContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.ExpressionListContext;
+import edu.rit.goal.sdg.java8.antlr.JavaParser.FinallyBlockContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.ForControlContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.ForInitContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.LocalVariableDeclarationContext;
@@ -76,7 +79,7 @@ public class StmtVisitor {
 	} else if (whileStmt != null) {
 	    result = _while(ctx);
 	} else if (tryStmt != null) {
-	    Translator.unsupported(ctx);
+	    result = _try(ctx);
 	} else if (switchStmt != null) {
 	    Translator.unsupported(ctx);
 	} else if (syncStmt != null) {
@@ -254,5 +257,30 @@ public class StmtVisitor {
 	final Set<String> uses = JavaUtils.uses(ctx);
 	result.setUses(uses);
 	return result;
+    }
+
+    // TODO: Try catch blocks are just treated as sequences
+    public Stmt _try(final StatementContext ctx) {
+	final List<Stmt> stmts = new ArrayList<>();
+	final BlockContext blkCtx = ctx.block();
+	final BlockContextVisitor blkCtxVisitor = new BlockContextVisitor(className);
+	final Stmt tryBlock = blkCtxVisitor.visit(blkCtx);
+	stmts.add(tryBlock);
+	final List<CatchClauseContext> catchClauseCtx = ctx.catchClause();
+	if (catchClauseCtx != null) {
+	    for (final CatchClauseContext ccc : catchClauseCtx) {
+		final BlockContextVisitor blkCtxVisitor2 = new BlockContextVisitor(className);
+		final Stmt s = blkCtxVisitor2.visit(ccc.block());
+		stmts.add(s);
+	    }
+	}
+	final FinallyBlockContext finallyBlkCtx = ctx.finallyBlock();
+	if (finallyBlkCtx != null) {
+	    final BlockContext blkCtx2 = finallyBlkCtx.block();
+	    final BlockContextVisitor blkCtxVisitor3 = new BlockContextVisitor(className);
+	    final Stmt finallyStmt = blkCtxVisitor3.visit(blkCtx2);
+	    stmts.add(finallyStmt);
+	}
+	return Translator.seq(stmts);
     }
 }
