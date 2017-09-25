@@ -68,7 +68,7 @@ public class Translator {
     protected Language detectLang(final String source) {
 	Language result = Language.JAVA;
 	if ((source.contains("def ") && source.contains(":"))
-		|| (!source.contains("{") && !source.contains("}") && !source.contains(";"))) {
+		&& (!source.contains("{") && !source.contains("}") && !source.contains(";"))) {
 	    result = Language.PYTHON;
 	}
 	return result;

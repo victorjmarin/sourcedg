@@ -33,38 +33,44 @@ public class ClassBodyVisitor {
 	final List<Stmt> defStmts = new LinkedList<>();
 	for (final ClassBodyDeclarationContext clsBodyDeclCtx : ctx.classBodyDeclaration()) {
 	    final MemberDeclarationContext memberDeclCtx = clsBodyDeclCtx.memberDeclaration();
-	    MethodDeclarationContext methodDeclCtx = memberDeclCtx.methodDeclaration();
-	    final GenericMethodDeclarationContext genMethodDecl = memberDeclCtx.genericMethodDeclaration();
-	    // Attempt to retrieve generic method is regular method declaration is null
-	    if (methodDeclCtx == null)
-		methodDeclCtx = genMethodDecl.methodDeclaration();
-	    // We are only interested in methods currently
-	    if (methodDeclCtx != null) {
-		final TypeTypeOrVoidContext typeVoidCtx = methodDeclCtx.typeTypeOrVoid();
-		final TypeTypeContext typeCtx = typeVoidCtx.typeType();
-		// Method has return type
-		final Boolean b = typeCtx != null ? true : false;
-		// Method name with format className.methodName
-		final String methodName = methodDeclCtx.IDENTIFIER().getText();
-		final String x = Translator.fullMethodName(methodName, className);
-		final MethodBodyContext methodBodyCtx = methodDeclCtx.methodBody();
-		// Formal parameters
-		final List<Str> params = new ArrayList<>();
-		final FormalParametersContext formalParamsCtx = methodDeclCtx.formalParameters();
-		final FormalParameterListContext formalParamListCtx = formalParamsCtx.formalParameterList();
-		if (formalParamListCtx != null) {
-		    for (final FormalParameterContext formalParamCtx : formalParamListCtx.formalParameter()) {
-			final Str str = new Str(formalParamCtx.variableDeclaratorId().IDENTIFIER());
-			params.add(str);
+	    if (memberDeclCtx != null) {
+		MethodDeclarationContext methodDeclCtx = memberDeclCtx.methodDeclaration();
+		final GenericMethodDeclarationContext genMethodDecl = memberDeclCtx.genericMethodDeclaration();
+		// Attempt to retrieve generic method is regular method declaration is
+		// null
+		if (methodDeclCtx == null && genMethodDecl != null)
+		    methodDeclCtx = genMethodDecl.methodDeclaration();
+		// We are only interested in methods currently
+		if (methodDeclCtx != null) {
+		    final TypeTypeOrVoidContext typeVoidCtx = methodDeclCtx.typeTypeOrVoid();
+		    final TypeTypeContext typeCtx = typeVoidCtx.typeType();
+		    // Method has return type
+		    final Boolean b = typeCtx != null ? true : false;
+		    // Method name with format className.methodName
+		    final String methodName = methodDeclCtx.IDENTIFIER().getText();
+		    final String x = Translator.fullMethodName(methodName, className);
+		    final MethodBodyContext methodBodyCtx = methodDeclCtx.methodBody();
+		    // Formal parameters
+		    final List<Str> params = new ArrayList<>();
+		    final FormalParametersContext formalParamsCtx = methodDeclCtx.formalParameters();
+		    final FormalParameterListContext formalParamListCtx = formalParamsCtx.formalParameterList();
+		    if (formalParamListCtx != null) {
+			for (final FormalParameterContext formalParamCtx : formalParamListCtx.formalParameter()) {
+			    final Str str = new Str(formalParamCtx.variableDeclaratorId().IDENTIFIER());
+			    params.add(str);
+			}
+		    }
+		    // Method body
+		    final BlockContext blockCtx = methodBodyCtx.block();
+		    // Not abstract method
+		    if (blockCtx != null) {
+			Stmt s = null;
+			final BlockContextVisitor visitor = new BlockContextVisitor(className);
+			s = visitor.visit(blockCtx);
+			final Def def = new Def(b, x, Translator.param(params, true), s);
+			defStmts.add(def);
 		    }
 		}
-		// Method body
-		final BlockContext blockCtx = methodBodyCtx.block();
-		Stmt s = null;
-		final BlockContextVisitor visitor = new BlockContextVisitor(className);
-		s = visitor.visit(blockCtx);
-		final Def def = new Def(b, x, Translator.param(params, true), s);
-		defStmts.add(def);
 	    }
 	}
 	return Translator.seq(defStmts);

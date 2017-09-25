@@ -1,7 +1,5 @@
 package edu.rit.goal.sdg.interpreter;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -250,7 +248,7 @@ public class Interpreter {
 	} else if (s instanceof ParamIn) {
 	    final ParamIn paramIn = (ParamIn) s;
 	    final LinkedHashSet<Vertex> Px = program.P.get(paramIn.x);
-	    if (Px == null || paramIn.i > paramIn.V.size()) {
+	    if (Px == null || paramIn.i >= paramIn.V.size() || paramIn.V.size() > Px.size()) {
 		printRule("paramInOobRule");
 		result = paramInOobRule(program);
 	    } else if (paramIn.i >= 1 && Px.size() > paramIn.i) {
@@ -326,6 +324,8 @@ public class Interpreter {
 	    printRule("endDefRule");
 	    result = endDefRule(program);
 	}
+	if (result == null)
+	    System.out.println(1);
 	return result;
     }
 
@@ -614,10 +614,10 @@ public class Interpreter {
 	final Vertex v = new Vertex(vtxId++, VertexType.BREAK, "break");
 	program.sdg.addVertex(v);
 	program.Vc.add(v);
-	final CtrlVertex cv = program.C.pop();
-	final Deque<CtrlVertex> S = new ArrayDeque<CtrlVertex>(program.C);
-	S.add(cv);
-	final BreakEdge breakEdge = new BreakEdge(cv.ct, v, S);
+	// final CtrlVertex cv = program.C.pop();
+	// final Deque<CtrlVertex> S = new ArrayDeque<CtrlVertex>(program.C);
+	// S.add(cv);
+	// final BreakEdge breakEdge = new BreakEdge(cv.ct, v, S);
 	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
 		program.defers, new Skip());
     }
@@ -643,10 +643,10 @@ public class Interpreter {
 	final Vertex v = new Vertex(vtxId++, VertexType.CONTINUE, "continue");
 	program.sdg.addVertex(v);
 	program.Vc.add(v);
-	final CtrlVertex cv = program.C.pop();
-	final Deque<CtrlVertex> S = new ArrayDeque<CtrlVertex>(program.C);
-	S.add(cv);
-	final ContEdge contEdge = new ContEdge(cv, v, S);
+	// final CtrlVertex cv = program.C.pop();
+	// final Deque<CtrlVertex> S = new ArrayDeque<CtrlVertex>(program.C);
+	// S.add(cv);
+	// final ContEdge contEdge = new ContEdge(cv, v, S);
 	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
 		program.defers, new Skip());
     }

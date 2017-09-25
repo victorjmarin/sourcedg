@@ -244,7 +244,7 @@ public class SimpleInterpreter {
 	} else if (s instanceof ParamIn) {
 	    final ParamIn paramIn = (ParamIn) s;
 	    final LinkedHashSet<Vertex> Px = program.P.get(paramIn.x);
-	    if (Px == null || paramIn.i > paramIn.V.size()) {
+	    if (Px == null || paramIn.i >= paramIn.V.size() || paramIn.V.size() > Px.size()) {
 		printRule("paramInOobRule");
 		result = paramInOobRule(program);
 	    } else if (paramIn.i >= 1 && Px.size() > paramIn.i) {

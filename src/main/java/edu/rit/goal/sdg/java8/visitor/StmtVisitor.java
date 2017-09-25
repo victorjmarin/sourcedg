@@ -8,8 +8,10 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import edu.rit.goal.sdg.interpreter.Translator;
+import edu.rit.goal.sdg.interpreter.params.Param;
 import edu.rit.goal.sdg.interpreter.stmt.Assign;
 import edu.rit.goal.sdg.interpreter.stmt.Break;
+import edu.rit.goal.sdg.interpreter.stmt.Call;
 import edu.rit.goal.sdg.interpreter.stmt.Continue;
 import edu.rit.goal.sdg.interpreter.stmt.DoWhile;
 import edu.rit.goal.sdg.interpreter.stmt.Expr;
@@ -24,6 +26,7 @@ import edu.rit.goal.sdg.interpreter.stmt.Str;
 import edu.rit.goal.sdg.interpreter.stmt.While;
 import edu.rit.goal.sdg.java8.JavaUtils;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.BlockContext;
+import edu.rit.goal.sdg.java8.antlr.JavaParser.CreatorContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.ExpressionContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.ExpressionListContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.ForControlContext;
@@ -91,6 +94,9 @@ public class StmtVisitor {
 	} else if (identifierLbl != null) {
 	    Translator.unsupported(ctx);
 	}
+	if (result == null) {
+	    System.out.println(1);
+	}
 	return result;
     }
 
@@ -126,6 +132,7 @@ public class StmtVisitor {
 	Stmt result = null;
 	final Token bop = exprCtx.bop;
 	final boolean isMethodCall = exprCtx.expressionList() != null || Translator.isEmptyArgCall(exprCtx);
+	final boolean isCreator = exprCtx.creator() != null;
 	// Distinguish between assignment, call, pre-, post- operators
 	if (bop != null) {
 	    final boolean isShortHand = Translator.isShortHandOperator(bop.getText());
@@ -156,6 +163,13 @@ public class StmtVisitor {
 	    result.setUses(uses);
 	} else if (isMethodCall) {
 	    result = Translator.call(exprCtx, className);
+	} else if (isCreator) {
+	    result = creator(exprCtx.creator());
+	} else {
+	    // TODO: Assuming multiple conditions
+	    result = new Str(exprCtx.getText());
+	    final Set<String> uses = JavaUtils.uses(exprCtx);
+	    result.setUses(uses);
 	}
 	return result;
     }
@@ -224,6 +238,20 @@ public class StmtVisitor {
 	    uses = JavaUtils.uses(expr.get(0));
 	}
 	final Return result = new Return(e);
+	result.setUses(uses);
+	return result;
+    }
+
+    public Stmt creator(final CreatorContext ctx) {
+	final String methodName = ctx.createdName().getText();
+	final ExpressionListContext exprLstCtx = ctx.classCreatorRest().arguments().expressionList();
+	final List<Str> params = Translator.params(exprLstCtx);
+	final Param p = Translator.param(params, false);
+	final String x = Translator.fullMethodName(methodName, className);
+	final Call result = new Call(x, p);
+	// Using ctx instead of exprLstCtx to compute used because we are interested in
+	// retrieving references objects, e.g., in s.close() we want s as a use.
+	final Set<String> uses = JavaUtils.uses(ctx);
 	result.setUses(uses);
 	return result;
     }
