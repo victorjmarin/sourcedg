@@ -144,7 +144,7 @@ public class StmtVisitor {
 		result = assign(exprCtx, isShortHand);
 	    } else {
 		// TODO: Assuming a plain condition
-		result = new Str(exprCtx.getText());
+		result = new Str(exprCtx);
 		final Set<String> uses = JavaUtils.uses(exprCtx);
 		result.setUses(uses);
 	    }
@@ -212,7 +212,7 @@ public class StmtVisitor {
 
     public Stmt doWhile(final StatementContext ctx) {
 	final ExpressionContext exprCtx = ctx.parExpression().expression();
-	final Expr e = new Str(exprCtx.getText());
+	final Expr e = new Str(exprCtx);
 	final StatementContext stmtCtx = ctx.statement(0);
 	final Stmt s = new StmtVisitor(className).visit(stmtCtx);
 	final DoWhile result = new DoWhile(s, e);
@@ -223,7 +223,7 @@ public class StmtVisitor {
 
     public Stmt _while(final StatementContext ctx) {
 	final ExpressionContext exprCtx = ctx.parExpression().expression();
-	final Expr e = new Str(exprCtx.getText());
+	final Expr e = new Str(exprCtx);
 	final StatementContext stmtCtx = ctx.statement(0);
 	final Stmt s = new StmtVisitor(className).visit(stmtCtx);
 	final While result = new While(e, s);
@@ -253,7 +253,7 @@ public class StmtVisitor {
 	final String x = Translator.fullMethodName(methodName, className);
 	final Call result = new Call(x, p);
 	// Using ctx instead of exprLstCtx to compute used because we are interested in
-	// retrieving references objects, e.g., in s.close() we want s as a use.
+	// retrieving referenced objects, e.g., in s.close() we want s as a use.
 	final Set<String> uses = JavaUtils.uses(ctx);
 	result.setUses(uses);
 	return result;
@@ -285,6 +285,7 @@ public class StmtVisitor {
     }
 
     public Stmt _switch(final StatementContext ctx) {
+	final ExpressionContext exprCtx = ctx.parExpression().expression();
 	return null;
     }
 }

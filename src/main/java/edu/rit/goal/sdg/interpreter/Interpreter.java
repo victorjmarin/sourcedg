@@ -65,8 +65,8 @@ public class Interpreter {
 
     public int vtxId;
 
-    public final boolean PRINT = true;
-    public final boolean PRINT_RULES = true;
+    public final boolean PRINT = false;
+    public final boolean PRINT_RULES = false;
 
     private final boolean simpleControlLabels;
 
@@ -329,8 +329,6 @@ public class Interpreter {
 	    printRule("endDefRule");
 	    result = endDefRule(program);
 	}
-	if (result == null)
-	    System.out.println(1);
 	return result;
     }
 
