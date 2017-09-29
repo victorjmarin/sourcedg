@@ -8,6 +8,8 @@ import edu.rit.goal.sdg.interpreter.stmt.Break;
 import edu.rit.goal.sdg.interpreter.stmt.Call;
 import edu.rit.goal.sdg.interpreter.stmt.Continue;
 import edu.rit.goal.sdg.interpreter.stmt.Def;
+import edu.rit.goal.sdg.interpreter.stmt.DoWhile;
+import edu.rit.goal.sdg.interpreter.stmt.Expr;
 import edu.rit.goal.sdg.interpreter.stmt.IfThenElse;
 import edu.rit.goal.sdg.interpreter.stmt.Return;
 import edu.rit.goal.sdg.interpreter.stmt.Seq;
@@ -43,6 +45,15 @@ public class Programs {
 	final IfThenElse ifThenElse = new IfThenElse(new Str("true"), new Continue(), new Skip());
 	final While whileStmt = new While(new Str("true"), ifThenElse);
 	final Def result = new Def(false, "m", whileStmt);
+	return new Program(result);
+    }
+
+    public static Program doWhile() {
+	final Expr e = new Str("true");
+	final Call call = new Call("System.out.println", new Str("2"));
+	final Assign assign = new Assign("a", new Str("2"));
+	final Stmt s = new Seq(call, assign);
+	final DoWhile result = new DoWhile(s, e);
 	return new Program(result);
     }
 

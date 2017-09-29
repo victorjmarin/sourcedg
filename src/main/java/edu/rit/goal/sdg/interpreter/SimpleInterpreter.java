@@ -419,8 +419,8 @@ public class SimpleInterpreter {
 	final DoWhile doWhile = (DoWhile) s.s;
 	final Vertex v = new Vertex(VTX_ID++, VertexType.CTRL_DO, doWhile.e.toString());
 	program.sdg.addVertex(v);
+	program.sdg.addEdge(v, v, EdgeType.CTRL_TRUE);
 	program.Vc.clear();
-	program.Vc.add(v);
 	final CtrlVertex cv = new CtrlVertex(v, CtrlType.LOOP);
 	program.C.push(cv);
 	final List<Boolean> B = new LinkedList<>(s.B);
@@ -429,7 +429,7 @@ public class SimpleInterpreter {
 	N.add(v);
 	final Stmt doWhileStmt = doWhile.s;
 	final CtrlEdge ctrl = new CtrlEdge(B, N, doWhileStmt);
-	final Seq seq = new Seq(ctrl, new PopCtrl());
+	final Seq seq = new Seq(ctrl, new Seq(new Vc(v), new PopCtrl()));
 	return new Program(program.sdg, program.Vc, program.P, program.C, seq);
     }
 

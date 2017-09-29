@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.jgrapht.DirectedGraph;
 
@@ -23,20 +22,22 @@ public class Main {
 	final Stmt stmt = translator.from(program);
 	System.out.println(stmt);
 	final Interpreter intrprtr = new Interpreter(false);
-	final Program p = intrprtr.interpret(new Program(stmt));
+	final Program pstmt = new Program(stmt);
+	final Program p = intrprtr.interpret(pstmt);
 	final SysDepGraph sdg = p.sdg;
 	final Map<String, DirectedGraph<Vertex, Edge>> methodSubgraphs = sdg.getMethodSubgraphs();
 	System.out.println(System.currentTimeMillis() - t + " ms. to build the PDG");
 	System.out.println(sdg);
 	sdg.computeDataFlow(intrprtr.vtxId);
-	final DirectedGraph<Vertex, Edge> und = p.F.get("Circle.main");
-	TestUtils.exportAsDot(sdg, "count");
-	for (final Entry<String, DirectedGraph<Vertex, Edge>> e : methodSubgraphs.entrySet()) {
-	    final DirectedGraph<Vertex, Edge> g = e.getValue();
-	    TestUtils.exportAsDot(g, e.getKey() + "Flow");
-	    // TestUtils.exportAsDot(new FlowGraph(e.getValue()).graph, e.getKey() +
-	    // "Flow");
-	}
+	// final DirectedGraph<Vertex, Edge> und = p.F.get("Circle.main");
+	TestUtils.exportAsDot(sdg, "und");
+	// for (final Entry<String, DirectedGraph<Vertex, Edge>> e :
+	// methodSubgraphs.entrySet()) {
+	// final DirectedGraph<Vertex, Edge> g = e.getValue();
+	// TestUtils.exportAsDot(g, e.getKey() + "Flow");
+	// TestUtils.exportAsDot(new FlowGraph(e.getValue()).graph, e.getKey() +
+	// "Flow");
+	// }
     }
 
 }

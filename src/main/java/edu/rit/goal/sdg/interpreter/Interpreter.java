@@ -65,9 +65,8 @@ public class Interpreter {
 
     public int vtxId;
 
-    public final Program PROGRAM = Programs.simpleDef();
-    public final boolean PRINT = false;
-    public final boolean PRINT_RULES = false;
+    public final boolean PRINT = true;
+    public final boolean PRINT_RULES = true;
 
     private final boolean simpleControlLabels;
 
@@ -87,7 +86,13 @@ public class Interpreter {
     private Program _interpret(final Program program) {
 	Program result = program;
 	while (!(result.s instanceof Skip)) {
+	    if (PRINT)
+		System.out.println(result.s);
 	    result = small(result);
+	    if (PRINT) {
+		System.out.println(result.sdg);
+		System.out.println();
+	    }
 	}
 	if (!result.defers.isEmpty()) {
 	    final Stmt deferSeq = Translator.seq(result.defers);
@@ -530,12 +535,11 @@ public class Interpreter {
 	final DoWhile doWhile = (DoWhile) s.s;
 	final Vertex v = new Vertex(vtxId++, (simpleControlLabels ? VertexType.CTRL : VertexType.CTRL_DO),
 		doWhile.e.toString());
-	v.setAssignedVariable(s.getDef());
-	v.setReadingVariables(s.getUses());
+	v.setAssignedVariable(doWhile.getDef());
+	v.setReadingVariables(doWhile.getUses());
 	program.sdg.addVertex(v);
 	program.cfg.addVertex(v);
 	program.Vc.clear();
-	program.Vc.add(v);
 	final CtrlVertex cv = new CtrlVertex(v, CtrlType.LOOP);
 	program.C.push(cv);
 	final List<Boolean> B = new LinkedList<>(s.B);
@@ -543,7 +547,7 @@ public class Interpreter {
 	final List<Vertex> N = new LinkedList<>(s.N);
 	N.add(v);
 	final Stmt doWhileStmt = doWhile.s;
-	final CtrlEdge ctrl = new CtrlEdge(B, N, doWhileStmt);
+	final CtrlEdge ctrl = new CtrlEdge(B, N, new Seq(doWhileStmt, new Vc(v)));
 	final Io io1 = new Io(v, v);
 	final Set<Vertex> nullSet = null;
 	final Io io2 = new Io(nullSet, v);
@@ -1056,12 +1060,17 @@ public class Interpreter {
 
     private void createEdges(final SysDepGraph sdg, final List<Boolean> B, final List<Vertex> sources,
 	    final Set<Vertex> targets) {
-	for (final Boolean b : B) {
-	    for (final Vertex s : sources) {
-		for (final Vertex t : targets) {
-		    final EdgeType type = b ? EdgeType.CTRL_TRUE : EdgeType.CTRL_FALSE;
-		    sdg.addEdge(s, t, type);
-		}
+	if (targets.isEmpty())
+	    return;
+	final int bSize = B.size();
+	if (bSize != sources.size())
+	    throw new IllegalArgumentException("B and sources should be the same size.");
+	for (int i = 0; i < bSize; i++) {
+	    final Boolean b = B.get(i);
+	    final EdgeType type = b ? EdgeType.CTRL_TRUE : EdgeType.CTRL_FALSE;
+	    final Vertex s = sources.get(i);
+	    for (final Vertex t : targets) {
+		sdg.addEdge(s, t, type);
 	    }
 	}
     }

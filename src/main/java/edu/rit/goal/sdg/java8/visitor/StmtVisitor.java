@@ -81,7 +81,7 @@ public class StmtVisitor {
 	} else if (tryStmt != null) {
 	    result = _try(ctx);
 	} else if (switchStmt != null) {
-	    Translator.unsupported(ctx);
+	    result = _switch(ctx);
 	} else if (syncStmt != null) {
 	    Translator.unsupported(ctx);
 	} else if (returnStmt != null) {
@@ -282,5 +282,9 @@ public class StmtVisitor {
 	    stmts.add(finallyStmt);
 	}
 	return Translator.seq(stmts);
+    }
+
+    public Stmt _switch(final StatementContext ctx) {
+	return null;
     }
 }
