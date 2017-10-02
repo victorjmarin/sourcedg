@@ -10,6 +10,8 @@ public class Def extends Stmt {
     public String x;
     public Param p;
     public Stmt s;
+    public Integer startLine;
+    public Integer endLine;
 
     public Def(final boolean b, final String x, final Stmt s) {
 	super();

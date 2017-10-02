@@ -68,6 +68,9 @@ public class ClassBodyVisitor {
 			final BlockContextVisitor visitor = new BlockContextVisitor(className);
 			s = visitor.visit(blockCtx);
 			final Def def = new Def(b, x, Translator.param(params, true), s);
+			// Start and end lines of the method
+			def.startLine = methodDeclCtx.getStart().getLine();
+			def.endLine = methodDeclCtx.getStop().getLine();
 			defStmts.add(def);
 		    }
 		}

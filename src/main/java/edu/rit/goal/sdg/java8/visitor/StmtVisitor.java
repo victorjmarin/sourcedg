@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -27,6 +28,7 @@ import edu.rit.goal.sdg.interpreter.stmt.Str;
 import edu.rit.goal.sdg.interpreter.stmt.While;
 import edu.rit.goal.sdg.java8.JavaUtils;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.BlockContext;
+import edu.rit.goal.sdg.java8.antlr.JavaParser.BlockStatementContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.CatchClauseContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.CreatorContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.ExpressionContext;
@@ -36,6 +38,8 @@ import edu.rit.goal.sdg.java8.antlr.JavaParser.ForControlContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.ForInitContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.LocalVariableDeclarationContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.StatementContext;
+import edu.rit.goal.sdg.java8.antlr.JavaParser.SwitchBlockStatementGroupContext;
+import edu.rit.goal.sdg.java8.antlr.JavaParser.SwitchLabelContext;
 
 public class StmtVisitor {
 
@@ -96,9 +100,6 @@ public class StmtVisitor {
 	    result = expr(ctx.statementExpression);
 	} else if (identifierLbl != null) {
 	    Translator.unsupported(ctx);
-	}
-	if (result == null) {
-	    System.out.println(1);
 	}
 	return result;
     }
@@ -170,7 +171,7 @@ public class StmtVisitor {
 	    result = creator(exprCtx.creator());
 	} else {
 	    // TODO: Assuming multiple conditions
-	    result = new Str(exprCtx.getText());
+	    result = new Str(exprCtx);
 	    final Set<String> uses = JavaUtils.uses(exprCtx);
 	    result.setUses(uses);
 	}
@@ -203,7 +204,7 @@ public class StmtVisitor {
 	    s2 = new StmtVisitor(className).visit(elseBranch);
 	}
 	final ExpressionContext exprCtx = ctx.parExpression().expression();
-	final Expr e = new Str(exprCtx.getText());
+	final Expr e = new Str(exprCtx);
 	final IfThenElse result = new IfThenElse(e, s1, s2);
 	final Set<String> uses = JavaUtils.uses(exprCtx);
 	result.setUses(uses);
@@ -286,6 +287,14 @@ public class StmtVisitor {
 
     public Stmt _switch(final StatementContext ctx) {
 	final ExpressionContext exprCtx = ctx.parExpression().expression();
+	final Expr e = new Str(exprCtx.getText());
+	final List<SwitchBlockStatementGroupContext> swithcBlkStmtGroupCtx = ctx.switchBlockStatementGroup();
+	for (final SwitchBlockStatementGroupContext s : swithcBlkStmtGroupCtx) {
+	    final List<SwitchLabelContext> switchLblCtxLst = s.switchLabel();
+	    final String labels = switchLblCtxLst.stream().map(c -> c.getText()).collect(Collectors.joining(","));
+	    final List<BlockStatementContext> blkStmtCtxLst = s.blockStatement();
+	    System.out.println(labels);
+	}
 	return null;
     }
 }

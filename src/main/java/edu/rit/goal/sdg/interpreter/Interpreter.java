@@ -336,6 +336,8 @@ public class Interpreter {
 	final Def s = (Def) program.s;
 	final String methodName = Translator.removeClassName(s.x);
 	final Vertex v = new Vertex(vtxId++, VertexType.ENTRY, methodName);
+	v.setStartLine(s.startLine);
+	v.setEndLine(s.endLine);
 	program.sdg.addVertex(v);
 	program.cfg.addVertex(v);
 	program.m = s.x;
@@ -354,6 +356,8 @@ public class Interpreter {
 	final Def s = (Def) program.s;
 	final String methodName = Translator.removeClassName(s.x);
 	final Vertex v = new Vertex(vtxId++, VertexType.ENTRY, methodName);
+	v.setStartLine(s.startLine);
+	v.setEndLine(s.endLine);
 	program.sdg.addVertex(v);
 	program.cfg.addVertex(v);
 	program.m = s.x;

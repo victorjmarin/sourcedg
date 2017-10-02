@@ -11,6 +11,8 @@ public class Vertex {
     private String lookupId;
     private String assignedVariable;
     private Set<String> readingVariables;
+    private Integer startLine;
+    private Integer endLine;
 
     public Vertex() {
     }
@@ -74,13 +76,29 @@ public class Vertex {
     }
 
     public Set<String> getReadingVariables() {
-    	if (readingVariables == null)
-    		readingVariables = new HashSet<>();
+	if (readingVariables == null)
+	    readingVariables = new HashSet<>();
 	return readingVariables;
     }
 
     public void setReadingVariables(final Set<String> readingVariables) {
 	this.readingVariables = readingVariables;
+    }
+
+    public Integer getStartLine() {
+	return startLine;
+    }
+
+    public void setStartLine(final Integer startLine) {
+	this.startLine = startLine;
+    }
+
+    public Integer getEndLine() {
+	return endLine;
+    }
+
+    public void setEndLine(final Integer endLine) {
+	this.endLine = endLine;
     }
 
     @Override
