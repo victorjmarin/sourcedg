@@ -80,7 +80,9 @@ public class Interpreter {
 
     public Program interpret(final Program program) {
 	vtxId = 0;
-	return _interpret(program);
+	final Program result = _interpret(program);
+	result.sdg.computeDataFlow(vtxId);
+	return result;
     }
 
     private Program _interpret(final Program program) {
