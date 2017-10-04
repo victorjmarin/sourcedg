@@ -2,6 +2,7 @@ package edu.rit.goal.sdg.java8.visitor;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -26,6 +27,12 @@ import edu.rit.goal.sdg.interpreter.stmt.Skip;
 import edu.rit.goal.sdg.interpreter.stmt.Stmt;
 import edu.rit.goal.sdg.interpreter.stmt.Str;
 import edu.rit.goal.sdg.interpreter.stmt.While;
+import edu.rit.goal.sdg.interpreter.stmt.sw.ICase;
+import edu.rit.goal.sdg.interpreter.stmt.sw.ISwitchBody;
+import edu.rit.goal.sdg.interpreter.stmt.sw.MultiCase;
+import edu.rit.goal.sdg.interpreter.stmt.sw.SingleCase;
+import edu.rit.goal.sdg.interpreter.stmt.sw.SingleSwitch;
+import edu.rit.goal.sdg.interpreter.stmt.sw.Switch;
 import edu.rit.goal.sdg.java8.JavaUtils;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.BlockContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.BlockStatementContext;
@@ -70,7 +77,7 @@ public class StmtVisitor {
 	final ExpressionContext exprCtx = ctx.statementExpression;
 	final Token identifierLbl = ctx.identifierLabel;
 	if (blockLabel != null) {
-	    final BlockContextVisitor visitor = new BlockContextVisitor(className);
+	    final BlockVisitor visitor = new BlockVisitor(className);
 	    result = visitor.visit(ctx.block());
 	} else if (assertStmt != null) {
 	    Translator.unsupported(ctx);
@@ -111,7 +118,7 @@ public class StmtVisitor {
 	final ForInitContext forInitCtx = forCtrlCtx.forInit();
 	// TODO: Support for initialization and update of multiple variables
 	Stmt si = new Skip();
-	Stmt sc = new Skip();
+	Stmt sc = new Str("");
 	Stmt su = new Skip();
 	if (forInitCtx != null) {
 	    final LocalVariableDeclarationContext lclVarDeclCtx = forInitCtx.localVariableDeclaration();
@@ -264,13 +271,13 @@ public class StmtVisitor {
     public Stmt _try(final StatementContext ctx) {
 	final List<Stmt> stmts = new ArrayList<>();
 	final BlockContext blkCtx = ctx.block();
-	final BlockContextVisitor blkCtxVisitor = new BlockContextVisitor(className);
+	final BlockVisitor blkCtxVisitor = new BlockVisitor(className);
 	final Stmt tryBlock = blkCtxVisitor.visit(blkCtx);
 	stmts.add(tryBlock);
 	final List<CatchClauseContext> catchClauseCtx = ctx.catchClause();
 	if (catchClauseCtx != null) {
 	    for (final CatchClauseContext ccc : catchClauseCtx) {
-		final BlockContextVisitor blkCtxVisitor2 = new BlockContextVisitor(className);
+		final BlockVisitor blkCtxVisitor2 = new BlockVisitor(className);
 		final Stmt s = blkCtxVisitor2.visit(ccc.block());
 		stmts.add(s);
 	    }
@@ -278,7 +285,7 @@ public class StmtVisitor {
 	final FinallyBlockContext finallyBlkCtx = ctx.finallyBlock();
 	if (finallyBlkCtx != null) {
 	    final BlockContext blkCtx2 = finallyBlkCtx.block();
-	    final BlockContextVisitor blkCtxVisitor3 = new BlockContextVisitor(className);
+	    final BlockVisitor blkCtxVisitor3 = new BlockVisitor(className);
 	    final Stmt finallyStmt = blkCtxVisitor3.visit(blkCtx2);
 	    stmts.add(finallyStmt);
 	}
@@ -289,12 +296,66 @@ public class StmtVisitor {
 	final ExpressionContext exprCtx = ctx.parExpression().expression();
 	final Expr e = new Str(exprCtx.getText());
 	final List<SwitchBlockStatementGroupContext> swithcBlkStmtGroupCtx = ctx.switchBlockStatementGroup();
+	final List<SwitchBlockStatementGroup> lSbsg = new LinkedList<>();
 	for (final SwitchBlockStatementGroupContext s : swithcBlkStmtGroupCtx) {
 	    final List<SwitchLabelContext> switchLblCtxLst = s.switchLabel();
-	    final String labels = switchLblCtxLst.stream().map(c -> c.getText()).collect(Collectors.joining(","));
+	    final Set<Str> labels = new HashSet<>();
+	    for (final SwitchLabelContext slc : switchLblCtxLst) {
+		final Str lbl = switchLabel(slc);
+		final Set<String> uses = JavaUtils.uses(slc);
+		lbl.setUses(uses);
+		labels.add(lbl);
+	    }
 	    final List<BlockStatementContext> blkStmtCtxLst = s.blockStatement();
-	    System.out.println(labels);
+	    final List<Stmt> stmts = blkStmtCtxLst.stream().map(b -> new BlockStmtVisitor(className).visit(b))
+		    .collect(Collectors.toList());
+	    final SwitchBlockStatementGroup sbsg = new SwitchBlockStatementGroup(labels, stmts);
+	    lSbsg.add(sbsg);
+	    System.out.println(sbsg);
 	}
-	return null;
+	switchTranslation(e, lSbsg);
+	final ISwitchBody sb = null;
+	final Switch result = new Switch(e, sb);
+	return result;
     }
+
+    private Str switchLabel(final SwitchLabelContext ctx) {
+	String result = "default";
+	if (ctx.constantExpression != null) {
+	    result = ctx.constantExpression.getText();
+	} else if (ctx.enumConstantName != null) {
+	    result = ctx.enumConstantName.getText();
+	}
+	return new Str(result);
+    }
+
+    private void switchTranslation(final Expr switchExpr, final List<SwitchBlockStatementGroup> blocks) {
+	final List<Str> labels = new ArrayList<>();
+	List<ISwitchBody> switchBody = new ArrayList<>();
+	for (final SwitchBlockStatementGroup b : blocks) {
+	    labels.addAll(b.labels);
+	    for (final Stmt stmt : b.stmts) {
+		if (stmt instanceof Break) {
+		    final ICase icase = buildCases(labels);
+		    ISwitchBody body = new SingleSwitch(icase, Translator.seq(b.stmts));
+		    System.out.println(icase);
+		    labels.clear();
+		    break;
+		}
+	    }
+	}
+    }
+
+    private ICase buildCases(final List<Str> labels) {
+	if (labels.isEmpty())
+	    return null;
+	if (labels.size() == 1) {
+	    final Str lbl = labels.remove(0);
+	    return new SingleCase(lbl.value);
+	} else {
+	    final Str lbl = labels.remove(0);
+	    return new MultiCase(new SingleCase(lbl.value), buildCases(labels));
+	}
+    }
+
 }

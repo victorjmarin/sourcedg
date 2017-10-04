@@ -8,11 +8,11 @@ import edu.rit.goal.sdg.interpreter.stmt.Stmt;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.BlockContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.BlockStatementContext;
 
-public class BlockContextVisitor {
+public class BlockVisitor {
 
     private final String className;
 
-    public BlockContextVisitor(final String className) {
+    public BlockVisitor(final String className) {
 	this.className = className;
     }
 

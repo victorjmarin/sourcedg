@@ -65,7 +65,7 @@ public class ClassBodyVisitor {
 		    // Not abstract method
 		    if (blockCtx != null) {
 			Stmt s = null;
-			final BlockContextVisitor visitor = new BlockContextVisitor(className);
+			final BlockVisitor visitor = new BlockVisitor(className);
 			s = visitor.visit(blockCtx);
 			final Def def = new Def(b, x, Translator.param(params, true), s);
 			// Start and end lines of the method
