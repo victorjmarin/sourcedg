@@ -66,7 +66,7 @@ public class Interpreter {
     public int vtxId;
 
     public final boolean PRINT = false;
-    public final boolean PRINT_RULES = false;
+    public final boolean PRINT_RULES = true;
 
     private final boolean simpleControlLabels;
 
@@ -176,8 +176,14 @@ public class Interpreter {
 	    printRule("doWhileRule");
 	    result = doWhileRule(program);
 	} else if (s instanceof For) {
-	    printRule("forRule");
-	    result = forRule(program);
+	    final Stmt si = ((For) s).si;
+	    if (si instanceof Skip) {
+		printRule("forRuleNoInit");
+		result = forRuleNoInit(program);
+	    } else {
+		printRule("forRule");
+		result = forRule(program);
+	    }
 	} else if (s instanceof Switch) {
 	    final ISwitchBody sb = ((Switch) s).sb;
 	    if (sb instanceof EmptySwitch) {
@@ -564,6 +570,15 @@ public class Interpreter {
 
     private Program forRule(final Program program) {
 	final For s = (For) program.s;
+	program.Vc.clear();
+	final For forStmt = new For(new Skip(), s.sc, s.su, s.s);
+	final Seq seq = new Seq(s.si, forStmt);
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
+		program.defers, seq);
+    }
+
+    private Program forRuleNoInit(final Program program) {
+	final For s = (For) program.s;
 	final Vertex v = new Vertex(vtxId++, (simpleControlLabels ? VertexType.CTRL : VertexType.CTRL_FOR),
 		s.sc.toString());
 	v.setAssignedVariable(s.sc.getDef());
@@ -575,11 +590,10 @@ public class Interpreter {
 	final CtrlVertex cv = new CtrlVertex(v, CtrlType.LOOP);
 	program.C.push(cv);
 	final CtrlEdge ctrlEdge = new CtrlEdge(true, v, new Seq(s.s, s.su));
-	final CfgEdge cfgEdge2 = new CfgEdge(s.si, new Io(v, v));
-	final Seq seq1 = new Seq(cfgEdge2, ctrlEdge);
+	final CfgEdge cfgEdge2 = new CfgEdge(new Io(v, v), ctrlEdge);
 	final Set<Vertex> nullSet = null;
 	final Io io2 = new Io(v, nullSet);
-	final CfgEdge cfgEdge1 = new CfgEdge(seq1, io2);
+	final CfgEdge cfgEdge1 = new CfgEdge(cfgEdge2, io2);
 	final Set<Vertex> emptySet = new HashSet<>();
 	final Io io1 = new Io(emptySet, v);
 	final IoUnion ioUnion = new IoUnion(io1, cfgEdge1);
