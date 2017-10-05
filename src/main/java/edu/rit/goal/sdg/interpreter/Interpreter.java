@@ -439,7 +439,7 @@ public class Interpreter {
 	program.cfg.addVertex(v);
 	program.Vc.add(v);
 	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Io(v, v));
+		program.defers, new Io(v, new HashSet<>()));
     }
 
     private Program vcRule(final Program program) {
