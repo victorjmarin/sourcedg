@@ -92,7 +92,8 @@ public class StmtVisitor {
 	} else if (tryStmt != null) {
 	    result = _try(ctx);
 	} else if (switchStmt != null) {
-	    result = _switch(ctx);
+	    Translator.unsupported(ctx);
+	    // result = _switch(ctx);
 	} else if (syncStmt != null) {
 	    Translator.unsupported(ctx);
 	} else if (returnStmt != null) {
@@ -331,13 +332,13 @@ public class StmtVisitor {
 
     private void switchTranslation(final Expr switchExpr, final List<SwitchBlockStatementGroup> blocks) {
 	final List<Str> labels = new ArrayList<>();
-	List<ISwitchBody> switchBody = new ArrayList<>();
+	final List<ISwitchBody> switchBody = new ArrayList<>();
 	for (final SwitchBlockStatementGroup b : blocks) {
 	    labels.addAll(b.labels);
 	    for (final Stmt stmt : b.stmts) {
 		if (stmt instanceof Break) {
 		    final ICase icase = buildCases(labels);
-		    ISwitchBody body = new SingleSwitch(icase, Translator.seq(b.stmts));
+		    final ISwitchBody body = new SingleSwitch(icase, Translator.seq(b.stmts));
 		    System.out.println(icase);
 		    labels.clear();
 		    break;
