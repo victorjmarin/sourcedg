@@ -4,18 +4,18 @@ import edu.rit.goal.sdg.graph.Vertex;
 
 public class ParamOut extends Stmt {
 
-    public Vertex v;
     public String x;
+    public Vertex v;
 
-    public ParamOut(final Vertex v, final String x) {
+    public ParamOut(final String x, final Vertex v) {
 	super();
-	this.v = v;
 	this.x = x;
+	this.v = v;
     }
 
     @Override
     public String toString() {
-	return "paramout " + v + " " + x;
+	return "paramout " + x + " " + v;
     }
 
 }
