@@ -92,7 +92,7 @@ public class Interpreter {
 		System.out.println(result.s);
 	    result = small(result);
 	    if (PRINT) {
-		System.out.println(result.sdg);
+		// System.out.println(result.sdg);
 		System.out.println();
 	    }
 	}
@@ -300,9 +300,9 @@ public class Interpreter {
 			printRule("cfgEdgeIoIoRule");
 			result = cfgEdgeIoIoRule(program);
 		    }
-		} else if (s2 instanceof Def) {
-		    printRule("cfgEdgeIoDefRule");
-		    result = cfgEdgeIoDefRule(program);
+		} else if (s2 instanceof EndDef) {
+		    printRule("cfgEdgeIoEndDefRule");
+		    result = cfgEdgeIoEndDefRule(program);
 		} else {
 		    printRule("cfgEdgeIoRule");
 		    result = cfgEdgeIoRule(program);
@@ -704,7 +704,7 @@ public class Interpreter {
 	    program.Vc.add(v);
 	}
 	final Vertex Vp0 = Vp.iterator().next();
-	program.defers.add(new ParamOut(Vp0, param.x));
+	program.defers.add(new ParamOut(param.x, Vp0));
 	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
 		program.defers, new Skip());
     }
@@ -919,6 +919,13 @@ public class Interpreter {
 	final Def def = (Def) cfgEdge.s2;
 	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
 		program.defers, def);
+    }
+
+    private Program cfgEdgeIoEndDefRule(final Program program) {
+	final CfgEdge cfgEdge = (CfgEdge) program.s;
+	final EndDef fed = (EndDef) cfgEdge.s2;
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
+		program.defers, fed);
     }
 
     private Program cfgEdgeIoCopyInRule(final Program program) {
