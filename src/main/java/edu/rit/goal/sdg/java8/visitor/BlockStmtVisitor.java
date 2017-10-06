@@ -1,5 +1,7 @@
 package edu.rit.goal.sdg.java8.visitor;
 
+import edu.rit.goal.sdg.interpreter.Translator;
+import edu.rit.goal.sdg.interpreter.stmt.Skip;
 import edu.rit.goal.sdg.interpreter.stmt.Stmt;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.BlockStatementContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.LocalVariableDeclarationContext;
@@ -14,7 +16,7 @@ public class BlockStmtVisitor {
     }
 
     public Stmt visit(final BlockStatementContext ctx) {
-	Stmt result = null;
+	Stmt result = new Skip();
 	final LocalVariableDeclarationContext localVarDeclCtx = ctx.localVariableDeclaration();
 	final StatementContext statementCtx = ctx.statement();
 	// Local variable declaration
@@ -28,6 +30,8 @@ public class BlockStmtVisitor {
 	    final StmtVisitor visitor = new StmtVisitor(className);
 	    final Stmt stmtStmnts = visitor.visit(statementCtx);
 	    result = stmtStmnts;
+	} else {
+	    Translator.unsupported(ctx);
 	}
 	return result;
     }
