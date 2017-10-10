@@ -65,20 +65,8 @@ import edu.rit.goal.sdg.interpreter.stmt.sw.Switch;;
 public class Interpreter {
 
   public int vtxId;
-
   public final boolean PRINT = false;
-
   public final boolean PRINT_RULES = true;
-
-  private final boolean simpleControlLabels;
-
-  public Interpreter() {
-    simpleControlLabels = false;
-  }
-
-  public Interpreter(final boolean simpleControlLabels) {
-    this.simpleControlLabels = simpleControlLabels;
-  }
 
   public Program interpret(final Program program) {
     vtxId = 0;
@@ -94,7 +82,7 @@ public class Interpreter {
         System.out.println(result.s);
       result = small(result);
       if (PRINT) {
-        // System.out.println(result.sdg);
+        System.out.println(result.sdg);
         System.out.println();
       }
     }
@@ -110,6 +98,8 @@ public class Interpreter {
   public Program small(final Program program) {
     Program result = null;
     final Stmt stmt = program.s;
+
+    // TODO: Do not reconstruct pm object with every call to small
 
     // @formatter:off
     final PatternMatching pm = $(
@@ -270,6 +260,7 @@ public class Interpreter {
   }
 
   private Program defRule(final Program program) {
+    printRule("defRule");
     final Def s = (Def) program.s;
     final String methodName = Translator.removeClassName(s.x);
     final Vertex v = new Vertex(vtxId++, VertexType.ENTRY, methodName);
@@ -289,6 +280,7 @@ public class Interpreter {
   }
 
   private Program voidDefRule(final Program program) {
+    printRule("voidDefRule");
     final Def s = (Def) program.s;
     final String methodName = Translator.removeClassName(s.x);
     final Vertex v = new Vertex(vtxId++, VertexType.ENTRY, methodName);
@@ -305,6 +297,7 @@ public class Interpreter {
   }
 
   private Program seqRule(final Program program) {
+    printRule("seqRule");
     final Seq seq = (Seq) program.s;
     final Program p = small(program.cloneWithStmt(seq.s1));
     p.s = new Seq(p.s, seq.s2);
@@ -312,12 +305,14 @@ public class Interpreter {
   }
 
   private Program seqSkipRule(final Program program) {
+    printRule("seqSkipRule");
     final Seq s = (Seq) program.s;
     program.s = s.s2;
     return program;
   }
 
   private Program assignRule(final Program program) {
+    printRule("assignRule");
     final Assign assign = (Assign) program.s;
     final Vertex va = new Vertex(vtxId++, VertexType.ASSIGN, assign.x + assign.op + assign.e);
     va.setAssignedVariable(assign.getDef());
@@ -330,6 +325,7 @@ public class Interpreter {
   }
 
   private Program preOpRule(final Program program) {
+    printRule("preOpRule");
     final PreOp preOp = (PreOp) program.s;
     final Vertex v = new Vertex(vtxId++, VertexType.ASSIGN, preOp.op + preOp.x);
     v.setAssignedVariable(preOp.getDef());
@@ -342,6 +338,7 @@ public class Interpreter {
   }
 
   private Program postOpRule(final Program program) {
+    printRule("postOpRule");
     final PostOp postOp = (PostOp) program.s;
     final Vertex v = new Vertex(vtxId++, VertexType.ASSIGN, postOp.x + postOp.op);
     v.setAssignedVariable(postOp.getDef());
@@ -354,6 +351,7 @@ public class Interpreter {
   }
 
   private Program returnRule(final Program program) {
+    printRule("returnRule");
     final Return ret = (Return) program.s;
     final Vertex v = new Vertex(vtxId++, VertexType.RETURN, ret.e);
     v.setReadingVariables(ret.getUses());
@@ -365,6 +363,7 @@ public class Interpreter {
   }
 
   private Program vcRule(final Program program) {
+    printRule("vcRule");
     final Vc vc = (Vc) program.s;
     program.Vc.add(vc.v);
     program.s = new Skip();
@@ -372,6 +371,7 @@ public class Interpreter {
   }
 
   private Program ctrlEdgeRule(final Program program) {
+    printRule("ctrlEdgeRule");
     final CtrlEdge ctrledge = (CtrlEdge) program.s;
     final Stmt s = ctrledge.s;
     final Program p = small(program.cloneWithStmt(s));
@@ -380,6 +380,7 @@ public class Interpreter {
   }
 
   private Program ctrlEdgeSkipRule(final Program program) {
+    printRule("ctrlEdgeSkipRule");
     final CtrlEdge s = (CtrlEdge) program.s;
     createEdges(program.sdg, s.B, s.N, program.Vc);
     program.Vc = new HashSet<>();
@@ -388,6 +389,7 @@ public class Interpreter {
   }
 
   private Program ctrlEdgeSeqRule(final Program program) {
+    printRule("ctrlEdgeSeqRule");
     final CtrlEdge s = (CtrlEdge) program.s;
     final Seq seq = (Seq) s.s;
     program.s = new Seq(new CtrlEdge(s.B, s.N, seq.s1), new CtrlEdge(s.B, s.N, seq.s2));
@@ -395,9 +397,9 @@ public class Interpreter {
   }
 
   private Program ifThenElseRule(final Program program) {
+    printRule("ifThenElseRule");
     final IfThenElse s = (IfThenElse) program.s;
-    final Vertex v = new Vertex(vtxId++,
-        (simpleControlLabels ? VertexType.CTRL : VertexType.CTRL_IF), s.e.toString());
+    final Vertex v = new Vertex(vtxId++, VertexType.CTRL, s.e.toString());
     v.setAssignedVariable(s.getDef());
     v.setReadingVariables(s.getUses());
     program.sdg.addVertex(v);
@@ -414,9 +416,9 @@ public class Interpreter {
   }
 
   private Program whileRule(final Program program) {
+    printRule("whileRule");
     final While s = (While) program.s;
-    final Vertex v = new Vertex(vtxId++,
-        (simpleControlLabels ? VertexType.CTRL : VertexType.CTRL_WHILE), s.e.toString());
+    final Vertex v = new Vertex(vtxId++, VertexType.CTRL, s.e.toString());
     v.setAssignedVariable(s.getDef());
     v.setReadingVariables(s.getUses());
     program.sdg.addVertex(v);
@@ -432,9 +434,9 @@ public class Interpreter {
   }
 
   private Program doWhileRule(final Program program) {
+    printRule("doWhileRule");
     final DoWhile s = (DoWhile) program.s;
-    final Vertex v = new Vertex(vtxId++,
-        (simpleControlLabels ? VertexType.CTRL : VertexType.CTRL_DO), s.e.toString());
+    final Vertex v = new Vertex(vtxId++, VertexType.CTRL, s.e.toString());
     v.setAssignedVariable(s.getDef());
     v.setReadingVariables(s.getUses());
     program.sdg.addVertex(v);
@@ -451,10 +453,10 @@ public class Interpreter {
   }
 
   private Program ctrlEdgeDoWhileRule(final Program program) {
+    printRule("ctrlEdgeDoWhileRule");
     final CtrlEdge s = (CtrlEdge) program.s;
     final DoWhile doWhile = (DoWhile) s.s;
-    final Vertex v = new Vertex(vtxId++,
-        (simpleControlLabels ? VertexType.CTRL : VertexType.CTRL_DO), doWhile.e.toString());
+    final Vertex v = new Vertex(vtxId++, VertexType.CTRL, doWhile.e.toString());
     v.setAssignedVariable(doWhile.getDef());
     v.setReadingVariables(doWhile.getUses());
     program.sdg.addVertex(v);
@@ -471,9 +473,9 @@ public class Interpreter {
   }
 
   private Program forRule(final Program program) {
+    printRule("forRule");
     final For s = (For) program.s;
-    final Vertex v = new Vertex(vtxId++,
-        (simpleControlLabels ? VertexType.CTRL : VertexType.CTRL_FOR), s.sc.toString());
+    final Vertex v = new Vertex(vtxId++, VertexType.CTRL, s.sc.toString());
     v.setAssignedVariable(s.sc.getDef());
     v.setReadingVariables(s.sc.getUses());
     program.sdg.addVertex(v);
@@ -492,9 +494,9 @@ public class Interpreter {
   }
 
   private Program switchEmptyRule(final Program program) {
+    printRule("switchEmptyRule");
     final Switch s = (Switch) program.s;
-    final Vertex v = new Vertex(vtxId++,
-        (simpleControlLabels ? VertexType.CTRL : VertexType.CTRL_IF), s.e.toString());
+    final Vertex v = new Vertex(vtxId++, VertexType.CTRL, s.e.toString());
     program.sdg.addVertex(v);
     program.Vc.add(v);
     program.s = new Skip();
@@ -502,6 +504,7 @@ public class Interpreter {
   }
 
   private Program switchCaseRule(final Program program) {
+    printRule("switchCaseRule");
     final Switch s = (Switch) program.s;
     final SingleSwitch ss = (SingleSwitch) s.sb;
     final String x = largeCsCond(s.e, ss.cs);
@@ -512,6 +515,7 @@ public class Interpreter {
   }
 
   private Program switchCasesRule(final Program program) {
+    printRule("switchCasesRule");
     final Switch s = (Switch) program.s;
     final MultiSwitch sb = (MultiSwitch) s.sb;
     final Switch sw = new Switch(s.e, sb.ss);
@@ -521,6 +525,7 @@ public class Interpreter {
   }
 
   private Program breakRule(final Program program) {
+    printRule("breakRule");
     final Vertex v = new Vertex(vtxId++, VertexType.BREAK, "break");
     program.sdg.addVertex(v);
     program.Vc.add(v);
@@ -529,6 +534,7 @@ public class Interpreter {
   }
 
   private Program continueRule(final Program program) {
+    printRule("continueRule");
     final Vertex v = new Vertex(vtxId++, VertexType.CONTINUE, "continue");
     program.sdg.addVertex(v);
     program.Vc.add(v);
@@ -537,6 +543,7 @@ public class Interpreter {
   }
 
   private Program paramActualInRule(final Program program) {
+    printRule("paramActualInRule");
     final Param param = (Param) program.s;
     final LinkedHashSet<Vertex> Vp = largeParam(param);
     for (final Vertex v : Vp) {
@@ -549,6 +556,7 @@ public class Interpreter {
   }
 
   private Program paramActualOutRule(final Program program) {
+    printRule("paramActualOutRule");
     final Param param = (Param) program.s;
     final Set<Vertex> Vp = largeParam(param);
     for (final Vertex v : Vp) {
@@ -562,6 +570,7 @@ public class Interpreter {
   }
 
   private Program paramFormalInRule(final Program program) {
+    printRule("paramFormalInRule");
     final Param param = (Param) program.s;
     final Set<Vertex> Vp = largeParam(param);
     LinkedHashSet<Vertex> paramVtcs = program.P.get(param.x);
@@ -587,6 +596,7 @@ public class Interpreter {
   }
 
   private Program paramFormalOutRule(final Program program) {
+    printRule("paramFormalOutRule");
     final Param param = (Param) program.s;
     final Set<Vertex> Vp = largeParam(param);
     LinkedHashSet<Vertex> paramVtcs = program.P.get(param.x);
@@ -604,6 +614,7 @@ public class Interpreter {
   }
 
   private Program paramInRule(final Program program) {
+    printRule("paramInRule");
     final ParamIn paramIn = (ParamIn) program.s;
     final Vertex v = vtxAtIdx(program.P.get(paramIn.x), paramIn.i);
     final Vertex Vi = vtxAtIdx(paramIn.V, paramIn.i - 1);
@@ -613,11 +624,13 @@ public class Interpreter {
   }
 
   private Program paramInOobRule(final Program program) {
+    printRule("paramInOobRule");
     program.s = new Skip();
     return program;
   }
 
   private Program paramOutRule(final Program program) {
+    printRule("paramOutRule");
     final ParamOut paramOut = (ParamOut) program.s;
     final LinkedHashSet<Vertex> Px = program.P.get(paramOut.x);
     if (Px != null && !Px.isEmpty()) {
@@ -634,6 +647,7 @@ public class Interpreter {
   }
 
   private Program callRule(final Program program) {
+    printRule("callRule");
     final Call s = (Call) program.s;
     final String methodName = Translator.removeClassName(s.x);
     final Vertex vc = new Vertex(vtxId++, VertexType.CALL, s.toString());
@@ -650,6 +664,7 @@ public class Interpreter {
   }
 
   private Program assignCallRule(final Program program) {
+    printRule("assignCallRule");
     final Assign assign = (Assign) program.s;
     final Call call = (Call) assign.e;
     final String methodName = Translator.removeClassName(call.x);
@@ -669,6 +684,7 @@ public class Interpreter {
   }
 
   private Program callEdgeRule(final Program program) {
+    printRule("callEdgeRule");
     final CallEdge callEdge = (CallEdge) program.s;
     final Optional<Vertex> ve = program.sdg.vertexSet().stream()
         .filter(v -> v.getType().equals(VertexType.ENTRY) && v.getLabel().equals(callEdge.x))
@@ -686,11 +702,13 @@ public class Interpreter {
   // Control-flow graph
 
   private Program ioRule(final Program program) {
+    printRule("ioRule");
     program.s = new Skip();
     return program;
   }
 
   private Program seqIoRule(final Program program) {
+    printRule("seqIoRule");
     final Stmt s1 = ((Seq) program.s).s1;
     final Stmt s2 = ((Seq) program.s).s2;
     program.s = new CfgEdge(s1, s2);
@@ -698,6 +716,7 @@ public class Interpreter {
   }
 
   private Program ctrlEdgeIoRule(final Program program) {
+    printRule("ctrlEdgeIoRule");
     final CtrlEdge s = (CtrlEdge) program.s;
     createEdges(program.sdg, s.B, s.N, program.Vc);
     program.Vc = new HashSet<>();
@@ -706,6 +725,7 @@ public class Interpreter {
   }
 
   private Program cfgEdgeRule(final Program program) {
+    printRule("cfgEdgeRule");
     final CfgEdge cfgEdge = (CfgEdge) program.s;
     final Stmt s = cfgEdge.s1;
     final Program p = small(program.cloneWithStmt(s));
@@ -714,6 +734,7 @@ public class Interpreter {
   }
 
   private Program cfgEdgeIoRule(final Program program) {
+    printRule("cfgEdgeIoRule");
     final CfgEdge cfgEdge = (CfgEdge) program.s;
     final Stmt s = cfgEdge.s2;
     final Program p = small(program.cloneWithStmt(s));
@@ -722,24 +743,28 @@ public class Interpreter {
   }
 
   private Program cfgEdgeSkipFirstRule(final Program program) {
+    printRule("cfgEdgeSkipFirstRule");
     final CfgEdge cfgEdge = (CfgEdge) program.s;
     program.s = cfgEdge.s2;
     return program;
   }
 
   private Program cfgEdgeSkipSecondRule(final Program program) {
+    printRule("cfgEdgeSkipSecondRule");
     final CfgEdge cfgEdge = (CfgEdge) program.s;
     program.s = cfgEdge.s1;
     return program;
   }
 
   private Program cfgEdgeIoEndDefRule(final Program program) {
+    printRule("cfgEdgeIoEndDefRule");
     final CfgEdge cfgEdge = (CfgEdge) program.s;
     program.s = cfgEdge.s2;
     return program;
   }
 
   private Program cfgEdgeIoCopyInRule(final Program program) {
+    printRule("cfgEdgeIoCopyInRule");
     final CfgEdge cfgEdge = (CfgEdge) program.s;
     final Io io1 = (Io) cfgEdge.s1;
     final Io io2 = (Io) cfgEdge.s2;
@@ -749,6 +774,7 @@ public class Interpreter {
   }
 
   private Program cfgEdgeIoCopyOutRule(final Program program) {
+    printRule("cfgEdgeIoCopyOutRule");
     final CfgEdge cfgEdge = (CfgEdge) program.s;
     final Io io1 = (Io) cfgEdge.s1;
     final Io io2 = (Io) cfgEdge.s2;
@@ -758,6 +784,7 @@ public class Interpreter {
   }
 
   private Program cfgEdgeIoIoRule(final Program program) {
+    printRule("cfgEdgeIoIoRule");
     final CfgEdge cfgEdge = (CfgEdge) program.s;
     final Io io1 = (Io) cfgEdge.s1;
     final Io io2 = (Io) cfgEdge.s2;
@@ -771,6 +798,7 @@ public class Interpreter {
   }
 
   private Program ioUnionRule(final Program program) {
+    printRule("ioUnionRule");
     final IoUnion outUnion = (IoUnion) program.s;
     final Stmt s1 = outUnion.s1;
     final Stmt s2 = outUnion.s2;
@@ -780,6 +808,7 @@ public class Interpreter {
   }
 
   private Program ioUnionIoRule(final Program program) {
+    printRule("ioUnionIoRule");
     final IoUnion outUnion = (IoUnion) program.s;
     final Io io = (Io) outUnion.s1;
     final Stmt s = outUnion.s2;
@@ -789,6 +818,7 @@ public class Interpreter {
   }
 
   private Program ioUnionIoIoRule(final Program program) {
+    printRule("ioUnionIoIoRule");
     final IoUnion outUnion = (IoUnion) program.s;
     final Io s1 = (Io) outUnion.s1;
     final Io s2 = (Io) outUnion.s2;
@@ -799,6 +829,7 @@ public class Interpreter {
   }
 
   private Program fedRule(final Program program) {
+    printRule("fedRule");
     final Fed fed = (Fed) program.s;
     program.F.put(fed.x, program.clonedCfg());
     program.cfg = new DefaultDirectedGraph<Vertex, Edge>(Edge.class);

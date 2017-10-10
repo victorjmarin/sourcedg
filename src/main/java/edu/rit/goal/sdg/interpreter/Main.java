@@ -18,7 +18,7 @@ public class Main {
     final Translator translator = new Translator();
     final Stmt stmt = translator.from(FILE_NAME);
     System.out.println(stmt);
-    final Interpreter intrprtr = new Interpreter(false);
+    final Interpreter intrprtr = new Interpreter();
     final Program pstmt = new Program(stmt);
     final Program p = intrprtr.interpret(pstmt);
     final SysDepGraph sdg = p.sdg;
