@@ -25,7 +25,7 @@ public class CircleTest {
 
     @BeforeClass
     public static void parseTestProgram() throws IOException, ExportException {
-	final Program p = SimpleInterpreter.interpret(Programs.horwitz());
+	final Program p = new Interpreter().interpret(Programs.horwitz());
 	sdg = p.sdg;
 	notUsedVtcs = new HashSet<>(sdg.vertexSet());
 	TestUtils.exportAsDot(sdg, "circle");
@@ -112,8 +112,8 @@ public class CircleTest {
     @Test
     public void callMult3CircNodes() {
 	final Set<Vertex> vertices = sdg.vertexSet();
-	final Vertex mult3Vtx = vertices.stream().filter(v -> v.getLabel().equals("circ=mult3(2, P, rad)"))
-		.findFirst().get();
+	final Vertex mult3Vtx = vertices.stream().filter(v -> v.getLabel().equals("circ=mult3(2, P, rad)")).findFirst()
+		.get();
 	final Set<Edge> outgoingEdges = sdg.outgoingEdgesOf(mult3Vtx);
 	System.out.println("Outgoing edges of circ=mult3[2, p, rad]");
 	outgoingEdges.forEach(e -> {

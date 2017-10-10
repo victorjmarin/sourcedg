@@ -19,47 +19,39 @@ import edu.rit.goal.sdg.interpreter.stmt.Stmt;
 public class Program {
 
     SysDepGraph sdg;
-    // Temporal CFG
-    DefaultDirectedGraph<Vertex, Edge> cfg;
     Set<Vertex> Vc;
     Map<String, LinkedHashSet<Vertex>> P;
-    String m;
+    // Temporal CFG
+    DefaultDirectedGraph<Vertex, Edge> cfg;
     // Mapping from method name to CFG
     Map<String, DirectedGraph<Vertex, Edge>> F;
+    List<Stmt> sd;
     Stmt s;
-    List<Stmt> defers = new LinkedList<>();
 
     public Program(final Stmt s) {
 	sdg = new SysDepGraph();
-	cfg = new DefaultDirectedGraph<>(Edge.class);
 	Vc = new HashSet<>();
 	P = new HashMap<>();
+	cfg = new DefaultDirectedGraph<>(Edge.class);
 	F = new HashMap<>();
+	sd = new LinkedList<>();
 	this.s = s;
     }
 
-    public Program(final SysDepGraph sdg, final Set<Vertex> Vc, final Map<String, LinkedHashSet<Vertex>> P,
-	    final Stmt s) {
-	super();
-	this.sdg = sdg;
-	cfg = null;
-	this.Vc = Vc;
-	this.P = P;
-	this.s = s;
+    public Program(final Program p) {
+	sdg = p.sdg;
+	Vc = p.Vc;
+	P = p.P;
+	cfg = p.cfg;
+	F = p.F;
+	sd = p.sd;
+	s = p.s;
     }
 
-    public Program(final SysDepGraph sdg, final DefaultDirectedGraph<Vertex, Edge> cfg, final Set<Vertex> Vc,
-	    final Map<String, LinkedHashSet<Vertex>> P, final Map<String, DirectedGraph<Vertex, Edge>> F,
-	    final String m, final List<Stmt> defers, final Stmt s) {
-	super();
-	this.sdg = sdg;
-	this.cfg = cfg;
-	this.Vc = Vc;
-	this.P = P;
-	this.F = F;
-	this.m = m;
-	this.defers = defers;
-	this.s = s;
+    public Program cloneWithStmt(final Stmt s) {
+	final Program result = new Program(this);
+	result.s = s;
+	return result;
     }
 
     public DefaultDirectedGraph<Vertex, Edge> clonedCfg() {
