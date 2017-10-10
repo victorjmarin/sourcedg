@@ -26,7 +26,8 @@ public class CompilationUnitVisitor extends JavaParserBaseVisitor<Stmt> {
 	    final Stmt s = new TypeDeclarationVisitor().visit(c);
 	    stmts.add(s);
 	}
-	return Translator.seq(stmts);
+	final Stmt result = Translator.seq(stmts);
+	return result;
     }
 
 }

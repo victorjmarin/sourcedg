@@ -18,7 +18,8 @@ public class TypeDeclarationVisitor {
 	}
 	final ClassBodyContext clsBodyCtx = clsDeclCtx.classBody();
 	final String className = clsDeclCtx.IDENTIFIER().getText();
-	return new ClassBodyVisitor(className).visit(clsBodyCtx);
+	final Stmt result = new ClassBodyVisitor(className).visit(clsBodyCtx);
+	return result;
     }
 
 }

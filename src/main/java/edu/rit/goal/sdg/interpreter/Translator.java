@@ -1,6 +1,8 @@
 package edu.rit.goal.sdg.interpreter;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -27,24 +29,26 @@ import edu.rit.goal.sdg.java8.antlr.JavaLexer;
 import edu.rit.goal.sdg.java8.antlr.JavaParser;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.ExpressionContext;
 import edu.rit.goal.sdg.java8.antlr.JavaParser.ExpressionListContext;
+import edu.rit.goal.sdg.java8.antlr.JavaParser.FormalParameterContext;
+import edu.rit.goal.sdg.java8.antlr.JavaParser.FormalParameterListContext;
+import edu.rit.goal.sdg.java8.antlr.JavaParser.FormalParametersContext;
 import edu.rit.goal.sdg.java8.visitor.CompilationUnitVisitor;
 
 public class Translator {
-    private boolean notWrapped = true;
 
     private enum Language {
 	JAVA, PYTHON
     }
 
-    public Stmt from(final String source) {
+    public Stmt from(final String fileName) throws IOException {
 	Stmt result = null;
 	final Lexer lexer;
 	CommonTokenStream tokens;
 	ParseTree tree;
 	Parser parser;
 	AbstractParseTreeVisitor<Stmt> visitor;
-	final Language lang = detectLang(source);
-	final CharStream chrStream = CharStreams.fromString(source);
+	final Language lang = detectLang(fileName);
+	final CharStream chrStream = CharStreams.fromFileName(fileName);
 	switch (lang) {
 	case JAVA:
 	    lexer = new JavaLexer(chrStream);
@@ -57,29 +61,12 @@ public class Translator {
 	case PYTHON:
 	    break;
 	}
-	if (result == null && notWrapped) {
-	    notWrapped = false;
-	    result = from(wrap(source));
-	}
-	notWrapped = true;
 	return result;
     }
 
-    protected Language detectLang(final String source) {
-	Language result = Language.JAVA;
-	if ((source.contains("def ") && source.contains(":"))
-		&& (!source.contains("{") && !source.contains("}") && !source.contains(";"))) {
-	    result = Language.PYTHON;
-	}
+    protected Language detectLang(final String fileName) {
+	final Language result = Language.JAVA;
 	return result;
-    }
-
-    public static String wrap(final String source) {
-	final String cls = "public class WrapperClass {";
-	final StringBuilder sb = new StringBuilder(cls);
-	sb.append(source);
-	sb.append("}");
-	return sb.toString();
     }
 
     public static Param param(final List<Str> params, final boolean isFormal) {
@@ -107,6 +94,18 @@ public class Translator {
 	for (final ExpressionContext exprCtx : ctx.expression()) {
 	    final Str str = new Str(exprCtx);
 	    result.add(str);
+	}
+	return result;
+    }
+
+    public static List<Str> formalParams(final FormalParametersContext ctx) {
+	final List<Str> result = new LinkedList<>();
+	final FormalParameterListContext formalParamListCtx = ctx.formalParameterList();
+	if (formalParamListCtx != null) {
+	    for (final FormalParameterContext formalParamCtx : formalParamListCtx.formalParameter()) {
+		final Str str = new Str(formalParamCtx.variableDeclaratorId().IDENTIFIER());
+		result.add(str);
+	    }
 	}
 	return result;
     }

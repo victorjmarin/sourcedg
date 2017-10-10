@@ -1,13 +1,11 @@
-public class Triangle1 {
+public class DataTest1 {
 
-    public static void main(int a) {
-	switch (a) {
-	case 1:
-	case 2:
-	    break;
-	case 3:
-	    break;
-	}
+    public int m1(int a) {
+	m2(a);
+	return 0;
+    }
+
+    public int m2(int b) {
     }
 
 }

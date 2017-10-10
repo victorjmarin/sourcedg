@@ -553,7 +553,7 @@ public class SimpleInterpreter {
 	    program.Vc.add(v);
 	}
 	final Vertex Vp0 = Vp.iterator().next();
-	return new Program(program.sdg, program.Vc, program.P, program.C, new Defer(new ParamOut(Vp0, param.x)));
+	return new Program(program.sdg, program.Vc, program.P, program.C, new Defer(new ParamOut(param.x, Vp0)));
     }
 
     private static Program paramFormalRule(final Program program) {

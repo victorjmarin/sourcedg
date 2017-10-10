@@ -30,7 +30,6 @@ import edu.rit.goal.sdg.interpreter.stmt.CtrlEdge;
 import edu.rit.goal.sdg.interpreter.stmt.CtrlVertex;
 import edu.rit.goal.sdg.interpreter.stmt.CtrlVertex.CtrlType;
 import edu.rit.goal.sdg.interpreter.stmt.Def;
-import edu.rit.goal.sdg.interpreter.stmt.Defer;
 import edu.rit.goal.sdg.interpreter.stmt.DoWhile;
 import edu.rit.goal.sdg.interpreter.stmt.EndDef;
 import edu.rit.goal.sdg.interpreter.stmt.Expr;
@@ -119,19 +118,12 @@ public class Interpreter {
 	    }
 	} else if (s instanceof Seq) {
 	    final Stmt s1 = ((Seq) s).s1;
-	    final Stmt s2 = ((Seq) s).s2;
 	    if (s1 instanceof Io) {
 		printRule("seqIoRule");
 		result = seqIoRule(program);
 	    } else if (s1 instanceof Skip) {
 		printRule("seqSkipRule");
 		result = seqSkipRule(program);
-	    } else if (s1 instanceof Defer && !(s2 instanceof Defer)) {
-		printRule("seqDeferRule");
-		result = seqDeferRule(program);
-	    } else if (s1 instanceof Seq && ((Seq) s1).s2 instanceof Defer && !(s2 instanceof Defer)) {
-		printRule("seqSeqDeferRule");
-		result = seqSeqDeferRule(program);
 	    } else {
 		printRule("seqRule");
 		result = seqRule(program);
@@ -156,9 +148,6 @@ public class Interpreter {
 	    } else if (s2 instanceof Io) {
 		printRule("ctrlEdgeIoRule");
 		result = ctrlEdgeIoRule(program);
-	    } else if (s2 instanceof Defer) {
-		printRule("ctrlEdgeDeferRule");
-		result = ctrlEdgeDeferRule(program);
 	    } else if (s2 instanceof DoWhile) {
 		printRule("ctrlEdgeDoWhileRule");
 		result = ctrlEdgeDoWhileRule(program);
@@ -246,9 +235,6 @@ public class Interpreter {
 	} else if (s instanceof Vc) {
 	    printRule("vcRule");
 	    result = vcRule(program);
-	} else if (s instanceof Defer) {
-	    printRule("deferRule");
-	    result = deferRule(program);
 	} else if (s instanceof CallEdge) {
 	    printRule("callEdgeRule");
 	    result = callEdgeRule(program);
@@ -834,37 +820,6 @@ public class Interpreter {
 		program.defers, new Skip());
     }
 
-    private Program deferRule(final Program program) {
-	final Defer defer = (Defer) program.s;
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, defer.s);
-    }
-
-    private Program seqDeferRule(final Program program) {
-	final Seq seq = (Seq) program.s;
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Seq(seq.s2, seq.s1));
-    }
-
-    private Program seqSeqDeferRule(final Program program) {
-	final Seq seq = (Seq) program.s;
-	final Stmt s1 = ((Seq) seq.s1).s1;
-	final Defer s2 = (Defer) ((Seq) seq.s1).s2;
-	final Stmt s3 = seq.s2;
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Seq(s1, new Seq(s3, s2)));
-    }
-
-    private Program ctrlEdgeDeferRule(final Program program) {
-	final CtrlEdge s = (CtrlEdge) program.s;
-	final Defer d = (Defer) s.s;
-	final Defer defer = new Defer(new CtrlEdge(s.B, s.N, d.s));
-	final CtrlEdge ctrlEdge = new CtrlEdge(s.B, s.N, new Skip());
-	final Seq seq = new Seq(ctrlEdge, defer);
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, seq);
-    }
-
     // Control-flow graph
 
     private Program ioRule(final Program program) {
@@ -912,13 +867,6 @@ public class Interpreter {
 	final CfgEdge cfgEdge = (CfgEdge) program.s;
 	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
 		program.defers, cfgEdge.s1);
-    }
-
-    private Program cfgEdgeIoDefRule(final Program program) {
-	final CfgEdge cfgEdge = (CfgEdge) program.s;
-	final Def def = (Def) cfgEdge.s2;
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, def);
     }
 
     private Program cfgEdgeIoEndDefRule(final Program program) {
