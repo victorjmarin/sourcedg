@@ -20,15 +20,11 @@ import edu.rit.goal.sdg.interpreter.params.EmptyParam;
 import edu.rit.goal.sdg.interpreter.params.Params;
 import edu.rit.goal.sdg.interpreter.stmt.Assign;
 import edu.rit.goal.sdg.interpreter.stmt.Break;
-import edu.rit.goal.sdg.interpreter.stmt.BreakEdge;
 import edu.rit.goal.sdg.interpreter.stmt.Call;
 import edu.rit.goal.sdg.interpreter.stmt.CallEdge;
 import edu.rit.goal.sdg.interpreter.stmt.CfgEdge;
-import edu.rit.goal.sdg.interpreter.stmt.ContEdge;
 import edu.rit.goal.sdg.interpreter.stmt.Continue;
 import edu.rit.goal.sdg.interpreter.stmt.CtrlEdge;
-import edu.rit.goal.sdg.interpreter.stmt.CtrlVertex;
-import edu.rit.goal.sdg.interpreter.stmt.CtrlVertex.CtrlType;
 import edu.rit.goal.sdg.interpreter.stmt.Def;
 import edu.rit.goal.sdg.interpreter.stmt.DoWhile;
 import edu.rit.goal.sdg.interpreter.stmt.EndDef;
@@ -40,7 +36,6 @@ import edu.rit.goal.sdg.interpreter.stmt.IoUnion;
 import edu.rit.goal.sdg.interpreter.stmt.Param;
 import edu.rit.goal.sdg.interpreter.stmt.ParamIn;
 import edu.rit.goal.sdg.interpreter.stmt.ParamOut;
-import edu.rit.goal.sdg.interpreter.stmt.PopCtrl;
 import edu.rit.goal.sdg.interpreter.stmt.PostOp;
 import edu.rit.goal.sdg.interpreter.stmt.PreOp;
 import edu.rit.goal.sdg.interpreter.stmt.Return;
@@ -182,37 +177,9 @@ public class Interpreter {
 	} else if (s instanceof Break) {
 	    printRule("breakRule");
 	    result = breakRule(program);
-	} else if (s instanceof BreakEdge) {
-	    final BreakEdge s2 = (BreakEdge) s;
-	    final CtrlType ct = s2.ct;
-	    if (CtrlType.LOOP.equals(ct)) {
-		printRule("breakEdgeLoopRule");
-		result = breakEdgeLoopRule(program);
-	    } else if (CtrlType.SEQ.equals(ct) && program.C.size() > 1) {
-		printRule("breakEdgeSequentialRule");
-		result = breakEdgeSequentialRule(program);
-	    }
 	} else if (s instanceof Continue) {
 	    printRule("continueRule");
 	    result = continueRule(program);
-	} else if (s instanceof ContEdge) {
-	    final ContEdge s2 = (ContEdge) s;
-	    final CtrlType ct = s2.cv.ct;
-	    if (CtrlType.LOOP.equals(ct)) {
-		printRule("continueEdgeLoopRule");
-		result = continueEdgeLoopRule(program);
-	    } else if (CtrlType.SEQ.equals(ct)) {
-		printRule("continueEdgeSequentialRule");
-		result = continueEdgeSequentialRule(program);
-	    }
-	} else if (s instanceof PopCtrl) {
-	    if (program.C.isEmpty()) {
-		printRule("popCtrlEmptyRule");
-		result = popCtrlEmptyRule(program);
-	    } else {
-		printRule("popCtrlRule");
-		result = popCtrlRule(program);
-	    }
 	} else if (s instanceof Call) {
 	    printRule("callRule");
 	    result = callRule(program);
@@ -334,10 +301,7 @@ public class Interpreter {
 	final Seq seq1 = new Seq(param1, new Seq(param2, s.s));
 	final CtrlEdge ctrlEdge = new CtrlEdge(true, v, seq1);
 	final Seq seq2 = new Seq(new CfgEdge(new Io(v, v), ctrlEdge), new EndDef());
-	final CtrlVertex cv = new CtrlVertex(v, CtrlType.SEQ);
-	program.C.push(cv);
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, seq2);
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers, seq2);
     }
 
     private Program voidDefRule(final Program program) {
@@ -353,23 +317,20 @@ public class Interpreter {
 	final Seq seq1 = new Seq(param, s.s);
 	final CtrlEdge ctrlEdge = new CtrlEdge(true, v, seq1);
 	final Seq seq2 = new Seq(new CfgEdge(new Io(v, v), ctrlEdge), new EndDef());
-	final CtrlVertex cv = new CtrlVertex(v, CtrlType.SEQ);
-	program.C.push(cv);
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, seq2);
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers, seq2);
     }
 
     private Program seqRule(final Program program) {
 	final Seq seq = (Seq) program.s;
-	final Program s1Program = new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C,
-		program.m, program.defers, seq.s1);
+	final Program s1Program = new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m,
+		program.defers, seq.s1);
 	final Program p = small(s1Program);
-	return new Program(p.sdg, p.cfg, p.Vc, p.P, p.F, p.C, p.m, p.defers, new Seq(p.s, seq.s2));
+	return new Program(p.sdg, p.cfg, p.Vc, p.P, p.F, p.m, p.defers, new Seq(p.s, seq.s2));
     }
 
     private Program seqSkipRule(final Program program) {
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, ((Seq) program.s).s2);
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
+		((Seq) program.s).s2);
     }
 
     private Program assignRule(final Program program) {
@@ -383,8 +344,8 @@ public class Interpreter {
 	final Set<Vertex> I = new HashSet<>();
 	I.add(va);
 	final Set<Vertex> O = new HashSet<>(I);
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Io(I, O));
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
+		new Io(I, O));
     }
 
     private Program preOpRule(final Program program) {
@@ -395,8 +356,8 @@ public class Interpreter {
 	program.sdg.addVertex(v);
 	program.cfg.addVertex(v);
 	program.Vc.add(v);
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Io(v, v));
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
+		new Io(v, v));
     }
 
     private Program postOpRule(final Program program) {
@@ -407,8 +368,8 @@ public class Interpreter {
 	program.sdg.addVertex(v);
 	program.cfg.addVertex(v);
 	program.Vc.add(v);
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Io(v, v));
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
+		new Io(v, v));
     }
 
     private Program returnRule(final Program program) {
@@ -418,38 +379,38 @@ public class Interpreter {
 	program.sdg.addVertex(v);
 	program.cfg.addVertex(v);
 	program.Vc.add(v);
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Io(v, new HashSet<>()));
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
+		new Io(v, new HashSet<>()));
     }
 
     private Program vcRule(final Program program) {
 	final Vc vc = (Vc) program.s;
 	program.Vc.add(vc.v);
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Skip());
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
+		new Skip());
     }
 
     private Program ctrlEdgeRule(final Program program) {
 	final CtrlEdge ctrledge = (CtrlEdge) program.s;
 	final Stmt s = ctrledge.s;
-	final Program p = small(new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C,
-		program.m, program.defers, s));
+	final Program p = small(
+		new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers, s));
 	final CtrlEdge ctrlEdge = new CtrlEdge(ctrledge.B, ctrledge.N, p.s);
-	return new Program(p.sdg, p.cfg, p.Vc, p.P, p.F, p.C, p.m, p.defers, ctrlEdge);
+	return new Program(p.sdg, p.cfg, p.Vc, p.P, p.F, p.m, p.defers, ctrlEdge);
     }
 
     private Program ctrlEdgeSkipRule(final Program program) {
 	final CtrlEdge s = (CtrlEdge) program.s;
 	createEdges(program.sdg, s.B, s.N, program.Vc);
-	return new Program(program.sdg, program.cfg, new HashSet<>(), program.P, program.F, program.C, program.m,
-		program.defers, new Skip());
+	return new Program(program.sdg, program.cfg, new HashSet<>(), program.P, program.F, program.m, program.defers,
+		new Skip());
     }
 
     private Program ctrlEdgeSeqRule(final Program program) {
 	final CtrlEdge s = (CtrlEdge) program.s;
 	final Seq seq = (Seq) s.s;
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Seq(new CtrlEdge(s.B, s.N, seq.s1), new CtrlEdge(s.B, s.N, seq.s2)));
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
+		new Seq(new CtrlEdge(s.B, s.N, seq.s1), new CtrlEdge(s.B, s.N, seq.s2)));
     }
 
     private Program ifThenElseRule(final Program program) {
@@ -461,17 +422,14 @@ public class Interpreter {
 	program.sdg.addVertex(v);
 	program.cfg.addVertex(v);
 	program.Vc.clear();
-	final CtrlVertex cv = new CtrlVertex(v, CtrlType.SEQ);
-	program.C.push(cv);
 	final CtrlEdge ctrl1 = new CtrlEdge(true, v, s.s1);
 	final CtrlEdge ctrl2 = new CtrlEdge(false, v, s.s2);
 	final Io io = new Io(v, v);
 	final CfgEdge cfgEdge1 = new CfgEdge(io, ctrl1);
 	final CfgEdge cfgEdge2 = new CfgEdge(io, ctrl2);
 	final IoUnion outUnion = new IoUnion(cfgEdge1, cfgEdge2);
-	final Seq seq = new Seq(outUnion, new Seq(new Vc(v), new PopCtrl()));
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, seq);
+	final Seq seq = new Seq(outUnion, new Vc(v));
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers, seq);
     }
 
     private Program whileRule(final Program program) {
@@ -484,17 +442,14 @@ public class Interpreter {
 	program.sdg.addEdge(v, v, EdgeType.CTRL_TRUE);
 	program.cfg.addVertex(v);
 	program.Vc.clear();
-	final CtrlVertex cv = new CtrlVertex(v, CtrlType.LOOP);
-	program.C.push(cv);
 	final CtrlEdge ctrl = new CtrlEdge(true, v, s.s);
 	final Set<Vertex> V = new HashSet<>();
 	V.add(v);
 	final Io io = new Io(V, V);
 	final CfgEdge cfgEdge1 = new CfgEdge(io, ctrl);
 	final CfgEdge cfgEdge2 = new CfgEdge(cfgEdge1, io);
-	final Seq seq = new Seq(cfgEdge2, new Seq(new Vc(v), new PopCtrl()));
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, seq);
+	final Seq seq = new Seq(cfgEdge2, new Vc(v));
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers, seq);
     }
 
     private Program doWhileRule(final Program program) {
@@ -507,17 +462,14 @@ public class Interpreter {
 	program.sdg.addEdge(v, v, EdgeType.CTRL_TRUE);
 	program.cfg.addVertex(v);
 	program.Vc.clear();
-	final CtrlVertex cv = new CtrlVertex(v, CtrlType.LOOP);
-	program.C.push(cv);
 	final CtrlEdge ctrl = new CtrlEdge(true, v, s.s);
 	final Io io1 = new Io(v, v);
 	final Set<Vertex> sv = null;
 	final Io io2 = new Io(sv, v);
 	final CfgEdge cfgEdge1 = new CfgEdge(ctrl, io1);
 	final CfgEdge cfgEdge2 = new CfgEdge(cfgEdge1, io2);
-	final Seq seq = new Seq(cfgEdge2, new Seq(new Vc(v), new PopCtrl()));
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, seq);
+	final Seq seq = new Seq(cfgEdge2, new Vc(v));
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers, seq);
     }
 
     private Program ctrlEdgeDoWhileRule(final Program program) {
@@ -530,8 +482,6 @@ public class Interpreter {
 	program.sdg.addVertex(v);
 	program.cfg.addVertex(v);
 	program.Vc.clear();
-	final CtrlVertex cv = new CtrlVertex(v, CtrlType.LOOP);
-	program.C.push(cv);
 	final List<Boolean> B = new LinkedList<>(s.B);
 	B.add(true);
 	final List<Vertex> N = new LinkedList<>(s.N);
@@ -543,9 +493,8 @@ public class Interpreter {
 	final Io io2 = new Io(nullSet, v);
 	final CfgEdge cfgEdge1 = new CfgEdge(ctrl, io1);
 	final CfgEdge cfgEdge2 = new CfgEdge(cfgEdge1, io2);
-	final Seq seq = new Seq(cfgEdge2, new PopCtrl());
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, seq);
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
+		cfgEdge2);
     }
 
     private Program forRule(final Program program) {
@@ -558,8 +507,6 @@ public class Interpreter {
 	program.cfg.addVertex(v);
 	program.sdg.addEdge(v, v, EdgeType.CTRL_TRUE);
 	program.Vc.clear();
-	final CtrlVertex cv = new CtrlVertex(v, CtrlType.LOOP);
-	program.C.push(cv);
 	final CtrlEdge ctrlEdge = new CtrlEdge(true, v, new Seq(s.s, s.su));
 	final CfgEdge cfgEdge2 = new CfgEdge(new Io(v, v), ctrlEdge);
 	final Set<Vertex> nullSet = null;
@@ -568,9 +515,8 @@ public class Interpreter {
 	final Set<Vertex> emptySet = new HashSet<>();
 	final Io io1 = new Io(emptySet, v);
 	final IoUnion ioUnion = new IoUnion(io1, cfgEdge1);
-	final Seq seq = new Seq(s.si, new Seq(ioUnion, new Seq(new Vc(v), new PopCtrl())));
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, seq);
+	final Seq seq = new Seq(s.si, new Seq(ioUnion, new Vc(v)));
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers, seq);
     }
 
     private Program switchEmptyRule(final Program program) {
@@ -579,8 +525,8 @@ public class Interpreter {
 		s.e.toString());
 	program.sdg.addVertex(v);
 	program.Vc.add(v);
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Skip());
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
+		new Skip());
     }
 
     private Program switchCaseRule(final Program program) {
@@ -589,85 +535,34 @@ public class Interpreter {
 	final String x = largeCsCond(s.e, ss.cs);
 	final IfThenElse ifThenElse = new IfThenElse(new Str(x), ss.s, new Skip());
 	ifThenElse.setUses(s.getUses());
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, ifThenElse);
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
+		ifThenElse);
     }
 
     private Program switchCasesRule(final Program program) {
 	final Switch s = (Switch) program.s;
 	final MultiSwitch sb = (MultiSwitch) s.sb;
 	final Switch sw = new Switch(s.e, sb.ss);
-	final Program antProgram = new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C,
-		program.m, program.defers, sw);
+	final Program antProgram = new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m,
+		program.defers, sw);
 	final Program p = small(antProgram);
-	return new Program(p.sdg, p.cfg, p.Vc, p.P, p.F, p.C, p.m, p.defers, new Switch(s.e, sb.sb));
+	return new Program(p.sdg, p.cfg, p.Vc, p.P, p.F, p.m, p.defers, new Switch(s.e, sb.sb));
     }
 
     private Program breakRule(final Program program) {
 	final Vertex v = new Vertex(vtxId++, VertexType.BREAK, "break");
 	program.sdg.addVertex(v);
 	program.Vc.add(v);
-	// final CtrlVertex cv = program.C.pop();
-	// final Deque<CtrlVertex> S = new ArrayDeque<CtrlVertex>(program.C);
-	// S.add(cv);
-	// final BreakEdge breakEdge = new BreakEdge(cv.ct, v, S);
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Skip());
-    }
-
-    private Program breakEdgeLoopRule(final Program program) {
-	final BreakEdge s = (BreakEdge) program.s;
-	final CtrlVertex cv = program.C.pop();
-	final Vertex v1 = cv.v;
-	program.sdg.addEdge(s.v, v1, EdgeType.CTRL_TRUE);
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, s.S, program.m, program.defers,
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
 		new Skip());
-    }
-
-    private Program breakEdgeSequentialRule(final Program program) {
-	final BreakEdge s = (BreakEdge) program.s;
-	final CtrlVertex cv = program.C.pop();
-	final BreakEdge breakEdge = new BreakEdge(cv.ct, s.v, s.S);
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, breakEdge);
     }
 
     private Program continueRule(final Program program) {
 	final Vertex v = new Vertex(vtxId++, VertexType.CONTINUE, "continue");
 	program.sdg.addVertex(v);
 	program.Vc.add(v);
-	// final CtrlVertex cv = program.C.pop();
-	// final Deque<CtrlVertex> S = new ArrayDeque<CtrlVertex>(program.C);
-	// S.add(cv);
-	// final ContEdge contEdge = new ContEdge(cv, v, S);
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Skip());
-    }
-
-    private Program continueEdgeLoopRule(final Program program) {
-	final ContEdge s = (ContEdge) program.s;
-	program.sdg.addEdge(s.v, s.cv.v, EdgeType.CTRL_TRUE);
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, s.S, program.m, program.defers,
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
 		new Skip());
-    }
-
-    private Program continueEdgeSequentialRule(final Program program) {
-	final ContEdge s = (ContEdge) program.s;
-	final CtrlVertex cv = program.C.pop();
-	final ContEdge contEdge = new ContEdge(cv, s.v, s.S);
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, contEdge);
-    }
-
-    private Program popCtrlRule(final Program program) {
-	program.C.pop();
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Skip());
-    }
-
-    private Program popCtrlEmptyRule(final Program program) {
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Skip());
     }
 
     private Program paramActualInRule(final Program program) {
@@ -678,8 +573,8 @@ public class Interpreter {
 	    program.Vc.add(v);
 	}
 	program.defers.add(new ParamIn(param.x, 1, Vp));
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Skip());
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
+		new Skip());
     }
 
     private Program paramActualOutRule(final Program program) {
@@ -691,8 +586,8 @@ public class Interpreter {
 	}
 	final Vertex Vp0 = Vp.iterator().next();
 	program.defers.add(new ParamOut(param.x, Vp0));
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Skip());
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
+		new Skip());
     }
 
     private Program paramFormalInRule(final Program program) {
@@ -716,8 +611,8 @@ public class Interpreter {
 	    s.add(new Io(v, v));
 	    program.cfg.addVertex(v);
 	}
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, Translator.seq(s));
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
+		Translator.seq(s));
     }
 
     private Program paramFormalOutRule(final Program program) {
@@ -733,8 +628,8 @@ public class Interpreter {
 	    paramVtcs.add(v);
 	}
 	program.P.put(param.x, paramVtcs);
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Skip());
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
+		new Skip());
     }
 
     private Program paramInRule(final Program program) {
@@ -742,13 +637,13 @@ public class Interpreter {
 	final Vertex v = vtxAtIdx(program.P.get(paramIn.x), paramIn.i);
 	final Vertex Vi = vtxAtIdx(paramIn.V, paramIn.i - 1);
 	program.sdg.addEdge(Vi, v, EdgeType.PARAM_IN);
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new ParamIn(paramIn.x, paramIn.i + 1, paramIn.V));
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
+		new ParamIn(paramIn.x, paramIn.i + 1, paramIn.V));
     }
 
     private Program paramInOobRule(final Program program) {
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Skip());
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
+		new Skip());
     }
 
     private Program paramOutRule(final Program program) {
@@ -767,8 +662,8 @@ public class Interpreter {
 	    if (PRINT)
 		System.out.println("[WARN] Cannot find parameter vertices for method '" + paramOut.x + "'.");
 	}
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Skip());
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
+		new Skip());
     }
 
     private Program callRule(final Program program) {
@@ -783,8 +678,7 @@ public class Interpreter {
 	final Seq seq2 = new Seq(new Vc(vc), new Io(vc, vc));
 	final Param param = new Param(methodName, VertexType.ACTUAL_IN, s.p);
 	final Seq seq = new Seq(new CtrlEdge(true, vc, param), seq2);
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, seq);
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers, seq);
     }
 
     private Program assignCallRule(final Program program) {
@@ -802,8 +696,7 @@ public class Interpreter {
 	final Seq seq2 = new Seq(param1, param2);
 	final Seq seq3 = new Seq(new Vc(va), new Io(va, va));
 	final Seq seq = new Seq(new CtrlEdge(true, va, seq2), seq3);
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, seq);
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers, seq);
     }
 
     private Program callEdgeRule(final Program program) {
@@ -816,64 +709,63 @@ public class Interpreter {
 	} else {
 	    program.sdg.addEdge(callEdge.v, ve.get(), EdgeType.CALL);
 	}
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Skip());
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
+		new Skip());
     }
 
     // Control-flow graph
 
     private Program ioRule(final Program program) {
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Skip());
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
+		new Skip());
     }
 
     private Program seqIoRule(final Program program) {
 	final Stmt s1 = ((Seq) program.s).s1;
 	final Stmt s2 = ((Seq) program.s).s2;
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new CfgEdge(s1, s2));
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
+		new CfgEdge(s1, s2));
     }
 
     private Program ctrlEdgeIoRule(final Program program) {
 	final CtrlEdge s = (CtrlEdge) program.s;
 	createEdges(program.sdg, s.B, s.N, program.Vc);
-	return new Program(program.sdg, program.cfg, new HashSet<>(), program.P, program.F, program.C, program.m,
-		program.defers, s.s);
+	return new Program(program.sdg, program.cfg, new HashSet<>(), program.P, program.F, program.m, program.defers,
+		s.s);
     }
 
     private Program cfgEdgeRule(final Program program) {
 	final CfgEdge cfgEdge = (CfgEdge) program.s;
 	final Stmt s = cfgEdge.s1;
-	final Program p = small(new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C,
-		program.m, program.defers, s));
-	return new Program(p.sdg, p.cfg, p.Vc, p.P, p.F, p.C, p.m, p.defers, new CfgEdge(p.s, cfgEdge.s2));
+	final Program p = small(
+		new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers, s));
+	return new Program(p.sdg, p.cfg, p.Vc, p.P, p.F, p.m, p.defers, new CfgEdge(p.s, cfgEdge.s2));
     }
 
     private Program cfgEdgeIoRule(final Program program) {
 	final CfgEdge cfgEdge = (CfgEdge) program.s;
 	final Stmt s = cfgEdge.s2;
-	final Program p = small(new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C,
-		program.m, program.defers, s));
-	return new Program(p.sdg, p.cfg, p.Vc, p.P, p.F, p.C, p.m, p.defers, new CfgEdge(cfgEdge.s1, p.s));
+	final Program p = small(
+		new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers, s));
+	return new Program(p.sdg, p.cfg, p.Vc, p.P, p.F, p.m, p.defers, new CfgEdge(cfgEdge.s1, p.s));
     }
 
     private Program cfgEdgeSkipFirstRule(final Program program) {
 	final CfgEdge cfgEdge = (CfgEdge) program.s;
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, cfgEdge.s2);
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
+		cfgEdge.s2);
     }
 
     private Program cfgEdgeSkipSecondRule(final Program program) {
 	final CfgEdge cfgEdge = (CfgEdge) program.s;
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, cfgEdge.s1);
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
+		cfgEdge.s1);
     }
 
     private Program cfgEdgeIoEndDefRule(final Program program) {
 	final CfgEdge cfgEdge = (CfgEdge) program.s;
 	final EndDef fed = (EndDef) cfgEdge.s2;
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, fed);
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers, fed);
     }
 
     private Program cfgEdgeIoCopyInRule(final Program program) {
@@ -882,8 +774,7 @@ public class Interpreter {
 	final Io io2 = (Io) cfgEdge.s2;
 	io2.I = io1.I;
 	final CfgEdge s = new CfgEdge(io1, io2);
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, s);
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers, s);
     }
 
     private Program cfgEdgeIoCopyOutRule(final Program program) {
@@ -892,8 +783,7 @@ public class Interpreter {
 	final Io io2 = (Io) cfgEdge.s2;
 	io2.O = io1.O;
 	final CfgEdge s = new CfgEdge(io1, io2);
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, s);
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers, s);
     }
 
     private Program cfgEdgeIoIoRule(final Program program) {
@@ -905,26 +795,26 @@ public class Interpreter {
 		program.cfg.addEdge(o, i, new Edge(o, i));
 	    }
 	}
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Io(io1.I, io2.O));
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
+		new Io(io1.I, io2.O));
     }
 
     private Program ioUnionRule(final Program program) {
 	final IoUnion outUnion = (IoUnion) program.s;
 	final Stmt s1 = outUnion.s1;
 	final Stmt s2 = outUnion.s2;
-	final Program p = small(new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C,
-		program.m, program.defers, s1));
-	return new Program(p.sdg, p.cfg, p.Vc, p.P, p.F, p.C, p.m, p.defers, new IoUnion(p.s, s2));
+	final Program p = small(
+		new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers, s1));
+	return new Program(p.sdg, p.cfg, p.Vc, p.P, p.F, p.m, p.defers, new IoUnion(p.s, s2));
     }
 
     private Program ioUnionIoRule(final Program program) {
 	final IoUnion outUnion = (IoUnion) program.s;
 	final Io io = (Io) outUnion.s1;
 	final Stmt s = outUnion.s2;
-	final Program p = small(new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C,
-		program.m, program.defers, s));
-	return new Program(p.sdg, p.cfg, p.Vc, p.P, p.F, p.C, p.m, p.defers, new IoUnion(io, p.s));
+	final Program p = small(
+		new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers, s));
+	return new Program(p.sdg, p.cfg, p.Vc, p.P, p.F, p.m, p.defers, new IoUnion(io, p.s));
     }
 
     private Program ioUnionIoIoRule(final Program program) {
@@ -935,16 +825,16 @@ public class Interpreter {
 	I.addAll(s2.I);
 	final Set<Vertex> O = new HashSet<>(s1.O);
 	O.addAll(s2.O);
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new Io(I, O));
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
+		new Io(I, O));
     }
 
     private Program endDefRule(final Program program) {
 	final String currentMethod = program.m;
 	program.F.put(currentMethod, program.clonedCfg());
 	program.cfg = new DefaultDirectedGraph<Vertex, Edge>(Edge.class);
-	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.C, program.m,
-		program.defers, new PopCtrl());
+	return new Program(program.sdg, program.cfg, program.Vc, program.P, program.F, program.m, program.defers,
+		new Skip());
     }
 
     // Large-step

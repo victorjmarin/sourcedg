@@ -13,7 +13,7 @@ import edu.rit.goal.sdg.interpreter.stmt.Stmt;
 
 public class Main {
 
-    private static final String FILE_NAME = "programs/java8/npe/1.java";
+    private static final String FILE_NAME = "programs/java8/Circle.java";
 
     public static void main(final String[] args) throws IOException {
 	final long t = System.currentTimeMillis();
