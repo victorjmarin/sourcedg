@@ -877,8 +877,10 @@ public class Interpreter {
     v.setAssignedVariable(params.getDef());
     v.setReadingVariables(params.getUses());
     DefUsesUtils.paramsDefUses(v, params.x);
-    V.add(v);
-    return V;
+    final LinkedHashSet<Vertex> result = new LinkedHashSet<>();
+    result.add(v);
+    result.addAll(V);
+    return result;
   }
 
   private String largeCsCond(final Expr e, final ICase cs) {
