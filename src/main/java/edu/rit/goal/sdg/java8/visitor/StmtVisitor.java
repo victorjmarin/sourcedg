@@ -148,7 +148,14 @@ public class StmtVisitor {
     if (bop != null) {
       final boolean isShortHand = Translator.isShortHandOperator(bop.getText());
       final boolean isAssign = isShortHand || "=".equals(bop.getText());
-      if (isAssign) {
+      if (isAssign && isAssignCall(exprCtx)) {
+        final String x = exprCtx.expression(0).getText();
+        final Call e = Translator.call(exprCtx.expression(1), className);
+        final Assign assignCall = new Assign(x, e);
+        assignCall.setDef(x);
+        assignCall.setUses(e.getUses());
+        result = assignCall;
+      } else if (isAssign) {
         result = assign(exprCtx, isShortHand);
       } else {
         // TODO: Assuming a plain condition
@@ -358,6 +365,14 @@ public class StmtVisitor {
       final Str lbl = labels.remove(0);
       return new MultiCase(new SingleCase(lbl.value), buildCases(labels));
     }
+  }
+
+  private boolean isAssignCall(final ExpressionContext ctx) {
+    if (ctx.expression().size() > 1) {
+      final ExpressionContext exprCtx = ctx.expression(1);
+      return exprCtx.expressionList() != null;
+    }
+    return false;
   }
 
 }

@@ -66,7 +66,7 @@ import edu.rit.goal.sdg.interpreter.stmt.sw.Switch;;
 public class Interpreter {
 
   public int vtxId;
-  public final boolean PRINT = false;
+  public final boolean PRINT = true;
   public final boolean PRINT_RULES = true;
 
   public Program interpret(final Program program) {
@@ -667,7 +667,7 @@ public class Interpreter {
     final Assign assign = (Assign) program.s;
     final Call call = (Call) assign.e;
     final String methodName = Translator.removeClassName(call.x);
-    final Vertex va = new Vertex(vtxId++, VertexType.CALL, assign.x + assign.op + call.toString());
+    final Vertex va = new Vertex(vtxId++, VertexType.ASSIGN, assign.x + assign.op + call.toString());
     va.setAssignedVariable(assign.getDef());
     va.setReadingVariables(call.getUses());
     program.sdg.addVertex(va);

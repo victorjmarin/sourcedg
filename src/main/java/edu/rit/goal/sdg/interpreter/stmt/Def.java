@@ -34,4 +34,8 @@ public class Def extends Stmt {
     return "def " + b + " " + x + " (" + p + "): " + s;
   }
 
+  public static String type() {
+    return null;
+  }
+
 }
