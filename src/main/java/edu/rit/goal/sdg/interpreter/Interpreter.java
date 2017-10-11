@@ -267,11 +267,8 @@ public class Interpreter {
     v.setEndLine(s.endLine);
     program.sdg.addVertex(v);
     program.cfg.addVertex(v);
-    final Param param1 =
-        new Param(methodName, VertexType.FORMAL_IN, new Params(methodName + "ResultIn", s.p));
-    final Param param2 =
-        new Param(methodName, VertexType.FORMAL_OUT, new Str(methodName + "ResultOut"));
-    final Seq seq1 = new Seq(param1, new Seq(param2, s.s));
+    final Param param = new Param(methodName, VertexType.FORMAL_IN, s.p);
+    final Seq seq1 = new Seq(param, s.s);
     final CtrlEdge ctrlEdge = new CtrlEdge(true, v, seq1);
     final Io io = new Io(set(v), set(v));
     program.s = new Seq(new CfgEdge(io, ctrlEdge), new Fed(s.x));
@@ -667,18 +664,17 @@ public class Interpreter {
     final Assign assign = (Assign) program.s;
     final Call call = (Call) assign.e;
     final String methodName = Translator.removeClassName(call.x);
-    final Vertex va = new Vertex(vtxId++, VertexType.ASSIGN, assign.x + assign.op + call.toString());
+    final Vertex va =
+        new Vertex(vtxId++, VertexType.ASSIGN, assign.x + assign.op + call.toString());
     va.setAssignedVariable(assign.getDef());
     va.setReadingVariables(call.getUses());
     program.sdg.addVertex(va);
     program.cfg.addVertex(va);
     program.sd.add(new CallEdge(va, methodName));
-    final Param param1 = new Param(methodName, VertexType.ACTUAL_OUT, new Str(assign.x));
-    final Param param2 = new Param(methodName, VertexType.ACTUAL_IN, new Params(assign.x, call.p));
-    final Seq seq2 = new Seq(param1, param2);
+    final Param param = new Param(methodName, VertexType.ACTUAL_IN, call.p);
     final Io io = new Io(set(va), set(va));
     final Seq seq3 = new Seq(new Vc(va), io);
-    program.s = new Seq(new CtrlEdge(true, va, seq2), seq3);
+    program.s = new Seq(new CtrlEdge(true, va, param), seq3);
     return program;
   }
 

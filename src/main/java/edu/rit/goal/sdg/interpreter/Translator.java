@@ -62,6 +62,30 @@ public class Translator {
     return result;
   }
 
+  public Stmt fromSource(final String source) throws IOException {
+    Stmt result = null;
+    final Lexer lexer;
+    CommonTokenStream tokens;
+    ParseTree tree;
+    Parser parser;
+    AbstractParseTreeVisitor<Stmt> visitor;
+    final Language lang = Language.JAVA;
+    final CharStream chrStream = CharStreams.fromString(source);
+    switch (lang) {
+      case JAVA:
+        lexer = new JavaLexer(chrStream);
+        tokens = new CommonTokenStream(lexer);
+        parser = new JavaParser(tokens);
+        tree = ((JavaParser) parser).compilationUnit();
+        visitor = new CompilationUnitVisitor();
+        result = visitor.visit(tree);
+        break;
+      case PYTHON:
+        break;
+    }
+    return result;
+  }
+
   protected Language detectLang(final String fileName) {
     final Language result = Language.JAVA;
     return result;
