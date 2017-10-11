@@ -9,17 +9,17 @@ import edu.rit.goal.sdg.java8.antlr.JavaParser.TypeDeclarationContext;
 
 public class TypeDeclarationVisitor {
 
-    public Stmt visit(final TypeDeclarationContext ctx) {
-	final ClassDeclarationContext clsDeclCtx = ctx.classDeclaration();
-	// Interface decl or something different to class
-	if (clsDeclCtx == null) {
-	    Translator.unsupported(ctx);
-	    return new Skip();
-	}
-	final ClassBodyContext clsBodyCtx = clsDeclCtx.classBody();
-	final String className = clsDeclCtx.IDENTIFIER().getText();
-	final Stmt result = new ClassBodyVisitor(className).visit(clsBodyCtx);
-	return result;
+  public Stmt visit(final TypeDeclarationContext ctx) {
+    final ClassDeclarationContext clsDeclCtx = ctx.classDeclaration();
+    // Interface decl or something different to class
+    if (clsDeclCtx == null) {
+      Translator.unsupported(ctx);
+      return new Skip();
     }
+    final ClassBodyContext clsBodyCtx = clsDeclCtx.classBody();
+    final String className = clsDeclCtx.IDENTIFIER().getText();
+    final Stmt result = new ClassBodyVisitor(className).visit(clsBodyCtx);
+    return result;
+  }
 
 }

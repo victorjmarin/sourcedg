@@ -4,9 +4,9 @@ import java.util.function.Function;
 import edu.rit.goal.sdg.interpreter.Program;
 
 public class OtherwisePattern implements Pattern {
-  private final Function<Object, Function<Program, Object>> function;
+  private final Function<Object, Function<Program, Program>> function;
 
-  public OtherwisePattern(final Function<Object, Function<Program, Object>> function) {
+  public OtherwisePattern(final Function<Object, Function<Program, Program>> function) {
     this.function = function;
   }
 
@@ -16,11 +16,11 @@ public class OtherwisePattern implements Pattern {
   }
 
   @Override
-  public Function<Program, Object> apply(final Object value) {
+  public Function<Program, Program> apply(final Object value) {
     return function.apply(value);
   }
 
-  public static Pattern otherwise(final Function<Object, Function<Program, Object>> function) {
+  public static Pattern otherwise(final Function<Object, Function<Program, Program>> function) {
     return new OtherwisePattern(function);
   }
 }

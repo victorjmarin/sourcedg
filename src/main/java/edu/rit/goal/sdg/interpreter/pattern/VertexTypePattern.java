@@ -6,9 +6,10 @@ import edu.rit.goal.sdg.interpreter.Program;
 
 public class VertexTypePattern implements Pattern {
   private final VertexType pattern;
-  private final Function<VertexType, Function<Program, Object>> function;
+  private final Function<VertexType, Function<Program, Program>> function;
 
-  public VertexTypePattern(final VertexType pattern, final Function<VertexType, Function<Program, Object>> function) {
+  public VertexTypePattern(final VertexType pattern,
+      final Function<VertexType, Function<Program, Program>> function) {
     this.pattern = pattern;
     this.function = function;
   }
@@ -19,11 +20,12 @@ public class VertexTypePattern implements Pattern {
   }
 
   @Override
-  public Function<Program, Object> apply(final Object value) {
+  public Function<Program, Program> apply(final Object value) {
     return function.apply((VertexType) value);
   }
 
-  public static Pattern caseof(final VertexType pattern, final Function<VertexType, Function<Program, Object>> function) {
+  public static Pattern caseof(final VertexType pattern,
+      final Function<VertexType, Function<Program, Program>> function) {
     return new VertexTypePattern(pattern, function);
   }
 

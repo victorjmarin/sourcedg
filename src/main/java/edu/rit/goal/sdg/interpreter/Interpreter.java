@@ -180,17 +180,13 @@ public class Interpreter {
   
   private final PatternMatching pm = $(
           caseof(Def.class, 
-              s -> def
-                    .matchFor(s.b)),
+              s -> def.matchFor(s.b)),
           caseof(Seq.class,
-              s -> seq
-                    .matchFor(s.s1)),
+              s -> seq.matchFor(s.s1)),
           caseof(Assign.class,
-              s -> assign
-                    .matchFor(s.e)),
+              s -> assign.matchFor(s.e)),
           caseof(CtrlEdge.class,
-              s -> ctrlEdge
-                    .matchFor(s.s)),
+              s -> ctrlEdge.matchFor(s.s)),
           caseof(IfThenElse.class,
               __ -> this::ifThenElseRule),
           caseof(While.class,
@@ -200,8 +196,7 @@ public class Interpreter {
           caseof(For.class,
               __ -> this::forRule),
           caseof(Switch.class,
-              s -> $switch
-                    .matchFor(s.sb)),
+              s -> $switch.matchFor(s.sb)),
           caseof(Break.class,
               __ -> this::breakRule),
           caseof(Continue.class,
@@ -209,14 +204,13 @@ public class Interpreter {
           caseof(Call.class,
               __ -> this::callRule),
           caseof(Param.class,
-              s -> param
-                    .matchFor(s.t)),
+              s -> param.matchFor(s.t)),
           caseof(Vc.class,
               __ -> this::vcRule),
           caseof(CallEdge.class,
               __ -> this::callEdgeRule),
           caseof(ParamIn.class,
-              s -> this::paramInRule),
+              __ -> this::paramInRule),
           caseof(ParamOut.class,
               __ -> this::paramOutRule),
           caseof(Return.class,
@@ -236,8 +230,7 @@ public class Interpreter {
                                  caseof(Skip.class, 
                                      ___ -> this::cfgEdgeSkipFirstRule),
                                  caseof(Io.class, 
-                                     ___ -> cfgEdge
-                                             .matchFor(s.s2)),
+                                     ___ -> cfgEdge.matchFor(s.s2)),
                                  otherwise(
                                      ___ -> this::cfgEdgeRule)
                                 )
@@ -247,8 +240,7 @@ public class Interpreter {
           caseof(IoUnion.class,
               s -> $(
                      caseof(Io.class, 
-                         __ -> ioUnion
-                            .matchFor(s.s2)),
+                         __ -> ioUnion.matchFor(s.s2)),
                      otherwise(
                          __ -> this::ioUnionRule)
                    )
@@ -261,8 +253,8 @@ public class Interpreter {
 
   public Program small(final Program program) {
     final Stmt stmt = program.s;
-    final Function<Program, Object> fn = pm.matchFor(stmt);
-    final Program result = (Program) fn.apply(program);
+    final Function<Program, Program> rule = pm.matchFor(stmt);
+    final Program result = rule.apply(program);
     return result;
   }
 

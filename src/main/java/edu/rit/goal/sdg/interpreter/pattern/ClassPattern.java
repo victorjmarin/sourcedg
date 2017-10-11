@@ -7,9 +7,10 @@ public class ClassPattern<T> implements Pattern {
 
   private final Class<T> clazz;
 
-  private final Function<T, Function<Program, Object>> function;
+  private final Function<T, Function<Program, Program>> function;
 
-  public ClassPattern(final Class<T> clazz, final Function<T, Function<Program, Object>> function) {
+  public ClassPattern(final Class<T> clazz,
+      final Function<T, Function<Program, Program>> function) {
     this.clazz = clazz;
     this.function = function;
   }
@@ -21,12 +22,12 @@ public class ClassPattern<T> implements Pattern {
 
   @SuppressWarnings("unchecked")
   @Override
-  public Function<Program, Object> apply(final Object value) {
+  public Function<Program, Program> apply(final Object value) {
     return function.apply((T) value);
   }
 
   public static <T> Pattern caseof(final Class<T> clazz,
-      final Function<T, Function<Program, Object>> function) {
+      final Function<T, Function<Program, Program>> function) {
     return new ClassPattern<T>(clazz, function);
   }
 

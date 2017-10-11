@@ -15,7 +15,7 @@ public class PatternMatching {
     return new PatternMatching(patterns);
   }
 
-  public Function<Program, Object> matchFor(final Object value) {
+  public Function<Program, Program> matchFor(final Object value) {
     for (final Pattern pattern : patterns)
       if (pattern.matches(value))
         return pattern.apply(value);
