@@ -25,7 +25,8 @@ public class ClassPattern<T> implements Pattern {
     return function.apply((T) value);
   }
 
-  public static <T> Pattern caseof(final Class<T> clazz, final Function<T, Function<Program, Object>> function) {
+  public static <T> Pattern caseof(final Class<T> clazz,
+      final Function<T, Function<Program, Object>> function) {
     return new ClassPattern<T>(clazz, function);
   }
 

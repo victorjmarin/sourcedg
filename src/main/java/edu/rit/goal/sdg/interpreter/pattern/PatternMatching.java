@@ -5,7 +5,7 @@ import edu.rit.goal.sdg.interpreter.Program;
 
 public class PatternMatching {
   private final Pattern[] patterns;
-  
+
   @SafeVarargs
   public PatternMatching(final Pattern... patterns) {
     this.patterns = patterns;
@@ -19,7 +19,6 @@ public class PatternMatching {
     for (final Pattern pattern : patterns)
       if (pattern.matches(value))
         return pattern.apply(value);
-
-    throw new IllegalArgumentException("cannot match " + value);
+    throw new IllegalArgumentException("Cannot match " + value);
   }
 }
