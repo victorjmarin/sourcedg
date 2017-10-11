@@ -1,9 +1,11 @@
 package edu.rit.goal.sdg.graph;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Vertex {
+public class Vertex implements Serializable {
+  private static final long serialVersionUID = -8461510336107098420L;
 
   private int id;
   private VertexType type;

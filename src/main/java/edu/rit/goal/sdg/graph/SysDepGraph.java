@@ -1,6 +1,7 @@
 package edu.rit.goal.sdg.graph;
 
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -9,11 +10,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import org.jgrapht.DirectedGraph;
-import org.jgrapht.GraphPath;
 import org.jgrapht.alg.ConnectivityInspector;
-import org.jgrapht.alg.shortestpath.AllDirectedPaths;
 import org.jgrapht.graph.DefaultDirectedGraph;
+
 import edu.rit.goal.sdg.interpreter.FlowGraph;
 
 public class SysDepGraph extends DefaultDirectedGraph<Vertex, Edge> {
@@ -88,19 +89,25 @@ public class SysDepGraph extends DefaultDirectedGraph<Vertex, Edge> {
                   addEdge(defVtx, useVtx, new Edge(defVtx, useVtx, EdgeType.DATA));
                   continue;
                 }
+                
                 // Find all paths from the def to the use vtx
-                final AllDirectedPaths<Vertex, Edge> adp = new AllDirectedPaths<>(fg.graph);
-                final List<GraphPath<Vertex, Edge>> paths =
-                    adp.getAllPaths(defVtx, useVtx, true, Integer.MAX_VALUE);
-                // Add edge if we can find one x-clear path
-                boolean xClear = false;
-                for (final GraphPath<Vertex, Edge> p : paths) {
-                  xClear = pathIsXClear(p.getVertexList(), defVtx, useVtx, use);
-                  if (xClear) {
-                    addEdge(defVtx, useVtx, new Edge(defVtx, useVtx, EdgeType.DATA));
-                    break;
-                  }
-                }
+				if (hasXClearPath(fg.graph, defVtx, useVtx, use))
+					addEdge(defVtx, useVtx, new Edge(defVtx, useVtx, EdgeType.DATA));
+                
+                // TODO 0: Original impl.
+//                // Find all paths from the def to the use vtx
+//                final AllDirectedPaths<Vertex, Edge> adp = new AllDirectedPaths<>(fg.graph);
+//                final List<GraphPath<Vertex, Edge>> paths =
+//                    adp.getAllPaths(defVtx, useVtx, true, Integer.MAX_VALUE);
+//                // Add edge if we can find one x-clear path
+//                boolean xClear = false;
+//                for (final GraphPath<Vertex, Edge> p : paths) {
+//                  xClear = pathIsXClear(p.getVertexList(), defVtx, useVtx, use);
+//                  if (xClear) {
+//                    addEdge(defVtx, useVtx, new Edge(defVtx, useVtx, EdgeType.DATA));
+//                    break;
+//                  }
+//                }
               }
             }
           }
@@ -108,6 +115,57 @@ public class SysDepGraph extends DefaultDirectedGraph<Vertex, Edge> {
       }
     }
   }
+  
+  public boolean hasXClearPath(DirectedGraph<Vertex, Edge> graph, Vertex src, Vertex tgt, String use) {
+		if (src.equals(tgt))
+			return true;
+		
+		Deque<List<Vertex>> incompletePaths = new LinkedList<>();
+		Set<Edge> outgoingEdges = graph.outgoingEdgesOf(src);
+		for (Edge edge : outgoingEdges) {
+			Vertex target = graph.getEdgeTarget(edge);
+			
+			List<Vertex> path = new ArrayList<>();
+			path.add(src);
+			path.add(target);
+			
+			boolean isXClear = pathIsXClear(path, src, target, use);
+			if (isXClear)
+				incompletePaths.add(path);
+			
+			if (target.equals(tgt) && isXClear)
+				return true;
+		}
+		
+		// Walk through the queue of incomplete paths
+      for (List<Vertex> currentIncompletePath = null; (currentIncompletePath = incompletePaths.poll()) != null;) {
+      	Integer lengthSoFar = currentIncompletePath.size();
+          Vertex leafNode = currentIncompletePath.get(lengthSoFar - 1);
+
+          for (Edge outEdge : graph.outgoingEdgesOf(leafNode)) {
+          	Vertex target = graph.getEdgeTarget(outEdge);
+          	
+          	List<Vertex> newPath = new ArrayList<>(currentIncompletePath);
+              // Make sure this path isn't self-intersecting
+              if (newPath.contains(target))
+                  continue;
+              else {
+              	newPath.add(target);
+              	
+              	boolean isXClear = pathIsXClear(newPath, src, target, use);
+
+                  // If this path reaches a target, mark it.
+                  if (target.equals(tgt))
+                  	return true;
+                  else if (isXClear)
+                  	// Consider further extensions of this path.
+                      incompletePaths.addFirst(newPath);
+          	}
+          }
+      }
+      
+      return false;
+	}
 
   public boolean pathIsXClear(final List<Vertex> path, final Vertex start, final Vertex finish,
       final String x) {
