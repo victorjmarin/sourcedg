@@ -2,12 +2,13 @@ package edu.rit.goal.sdg.interpreter.pattern;
 
 import java.util.function.Function;
 import edu.rit.goal.sdg.graph.VertexType;
+import edu.rit.goal.sdg.interpreter.Program;
 
 public class VertexTypePattern implements Pattern {
   private final VertexType pattern;
-  private final Function<VertexType, Object> function;
+  private final Function<VertexType, Function<Program, Object>> function;
 
-  public VertexTypePattern(final VertexType pattern, final Function<VertexType, Object> function) {
+  public VertexTypePattern(final VertexType pattern, final Function<VertexType, Function<Program, Object>> function) {
     this.pattern = pattern;
     this.function = function;
   }
@@ -18,11 +19,11 @@ public class VertexTypePattern implements Pattern {
   }
 
   @Override
-  public Object apply(final Object value) {
+  public Function<Program, Object> apply(final Object value) {
     return function.apply((VertexType) value);
   }
 
-  public static Pattern caseof(final VertexType pattern, final Function<VertexType, Object> function) {
+  public static Pattern caseof(final VertexType pattern, final Function<VertexType, Function<Program, Object>> function) {
     return new VertexTypePattern(pattern, function);
   }
 

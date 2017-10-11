@@ -1,11 +1,12 @@
 package edu.rit.goal.sdg.interpreter.pattern;
 
 import java.util.function.Function;
+import edu.rit.goal.sdg.interpreter.Program;
 
 public class OtherwisePattern implements Pattern {
-  private final Function<Object, Object> function;
+  private final Function<Object, Function<Program, Object>> function;
 
-  public OtherwisePattern(final Function<Object, Object> function) {
+  public OtherwisePattern(final Function<Object, Function<Program, Object>> function) {
     this.function = function;
   }
 
@@ -15,11 +16,11 @@ public class OtherwisePattern implements Pattern {
   }
 
   @Override
-  public Object apply(final Object value) {
+  public Function<Program, Object> apply(final Object value) {
     return function.apply(value);
   }
 
-  public static Pattern otherwise(final Function<Object, Object> function) {
+  public static Pattern otherwise(final Function<Object, Function<Program, Object>> function) {
     return new OtherwisePattern(function);
   }
 }

@@ -1,12 +1,13 @@
 package edu.rit.goal.sdg.interpreter.pattern;
 
 import java.util.function.Function;
+import edu.rit.goal.sdg.interpreter.Program;
 
 public class BooleanPattern implements Pattern {
   private final Boolean pattern;
-  private final Function<Boolean, Object> function;
+  private final Function<Boolean, Function<Program, Object>> function;
 
-  public BooleanPattern(final boolean pattern, final Function<Boolean, Object> function) {
+  public BooleanPattern(final boolean pattern, final Function<Boolean, Function<Program, Object>> function) {
     this.pattern = pattern;
     this.function = function;
   }
@@ -17,11 +18,11 @@ public class BooleanPattern implements Pattern {
   }
 
   @Override
-  public Object apply(final Object value) {
+  public Function<Program, Object> apply(final Object value) {
     return function.apply((Boolean) value);
   }
 
-  public static Pattern caseof(final boolean pattern, final Function<Boolean, Object> function) {
+  public static Pattern caseof(final boolean pattern, final Function<Boolean, Function<Program, Object>> function) {
     return new BooleanPattern(pattern, function);
   }
 

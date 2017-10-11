@@ -1,5 +1,8 @@
 package edu.rit.goal.sdg.interpreter.pattern;
 
+import java.util.function.Function;
+import edu.rit.goal.sdg.interpreter.Program;
+
 public class PatternMatching {
   private final Pattern[] patterns;
   
@@ -12,7 +15,7 @@ public class PatternMatching {
     return new PatternMatching(patterns);
   }
 
-  public Object matchFor(final Object value) {
+  public Function<Program, Object> matchFor(final Object value) {
     for (final Pattern pattern : patterns)
       if (pattern.matches(value))
         return pattern.apply(value);

@@ -16,6 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import edu.rit.goal.sdg.DefUsesUtils;
 import edu.rit.goal.sdg.graph.Edge;
@@ -95,167 +96,157 @@ public class Interpreter {
     return result;
   }
 
+  //@formatter:off
+  private final PatternMatching pm = $(
+          caseof(Def.class, 
+              s -> $(
+                     caseof(true, 
+                         __ -> this::defRule), 
+                     caseof(false, 
+                         __ -> this::voidDefRule)
+                   )
+                    .matchFor(s.b)),
+          caseof(Seq.class,
+              s -> $(
+                     caseof(Io.class, 
+                         __ -> this::seqIoRule),
+                     caseof(Skip.class,
+                         __ -> this::seqSkipRule),
+                     otherwise(
+                         __ -> this::seqRule)
+                   )
+                    .matchFor(s.s1)),
+          caseof(Assign.class,
+              s -> $(
+                     caseof(Call.class, 
+                         __ -> this::assignCallRule),
+                     otherwise(
+                         __ -> this::assignRule)
+                   )
+                    .matchFor(s.e)),
+          caseof(CtrlEdge.class,
+              s -> $(
+                     caseof(Seq.class, 
+                         __ -> this::ctrlEdgeSeqRule),
+                     caseof(Skip.class, 
+                         __ -> this::ctrlEdgeSkipRule),
+                     caseof(Io.class, 
+                         __ -> this::ctrlEdgeIoRule),
+                     caseof(DoWhile.class, 
+                         __ -> this::ctrlEdgeDoWhileRule),
+                     otherwise(
+                         __ -> this::ctrlEdgeRule)
+                   )
+                    .matchFor(s.s)),
+          caseof(IfThenElse.class,
+              __ -> this::ifThenElseRule),
+          caseof(While.class,
+              __ -> this::whileRule),
+          caseof(DoWhile.class,
+              __ -> this::doWhileRule),
+          caseof(For.class,
+              __ -> this::forRule),
+          caseof(Switch.class,
+              s -> $(
+                     caseof(EmptySwitch.class, 
+                         __ -> this::switchEmptyRule),
+                     caseof(SingleSwitch.class, 
+                         __ -> this::switchCaseRule),
+                     caseof(MultiSwitch.class, 
+                         __ -> this::switchCasesRule)
+                   )
+                    .matchFor(s.sb)),
+          caseof(Break.class,
+              __ -> this::breakRule),
+          caseof(Continue.class,
+              __ -> this::continueRule),
+          caseof(Call.class,
+              __ -> this::callRule),
+          caseof(Param.class,
+              s -> $(
+                     caseof(ACTUAL_IN, 
+                         __ -> this::paramActualInRule),
+                     caseof(ACTUAL_OUT, 
+                         __ -> this::paramActualOutRule),
+                     caseof(FORMAL_IN, 
+                         __ -> this::paramFormalInRule),
+                     caseof(FORMAL_OUT, 
+                         __ -> this::paramFormalOutRule)
+                   )
+                    .matchFor(s.t)),
+          caseof(Vc.class,
+              __ -> this::vcRule),
+          caseof(CallEdge.class,
+              __ -> this::callEdgeRule),
+          caseof(ParamIn.class,
+              s -> this::paramInRule),
+          caseof(ParamOut.class,
+              __ -> this::paramOutRule),
+          caseof(Return.class,
+              __ -> this::returnRule),
+          caseof(PreOp.class,
+              __ -> this::preOpRule),
+          caseof(PostOp.class, 
+              __ -> this::postOpRule),
+          caseof(Io.class,
+              __ -> this::ioRule),
+          caseof(CfgEdge.class,
+              s -> $(
+                     caseof(Skip.class, 
+                         __ -> this::cfgEdgeSkipSecondRule),
+                     otherwise(
+                         __ -> $(
+                                 caseof(Skip.class, 
+                                     ___ -> this::cfgEdgeSkipFirstRule),
+                                 caseof(Io.class, 
+                                     ___ -> $(
+                                              caseof(Io.class, 
+                                                  s2 -> {
+                                                          final Set<Vertex> ioS1 = ((Io) s2).I;
+                                                          final Set<Vertex> ioS2 = ((Io) s2).O;
+                                                          if (ioS1 == null)
+                                                            return this::cfgEdgeIoCopyInRule;
+                                                          else if (ioS2 == null)
+                                                            return this::cfgEdgeIoCopyOutRule;
+                                                          else
+                                                            return this::cfgEdgeIoIoRule;
+                                                        }),
+                                              caseof(Fed.class, 
+                                                  __2 -> this::cfgEdgeIoEndDefRule),
+                                              otherwise(
+                                                  __2 -> this::cfgEdgeIoRule)
+                                            )
+                                             .matchFor(s.s2)),
+                                 otherwise(
+                                     ___ -> this::cfgEdgeRule)
+                                )
+                                 .matchFor(s.s1))
+                    )
+                     .matchFor(s.s2)),
+          caseof(IoUnion.class,
+              s -> $(
+                     caseof(Io.class, 
+                         __ -> $(
+                             caseof(Io.class, 
+                                 __2 -> this::ioUnionIoIoRule),
+                             otherwise(
+                                 __2 -> this::ioUnionIoRule)
+                           )
+                            .matchFor(s.s2)),
+                     otherwise(
+                         __ -> this::ioUnionRule)
+                   )
+                    .matchFor(s.s1)),
+          caseof(Fed.class,
+              __ -> this::fedRule
+          )
+      );
+      // @formatter:on
+
   public Program small(final Program program) {
-    Program result = null;
     final Stmt stmt = program.s;
-
-    // TODO: Do not reconstruct pm object with every call to small
-
-    // @formatter:off
-    final PatternMatching pm = $(
-        caseof(Def.class, 
-            s -> $(
-                   caseof(true, 
-                       __ -> defRule(program)), 
-                   caseof(false, 
-                       __ -> voidDefRule(program))
-                 )
-                  .matchFor(s.b)),
-        caseof(Seq.class,
-            s -> $(
-                   caseof(Io.class, 
-                       __ -> seqIoRule(program)),
-                   caseof(Skip.class,
-                       __ -> seqSkipRule(program)),
-                   otherwise(
-                       __ -> seqRule(program))
-                 )
-                  .matchFor(s.s1)),
-        caseof(Assign.class,
-            s -> $(
-                   caseof(Call.class, 
-                       __ -> assignCallRule(program)),
-                   otherwise(
-                       __ -> assignRule(program))
-                 )
-                  .matchFor(s.e)),
-        caseof(CtrlEdge.class,
-            s -> $(
-                   caseof(Seq.class, 
-                       __ -> ctrlEdgeSeqRule(program)),
-                   caseof(Skip.class, 
-                       __ -> ctrlEdgeSkipRule(program)),
-                   caseof(Io.class, 
-                       __ -> ctrlEdgeIoRule(program)),
-                   caseof(DoWhile.class, 
-                       __ -> ctrlEdgeDoWhileRule(program)),
-                   otherwise(
-                       __ -> ctrlEdgeRule(program))
-                 )
-                  .matchFor(s.s)),
-        caseof(IfThenElse.class,
-            __ -> ifThenElseRule(program)),
-        caseof(While.class,
-            __ -> whileRule(program)),
-        caseof(DoWhile.class,
-            __ -> doWhileRule(program)),
-        caseof(For.class,
-            __ -> forRule(program)),
-        caseof(Switch.class,
-            s -> $(
-                   caseof(EmptySwitch.class, 
-                       __ -> switchEmptyRule(program)),
-                   caseof(SingleSwitch.class, 
-                       __ -> switchCaseRule(program)),
-                   caseof(MultiSwitch.class, 
-                       __ -> switchCasesRule(program))
-                 )
-                  .matchFor(s.sb)),
-        caseof(Break.class,
-            __ -> breakRule(program)),
-        caseof(Continue.class,
-            __ -> continueRule(program)),
-        caseof(Call.class,
-            __ -> callRule(program)),
-        caseof(Param.class,
-            s -> $(
-                   caseof(ACTUAL_IN, 
-                       __ -> paramActualInRule(program)),
-                   caseof(ACTUAL_OUT, 
-                       __ -> paramActualOutRule(program)),
-                   caseof(FORMAL_IN, 
-                       __ -> paramFormalInRule(program)),
-                   caseof(FORMAL_OUT, 
-                       __ -> paramFormalOutRule(program))
-                 )
-                  .matchFor(s.t)),
-        caseof(Vc.class,
-            __ -> vcRule(program)),
-        caseof(CallEdge.class,
-            __ -> callEdgeRule(program)),
-        caseof(ParamIn.class,
-            s -> {
-                   final LinkedHashSet<Vertex> Px = program.P.get(s.x);
-                   if (Px == null || s.i >= s.V.size() || s.V.size() > Px.size())
-                     return paramInOobRule(program);
-                   else if (s.i >= 1 && Px.size() > s.i)
-                     return paramInRule(program);
-                   return null;
-                 }),
-        caseof(ParamOut.class,
-            __ -> paramOutRule(program)),
-        caseof(Return.class,
-            __ -> returnRule(program)),
-        caseof(PreOp.class,
-            __ -> preOpRule(program)),
-        caseof(PostOp.class,
-            __ -> postOpRule(program)),
-        caseof(Io.class,
-            __ -> ioRule(program)),
-        caseof(CfgEdge.class,
-            s -> $(
-                   caseof(Skip.class, 
-                       __ -> cfgEdgeSkipSecondRule(program)),
-                   otherwise(
-                       __ -> $(
-                               caseof(Skip.class, 
-                                   ___ -> cfgEdgeSkipFirstRule(program)),
-                               caseof(Io.class, 
-                                   ___ -> $(
-                                            caseof(Io.class, 
-                                                s2 -> {
-                                                        final Set<Vertex> ioS1 = ((Io) s2).I;
-                                                        final Set<Vertex> ioS2 = ((Io) s2).O;
-                                                        if (ioS1 == null)
-                                                          return cfgEdgeIoCopyInRule(program);
-                                                        else if (ioS2 == null)
-                                                          return cfgEdgeIoCopyOutRule(program);
-                                                        else
-                                                          return cfgEdgeIoIoRule(program);
-                                                      }),
-                                            caseof(Fed.class, 
-                                                __2 -> cfgEdgeIoEndDefRule(program)),
-                                            otherwise(
-                                                __2 -> cfgEdgeIoRule(program))
-                                          )
-                                           .matchFor(s.s2)),
-                               otherwise(
-                                   ___ -> cfgEdgeRule(program))
-                              )
-                               .matchFor(s.s1))
-                  )
-                   .matchFor(s.s2)),
-        caseof(IoUnion.class,
-            s -> $(
-                   caseof(Io.class, 
-                       __ -> $(
-                           caseof(Io.class, 
-                               __2 -> ioUnionIoIoRule(program)),
-                           otherwise(
-                               __2 -> ioUnionIoRule(program))
-                         )
-                          .matchFor(s.s2)),
-                   otherwise(
-                       __ -> ioUnionRule(program))
-                 )
-                  .matchFor(s.s1)),
-        caseof(Fed.class,
-            __ -> fedRule(program)
-        )
-    );
-    // @formatter:on
-
-    result = (Program) pm.matchFor(stmt);
+    final Function<Program, Object> fn = pm.matchFor(stmt);
+    final Program result = (Program) fn.apply(program);
     return result;
   }
 
@@ -269,9 +260,9 @@ public class Interpreter {
     program.sdg.addVertex(v);
     program.cfg.addVertex(v);
     final Param param1 =
-        new Param(methodName, VertexType.FORMAL_OUT, new Str(methodName + "ResultOut"));
-    final Param param2 =
         new Param(methodName, VertexType.FORMAL_IN, new Params(methodName + "ResultIn", s.p));
+    final Param param2 =
+        new Param(methodName, VertexType.FORMAL_OUT, new Str(methodName + "ResultOut"));
     final Seq seq1 = new Seq(param1, new Seq(param2, s.s));
     final CtrlEdge ctrlEdge = new CtrlEdge(true, v, seq1);
     final Io io = new Io(set(v), set(v));
@@ -550,7 +541,7 @@ public class Interpreter {
       program.sdg.addVertex(v);
       program.Vc.add(v);
     }
-    program.sd.add(new ParamIn(param.x, 1, Vp));
+    program.sd.add(new ParamIn(param.x, Vp));
     program.s = new Skip();
     return program;
   }
@@ -616,15 +607,11 @@ public class Interpreter {
   private Program paramInRule(final Program program) {
     printRule("paramInRule");
     final ParamIn paramIn = (ParamIn) program.s;
-    final Vertex v = vtxAtIdx(program.P.get(paramIn.x), paramIn.i);
-    final Vertex Vi = vtxAtIdx(paramIn.V, paramIn.i - 1);
-    program.sdg.addEdge(Vi, v, EdgeType.PARAM_IN);
-    program.s = new ParamIn(paramIn.x, paramIn.i + 1, paramIn.V);
-    return program;
-  }
-
-  private Program paramInOobRule(final Program program) {
-    printRule("paramInOobRule");
+    for (int i = 0; i < paramIn.V.size(); i++) {
+      final Vertex v = vtxAtIdx(program.P.get(paramIn.x), i);
+      final Vertex Vi = vtxAtIdx(paramIn.V, i);
+      program.sdg.addEdge(Vi, v, EdgeType.PARAM_IN);
+    }
     program.s = new Skip();
     return program;
   }
@@ -634,12 +621,12 @@ public class Interpreter {
     final ParamOut paramOut = (ParamOut) program.s;
     final LinkedHashSet<Vertex> Px = program.P.get(paramOut.x);
     if (Px != null && !Px.isEmpty()) {
-      final Vertex Px0 = vtxAtIdx(program.P.get(paramOut.x), 0);
-      if (VertexType.FORMAL_OUT.equals(Px0.getType())) {
-        program.sdg.addEdge(Px0, paramOut.v, EdgeType.PARAM_OUT);
+      final Vertex Pxm1 = vtxAtIdx(Px, Px.size() - 1);
+      if (VertexType.FORMAL_OUT.equals(Pxm1.getType())) {
+        program.sdg.addEdge(Pxm1, paramOut.v, EdgeType.PARAM_OUT);
       } else if (PRINT)
         System.out.println(
-            "[WARN] " + Px0 + " type is '" + Px0.getType() + "'. Expected was 'FORMAL_OUT'.");
+            "[WARN] " + Pxm1 + " type is '" + Pxm1.getType() + "'. Expected was 'FORMAL_OUT'.");
     } else if (PRINT)
       System.out.println("[WARN] Cannot find parameter vertices for method '" + paramOut.x + "'.");
     program.s = new Skip();
