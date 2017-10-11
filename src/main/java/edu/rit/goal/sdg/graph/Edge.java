@@ -1,6 +1,9 @@
 package edu.rit.goal.sdg.graph;
 
-public class Edge {
+import java.io.Serializable;
+
+public class Edge implements Serializable {
+  private static final long serialVersionUID = 5811583473376562089L;
 
   private Vertex source;
   private Vertex target;
