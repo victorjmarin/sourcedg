@@ -66,7 +66,7 @@ import edu.rit.goal.sdg.interpreter.stmt.sw.Switch;;
 public class Interpreter {
 
   public int vtxId;
-  public final boolean PRINT = true;
+  public final boolean PRINT = false;
   public final boolean PRINT_RULES = true;
 
   public Program interpret(final Program program) {
@@ -90,7 +90,7 @@ public class Interpreter {
     if (!result.sd.isEmpty()) {
       final Stmt deferSeq = Translator.seq(result.sd);
       result.s = deferSeq;
-      result = interpret(result);
+      result = _interpret(result);
     }
     result.sdg.setCfgs(result.F);
     return result;
@@ -613,7 +613,7 @@ public class Interpreter {
     printRule("paramInRule");
     final ParamIn paramIn = (ParamIn) program.s;
     final LinkedHashSet<Vertex> Px = program.P.get(paramIn.x);
-    if (Px != null && !Px.isEmpty()) {
+    if (Px != null && !Px.isEmpty() && Px.size() >= paramIn.V.size()) {
       for (int i = 0; i < paramIn.V.size(); i++) {
         final Vertex v = vtxAtIdx(Px, i);
         final Vertex Vi = vtxAtIdx(paramIn.V, i);
