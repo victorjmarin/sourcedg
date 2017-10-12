@@ -15,7 +15,7 @@ public class Params extends Stmt implements Param {
 
   @Override
   public String toString() {
-    return x + ", " + p;
+    return x + "," + p;
   }
 
 }
