@@ -52,6 +52,13 @@ public class SysDepGraph extends DefaultDirectedGraph<Vertex, Edge> {
     this.cfgs = cfgs;
   }
 
+  private static Set<String> exclusions = new HashSet<>();
+
+  static {
+    exclusions.add("System");
+    exclusions.add("Math");
+  }
+
   public void computeDataFlow(int vtxId) {
     if (!hasDataFlow) {
       hasDataFlow = true;
@@ -65,6 +72,8 @@ public class SysDepGraph extends DefaultDirectedGraph<Vertex, Edge> {
           for (final Vertex useVtx : vbu.getValue()) {
             // No def found for use. Create initial state vtx
             if (def == null) {
+              if (exclusions.contains(use))
+                continue;
               // Prevent method invocations from creating initial states.
               // Check comment in Translator.call for the reason why method
               // invocations get here as dependencies
@@ -115,8 +124,8 @@ public class SysDepGraph extends DefaultDirectedGraph<Vertex, Edge> {
     }
   }
 
-  public boolean hasXClearPath(final DirectedGraph<Vertex, Edge> graph, final Vertex src, final Vertex tgt,
-      final String use) {
+  public boolean hasXClearPath(final DirectedGraph<Vertex, Edge> graph, final Vertex src,
+      final Vertex tgt, final String use) {
     if (src.equals(tgt))
       return true;
 
