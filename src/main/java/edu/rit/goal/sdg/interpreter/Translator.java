@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -13,6 +14,7 @@ import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 import org.antlr.v4.runtime.tree.ParseTree;
+
 import edu.rit.goal.sdg.DefUsesUtils;
 import edu.rit.goal.sdg.interpreter.params.EmptyParam;
 import edu.rit.goal.sdg.interpreter.params.Param;
@@ -39,51 +41,35 @@ public class Translator {
   }
 
   public Stmt from(final String fileName) throws IOException {
-    Stmt result = null;
-    final Lexer lexer;
-    CommonTokenStream tokens;
-    ParseTree tree;
-    Parser parser;
-    AbstractParseTreeVisitor<Stmt> visitor;
-    final Language lang = detectLang(fileName);
-    final CharStream chrStream = CharStreams.fromFileName(fileName);
-    switch (lang) {
-      case JAVA:
-        lexer = new JavaLexer(chrStream);
-        tokens = new CommonTokenStream(lexer);
-        parser = new JavaParser(tokens);
-        tree = ((JavaParser) parser).compilationUnit();
-        visitor = new CompilationUnitVisitor();
-        result = visitor.visit(tree);
-        break;
-      case PYTHON:
-        break;
-    }
-    return result;
+    return parse(CharStreams.fromFileName(fileName), detectLang(fileName));
   }
 
-  public Stmt fromSource(final String source) throws IOException {
-    Stmt result = null;
-    final Lexer lexer;
-    CommonTokenStream tokens;
-    ParseTree tree;
-    Parser parser;
-    AbstractParseTreeVisitor<Stmt> visitor;
-    final Language lang = Language.JAVA;
-    final CharStream chrStream = CharStreams.fromString(source);
-    switch (lang) {
-      case JAVA:
-        lexer = new JavaLexer(chrStream);
-        tokens = new CommonTokenStream(lexer);
-        parser = new JavaParser(tokens);
-        tree = ((JavaParser) parser).compilationUnit();
-        visitor = new CompilationUnitVisitor();
-        result = visitor.visit(tree);
-        break;
-      case PYTHON:
-        break;
-    }
-    return result;
+  public Stmt fromSource(final String source) {
+    return parse(CharStreams.fromString(source), Language.JAVA);
+  }
+  
+  private Stmt parse(final CharStream chrStream, final Language lang) {
+	  Stmt result = null;
+	  final Lexer lexer;
+	  CommonTokenStream tokens;
+	  ParseTree tree;
+	  Parser parser;
+	  AbstractParseTreeVisitor<Stmt> visitor;
+	  
+	  switch (lang) {
+	      case JAVA:
+	        lexer = new JavaLexer(chrStream);
+	        tokens = new CommonTokenStream(lexer);
+	        parser = new JavaParser(tokens);
+	        tree = ((JavaParser) parser).compilationUnit();
+	        visitor = new CompilationUnitVisitor();
+	        result = visitor.visit(tree);
+	        break;
+	      case PYTHON:
+	        break;
+	  }
+	  
+	  return result;
   }
 
   protected Language detectLang(final String fileName) {
@@ -173,7 +159,7 @@ public class Translator {
   }
 
   public static void unsupported(final ParseTree ctx) {
-    System.out.println("Unsupported stmt: " + ctx.getText());
+    //System.out.println("Unsupported stmt: " + ctx.getText());
   }
 
   public static boolean isShortHandOperator(final String operator) {

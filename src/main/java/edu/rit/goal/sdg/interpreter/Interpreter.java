@@ -67,7 +67,7 @@ public class Interpreter {
 
   public int vtxId;
   public final boolean PRINT = false;
-  public final boolean PRINT_RULES = true;
+  public final boolean PRINT_RULES = false;
 
   public Program interpret(final Program program) {
     vtxId = 0;
