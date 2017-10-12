@@ -154,6 +154,8 @@ public class StmtVisitor {
         final Assign assignCall = new Assign(x, e);
         assignCall.setDef(x);
         assignCall.setUses(e.getUses());
+        if (isShortHand)
+          assignCall.getUses().add(x);
         result = assignCall;
       } else if (isAssign) {
         result = assign(exprCtx, isShortHand);
