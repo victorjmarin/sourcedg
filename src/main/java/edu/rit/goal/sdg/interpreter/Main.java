@@ -26,7 +26,7 @@ public class Main {
     System.out.println(System.currentTimeMillis() - t + " ms. to build the PDG");
     System.out.println(sdg);
     final DirectedGraph<Vertex, Edge> und = p.F.get("Circle.main");
-    TestUtils.exportAsDot(sdg, "und");
+    TestUtils.exportAsDot(sdg, "/Users/goal/Desktop", "und");
     // for (final Entry<String, DirectedGraph<Vertex, Edge>> e :
     // methodSubgraphs.entrySet()) {
     // final DirectedGraph<Vertex, Edge> g = e.getValue();
