@@ -4,8 +4,8 @@ import java.util.HashSet;
 import java.util.Set;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNodeImpl;
-import edu.rit.goal.sdg.java8.antlr.JavaParser;
-import edu.rit.goal.sdg.java8.antlr.JavaParser.PrimaryContext;
+import edu.rit.goal.sdg.java8.antlr4.JavaParser;
+import edu.rit.goal.sdg.java8.antlr4.JavaParser.PrimaryContext;
 
 public class JavaUtils {
 

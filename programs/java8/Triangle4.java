@@ -35,11 +35,3 @@ public class Triangle4 {
   }
 }
 
-
-class T1 {
-}
-
-
-class T2 {
-}
-

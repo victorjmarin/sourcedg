@@ -10,7 +10,7 @@ import edu.rit.goal.sdg.graph.Vertex;
 import edu.rit.goal.sdg.graph.VertexType;
 import edu.rit.goal.sdg.interpreter.params.Params;
 import edu.rit.goal.sdg.interpreter.stmt.Str;
-import edu.rit.goal.sdg.java8.antlr.JavaParser;
+import edu.rit.goal.sdg.java8.antlr4.JavaParser;
 
 public class DefUsesUtils {
 
