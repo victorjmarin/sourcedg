@@ -1,12 +1,12 @@
 package edu.rit.goal.sdg.interpreter;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -14,62 +14,62 @@ import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 import org.antlr.v4.runtime.tree.ParseTree;
-
 import edu.rit.goal.sdg.DefUsesUtils;
 import edu.rit.goal.sdg.interpreter.params.EmptyParam;
 import edu.rit.goal.sdg.interpreter.params.Param;
 import edu.rit.goal.sdg.interpreter.params.Params;
+import edu.rit.goal.sdg.interpreter.stmt.CUnit;
 import edu.rit.goal.sdg.interpreter.stmt.Call;
 import edu.rit.goal.sdg.interpreter.stmt.Seq;
 import edu.rit.goal.sdg.interpreter.stmt.Skip;
 import edu.rit.goal.sdg.interpreter.stmt.Stmt;
 import edu.rit.goal.sdg.interpreter.stmt.Str;
 import edu.rit.goal.sdg.java8.JavaUtils;
-import edu.rit.goal.sdg.java8.antlr.JavaLexer;
-import edu.rit.goal.sdg.java8.antlr.JavaParser;
-import edu.rit.goal.sdg.java8.antlr.JavaParser.ExpressionContext;
-import edu.rit.goal.sdg.java8.antlr.JavaParser.ExpressionListContext;
-import edu.rit.goal.sdg.java8.antlr.JavaParser.FormalParameterContext;
-import edu.rit.goal.sdg.java8.antlr.JavaParser.FormalParameterListContext;
-import edu.rit.goal.sdg.java8.antlr.JavaParser.FormalParametersContext;
-import edu.rit.goal.sdg.java8.visitor.CompilationUnitVisitor;
+import edu.rit.goal.sdg.java8.antlr4.JavaLexer;
+import edu.rit.goal.sdg.java8.antlr4.JavaParser;
+import edu.rit.goal.sdg.java8.antlr4.JavaParser.ExpressionContext;
+import edu.rit.goal.sdg.java8.antlr4.JavaParser.ExpressionListContext;
+import edu.rit.goal.sdg.java8.antlr4.JavaParser.FormalParameterContext;
+import edu.rit.goal.sdg.java8.antlr4.ParseResult;
+import edu.rit.goal.sdg.java8.antlr4.SourceDGJavaVisitor;
 
 public class Translator {
+
+  private String cUnitName;
 
   private enum Language {
     JAVA, PYTHON
   }
 
-  public Stmt from(final String fileName) throws IOException {
-    return parse(CharStreams.fromFileName(fileName), detectLang(fileName));
+  public Stmt from(final File file) throws IOException {
+    cUnitName = file.getName();
+    final String path = file.getPath();
+    return parse(CharStreams.fromFileName(path), detectLang(path));
   }
 
-  public Stmt fromSource(final String source) {
-    return parse(CharStreams.fromString(source), Language.JAVA);
-  }
-  
   private Stmt parse(final CharStream chrStream, final Language lang) {
-	  Stmt result = null;
-	  final Lexer lexer;
-	  CommonTokenStream tokens;
-	  ParseTree tree;
-	  Parser parser;
-	  AbstractParseTreeVisitor<Stmt> visitor;
-	  
-	  switch (lang) {
-	      case JAVA:
-	        lexer = new JavaLexer(chrStream);
-	        tokens = new CommonTokenStream(lexer);
-	        parser = new JavaParser(tokens);
-	        tree = ((JavaParser) parser).compilationUnit();
-	        visitor = new CompilationUnitVisitor();
-	        result = visitor.visit(tree);
-	        break;
-	      case PYTHON:
-	        break;
-	  }
-	  
-	  return result;
+    Stmt result = null;
+    final Lexer lexer;
+    CommonTokenStream tokens;
+    ParseTree tree;
+    Parser parser;
+    final AbstractParseTreeVisitor<ParseResult> visitor;
+
+    switch (lang) {
+      case JAVA:
+        lexer = new JavaLexer(chrStream);
+        tokens = new CommonTokenStream(lexer);
+        parser = new JavaParser(tokens);
+        tree = ((JavaParser) parser).compilationUnit();
+        visitor = new SourceDGJavaVisitor();
+        result = visitor.visit(tree).getStmt();
+        ((CUnit) result).x = cUnitName;
+        break;
+      case PYTHON:
+        break;
+    }
+
+    return result;
   }
 
   protected Language detectLang(final String fileName) {
@@ -106,11 +106,10 @@ public class Translator {
     return result;
   }
 
-  public static List<Str> formalParams(final FormalParametersContext ctx) {
+  public static List<Str> formalParams(final List<FormalParameterContext> ctx) {
     final List<Str> result = new LinkedList<>();
-    final FormalParameterListContext formalParamListCtx = ctx.formalParameterList();
-    if (formalParamListCtx != null) {
-      for (final FormalParameterContext formalParamCtx : formalParamListCtx.formalParameter()) {
+    if (ctx != null) {
+      for (final FormalParameterContext formalParamCtx : ctx) {
         final Str str = new Str(formalParamCtx.variableDeclaratorId().IDENTIFIER());
         result.add(str);
       }
@@ -125,8 +124,10 @@ public class Translator {
     } else if (stmts.size() == 1) {
       result = stmts.remove(0);
     } else {
-      final Stmt s = stmts.remove(0);
-      result = new Seq(s, seq(stmts));
+      final Seq seq = new Seq();
+      for (final Stmt stmt : stmts)
+        seq.add(stmt);
+      result = seq;
     }
     return result;
   }
@@ -159,7 +160,7 @@ public class Translator {
   }
 
   public static void unsupported(final ParseTree ctx) {
-    //System.out.println("Unsupported stmt: " + ctx.getText());
+    // System.out.println("Unsupported stmt: " + ctx.getText());
   }
 
   public static boolean isShortHandOperator(final String operator) {

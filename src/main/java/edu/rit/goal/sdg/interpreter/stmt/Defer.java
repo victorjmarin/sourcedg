@@ -1,10 +1,10 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
-public class Defer extends Stmt {
+public class Defer extends BaseStmt {
 
-  public Stmt s;
+  public BaseStmt s;
 
-  public Defer(final Stmt s) {
+  public Defer(final BaseStmt s) {
     super();
     this.s = s;
   }

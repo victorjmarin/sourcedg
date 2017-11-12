@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import edu.rit.goal.sdg.graph.Vertex;
 
-public class CtrlEdge extends Stmt {
+public class CtrlEdge extends BaseStmt {
 
   public List<Boolean> B;
   public List<Vertex> N;

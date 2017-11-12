@@ -3,7 +3,7 @@ package edu.rit.goal.sdg.interpreter.stmt;
 import java.util.LinkedHashSet;
 import edu.rit.goal.sdg.graph.Vertex;
 
-public class ParamIn extends Stmt {
+public class ParamIn extends BaseStmt {
 
   public String x;
   public LinkedHashSet<Vertex> V;

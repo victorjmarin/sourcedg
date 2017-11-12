@@ -3,7 +3,7 @@ package edu.rit.goal.sdg.interpreter.stmt;
 import edu.rit.goal.sdg.interpreter.Translator;
 import edu.rit.goal.sdg.interpreter.params.Param;
 
-public class Call extends Stmt implements Expr {
+public class Call extends BaseStmt implements Expr {
 
   public String x;
   public Param p;

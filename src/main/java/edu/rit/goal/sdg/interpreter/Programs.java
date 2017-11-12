@@ -14,7 +14,7 @@ import edu.rit.goal.sdg.interpreter.stmt.IfThenElse;
 import edu.rit.goal.sdg.interpreter.stmt.Return;
 import edu.rit.goal.sdg.interpreter.stmt.Seq;
 import edu.rit.goal.sdg.interpreter.stmt.Skip;
-import edu.rit.goal.sdg.interpreter.stmt.Stmt;
+import edu.rit.goal.sdg.interpreter.stmt.BaseStmt;
 import edu.rit.goal.sdg.interpreter.stmt.Str;
 import edu.rit.goal.sdg.interpreter.stmt.While;
 
@@ -25,7 +25,7 @@ public class Programs {
     final Assign assign = new Assign("res", new Call("m1", new Params("1", new Str("2"))));
     final Def main = new Def(false, "main", assign);
     final Def m1 = new Def(true, "m1", args, new Skip());
-    final Stmt result = new Seq(main, m1);
+    final BaseStmt result = new Seq(main, m1);
     return new Program(result);
   }
 
@@ -52,7 +52,7 @@ public class Programs {
     final Expr e = new Str("true");
     final Call call = new Call("System.out.println", new Str("2"));
     final Assign assign = new Assign("a", new Str("2"));
-    final Stmt s = new Seq(call, assign);
+    final BaseStmt s = new Seq(call, assign);
     final DoWhile result = new DoWhile(s, e);
     return new Program(result);
   }
@@ -70,14 +70,14 @@ public class Programs {
     final Assign l5 = new Assign("circ", new Call("mult3", args2));
     final Call l6 = new Call("output", new Str("area"));
     final Call l7 = new Call("output", new Str("circ"));
-    final Stmt mainBody =
+    final BaseStmt mainBody =
         new Seq(l1, new Seq(l2, new Seq(l3, new Seq(l4, new Seq(l5, new Seq(l6, l7))))));
     final Def main = new Def(false, "main", mainBody);
     // Mult3 function
     final Return mult3Body = new Return("op1*op2*op3");
     final Def mult3 = new Def(true, "mult3",
         new Params("op1", new Params("op2", new Params("op3", new EmptyParam()))), mult3Body);
-    final Stmt program = new Seq(main, mult3);
+    final BaseStmt program = new Seq(main, mult3);
     return new Program(program);
   }
 

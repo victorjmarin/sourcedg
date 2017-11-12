@@ -654,14 +654,14 @@ public interface JavaParserListener extends ParseTreeListener {
   void exitLastFormalParameter(JavaParser.LastFormalParameterContext ctx);
 
   /**
-   * Enter a parse tree produced by {@link JavaParser#qualifiedName}.
+   * Enter a parse tree produced by {@link JavaParser#x}.
    * 
    * @param ctx the parse tree
    */
   void enterQualifiedName(JavaParser.QualifiedNameContext ctx);
 
   /**
-   * Exit a parse tree produced by {@link JavaParser#qualifiedName}.
+   * Exit a parse tree produced by {@link JavaParser#x}.
    * 
    * @param ctx the parse tree
    */

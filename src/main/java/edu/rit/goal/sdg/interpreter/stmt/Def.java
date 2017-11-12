@@ -3,7 +3,7 @@ package edu.rit.goal.sdg.interpreter.stmt;
 import edu.rit.goal.sdg.interpreter.params.EmptyParam;
 import edu.rit.goal.sdg.interpreter.params.Param;
 
-public class Def extends Stmt {
+public class Def extends BaseStmt {
 
   // Flag indicating if the function returns other than void
   public boolean b;
@@ -31,11 +31,7 @@ public class Def extends Stmt {
 
   @Override
   public String toString() {
-    return "def " + b + " " + x + " (" + p + "): " + s;
-  }
-
-  public static String type() {
-    return null;
+    return "def " + b + " " + x + " (" + p + "): \n" + s.toString(indentationLevel + 1);
   }
 
 }

@@ -1,6 +1,6 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
-public class IoUnion extends Stmt {
+public class IoUnion extends BaseStmt {
 
   public Stmt s1;
   public Stmt s2;

@@ -2,20 +2,18 @@ package edu.rit.goal.sdg.interpreter.stmt;
 
 import edu.rit.goal.sdg.graph.Vertex;
 
-public class ParamOut extends BaseStmt {
+public class Ve extends BaseStmt {
 
-  public String x;
   public Vertex v;
 
-  public ParamOut(final String x, final Vertex v) {
+  public Ve(final Vertex v) {
     super();
-    this.x = x;
     this.v = v;
   }
 
   @Override
   public String toString() {
-    return "paramout " + x + " " + v;
+    return "ve " + v;
   }
 
 }

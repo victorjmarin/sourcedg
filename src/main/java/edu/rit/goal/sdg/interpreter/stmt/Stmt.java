@@ -2,25 +2,16 @@ package edu.rit.goal.sdg.interpreter.stmt;
 
 import java.util.Set;
 
-public abstract class Stmt {
+public interface Stmt {
 
-  private String def;
-  private Set<String> uses;
+  String getDef();
 
-  public String getDef() {
-    return def;
-  }
+  Set<String> getUses();
 
-  public Set<String> getUses() {
-    return uses;
-  }
+  void setDef(final String def);
 
-  public void setDef(final String def) {
-    this.def = def;
-  }
+  void setUses(final Set<String> uses);
 
-  public void setUses(final Set<String> uses) {
-    this.uses = uses;
-  }
+  String toString(final int indentationLevel);
 
 }

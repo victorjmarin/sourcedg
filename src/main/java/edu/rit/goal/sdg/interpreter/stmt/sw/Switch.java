@@ -1,9 +1,9 @@
 package edu.rit.goal.sdg.interpreter.stmt.sw;
 
 import edu.rit.goal.sdg.interpreter.stmt.Expr;
-import edu.rit.goal.sdg.interpreter.stmt.Stmt;
+import edu.rit.goal.sdg.interpreter.stmt.BaseStmt;
 
-public class Switch extends Stmt {
+public class Switch extends BaseStmt {
 
   public Expr e;
   public ISwitchBody sb;

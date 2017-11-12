@@ -1,6 +1,6 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
-public class For extends Stmt {
+public class For extends BaseStmt {
 
   public Stmt si, sc, su;
   public Stmt s;

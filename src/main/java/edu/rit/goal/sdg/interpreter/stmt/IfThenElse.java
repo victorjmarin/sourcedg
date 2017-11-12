@@ -1,6 +1,6 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
-public class IfThenElse extends Stmt {
+public class IfThenElse extends BaseStmt {
 
   public Expr e;
   public Stmt s1;
@@ -15,7 +15,8 @@ public class IfThenElse extends Stmt {
 
   @Override
   public String toString() {
-    return "if (" + e + ") {" + s1 + "} else {" + s2 + "}";
+    return "if (" + e + "):\n" + s1.toString(indentationLevel + 1) + "\n" + indentation + "else\n"
+        + s2.toString(indentationLevel + 1);
   }
 
 }

@@ -1,8 +1,8 @@
 package edu.rit.goal.sdg.interpreter.params;
 
-import edu.rit.goal.sdg.interpreter.stmt.Stmt;
+import edu.rit.goal.sdg.interpreter.stmt.BaseStmt;
 
-public class Params extends Stmt implements Param {
+public class Params extends BaseStmt implements Param {
 
   public String x;
   public Param p;

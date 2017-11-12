@@ -380,7 +380,7 @@ public interface JavaParserVisitor<T> extends ParseTreeVisitor<T> {
   T visitLastFormalParameter(JavaParser.LastFormalParameterContext ctx);
 
   /**
-   * Visit a parse tree produced by {@link JavaParser#qualifiedName}.
+   * Visit a parse tree produced by {@link JavaParser#x}.
    * 
    * @param ctx the parse tree
    * @return the visitor result

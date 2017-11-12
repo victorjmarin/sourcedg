@@ -1,6 +1,6 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
-public class Return extends Stmt {
+public class Return extends BaseStmt {
 
   public String e;
 

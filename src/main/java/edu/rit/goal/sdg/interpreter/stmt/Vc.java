@@ -2,7 +2,7 @@ package edu.rit.goal.sdg.interpreter.stmt;
 
 import edu.rit.goal.sdg.graph.Vertex;
 
-public class Vc extends Stmt {
+public class Vc extends BaseStmt {
 
   public Vertex v;
 

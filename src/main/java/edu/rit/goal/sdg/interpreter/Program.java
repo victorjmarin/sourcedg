@@ -17,7 +17,10 @@ import edu.rit.goal.sdg.interpreter.stmt.Stmt;
 public class Program {
 
   SysDepGraph sdg;
+  // CtrlEdge vertices
   Set<Vertex> Vc;
+  // EdgeStmt vertices
+  Set<Vertex> Ve;
   Map<String, LinkedHashSet<Vertex>> P;
   // Temporal CFG
   DefaultDirectedGraph<Vertex, Edge> cfg;
@@ -29,6 +32,7 @@ public class Program {
   public Program(final Stmt s) {
     sdg = new SysDepGraph();
     Vc = new HashSet<>();
+    Ve = new HashSet<>();
     P = new HashMap<>();
     cfg = new DefaultDirectedGraph<>(Edge.class);
     F = new HashMap<>();
@@ -39,6 +43,7 @@ public class Program {
   public Program(final Program p) {
     sdg = p.sdg;
     Vc = p.Vc;
+    Ve = p.Ve;
     P = p.P;
     cfg = p.cfg;
     F = p.F;

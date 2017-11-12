@@ -1,4 +1,4 @@
-package edu.rit.goal;
+package edu.rit.goal.sdg;
 
 import java.io.File;
 import java.util.HashMap;
@@ -12,7 +12,7 @@ import org.jgrapht.ext.IntegerComponentNameProvider;
 import edu.rit.goal.sdg.graph.Edge;
 import edu.rit.goal.sdg.graph.Vertex;
 
-public class TestUtils {
+public class Utils {
 
   private static final ComponentNameProvider<Vertex> vertexLabelProvider =
       new ComponentNameProvider<Vertex>() {

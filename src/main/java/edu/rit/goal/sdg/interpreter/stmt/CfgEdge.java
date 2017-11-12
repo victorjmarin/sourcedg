@@ -1,6 +1,6 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
-public class CfgEdge extends Stmt {
+public class CfgEdge extends BaseStmt {
 
   public Stmt s1;
   public Stmt s2;
@@ -10,6 +10,7 @@ public class CfgEdge extends Stmt {
     this.s2 = s2;
   }
 
+  @Override
   public String toString() {
     return "cfgedge " + s1 + " " + s2;
   }

@@ -2,7 +2,7 @@ package edu.rit.goal.sdg.interpreter.stmt;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
-public class Str extends Stmt implements Expr, edu.rit.goal.sdg.interpreter.params.Param {
+public class Str extends BaseStmt implements Expr, edu.rit.goal.sdg.interpreter.params.Param {
 
   public String value;
   public ParseTree pt;

@@ -3,7 +3,7 @@ package edu.rit.goal.sdg.interpreter.stmt;
 import java.util.Set;
 import edu.rit.goal.sdg.graph.Vertex;
 
-public class Io extends Stmt {
+public class Io extends BaseStmt {
 
   public Set<Vertex> I;
   public Set<Vertex> O;

@@ -1,6 +1,8 @@
 package edu.rit.goal.sdg.interpreter.params;
 
-public class EmptyParam implements Param {
+import edu.rit.goal.sdg.interpreter.stmt.BaseStmt;
+
+public class EmptyParam extends BaseStmt implements Param {
 
   @Override
   public String toString() {

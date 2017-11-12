@@ -29,22 +29,27 @@ import edu.rit.goal.sdg.interpreter.params.Params;
 import edu.rit.goal.sdg.interpreter.pattern.PatternMatching;
 import edu.rit.goal.sdg.interpreter.stmt.Assign;
 import edu.rit.goal.sdg.interpreter.stmt.Break;
+import edu.rit.goal.sdg.interpreter.stmt.CUnit;
 import edu.rit.goal.sdg.interpreter.stmt.Call;
 import edu.rit.goal.sdg.interpreter.stmt.CallEdge;
 import edu.rit.goal.sdg.interpreter.stmt.CfgEdge;
+import edu.rit.goal.sdg.interpreter.stmt.Cls;
 import edu.rit.goal.sdg.interpreter.stmt.Continue;
 import edu.rit.goal.sdg.interpreter.stmt.CtrlEdge;
 import edu.rit.goal.sdg.interpreter.stmt.Def;
 import edu.rit.goal.sdg.interpreter.stmt.DoWhile;
+import edu.rit.goal.sdg.interpreter.stmt.EdgeStmt;
 import edu.rit.goal.sdg.interpreter.stmt.Expr;
 import edu.rit.goal.sdg.interpreter.stmt.Fed;
 import edu.rit.goal.sdg.interpreter.stmt.For;
 import edu.rit.goal.sdg.interpreter.stmt.IfThenElse;
+import edu.rit.goal.sdg.interpreter.stmt.Import;
 import edu.rit.goal.sdg.interpreter.stmt.Io;
 import edu.rit.goal.sdg.interpreter.stmt.IoUnion;
 import edu.rit.goal.sdg.interpreter.stmt.Param;
 import edu.rit.goal.sdg.interpreter.stmt.ParamIn;
 import edu.rit.goal.sdg.interpreter.stmt.ParamOut;
+import edu.rit.goal.sdg.interpreter.stmt.Pkg;
 import edu.rit.goal.sdg.interpreter.stmt.PostOp;
 import edu.rit.goal.sdg.interpreter.stmt.PreOp;
 import edu.rit.goal.sdg.interpreter.stmt.Return;
@@ -53,6 +58,7 @@ import edu.rit.goal.sdg.interpreter.stmt.Skip;
 import edu.rit.goal.sdg.interpreter.stmt.Stmt;
 import edu.rit.goal.sdg.interpreter.stmt.Str;
 import edu.rit.goal.sdg.interpreter.stmt.Vc;
+import edu.rit.goal.sdg.interpreter.stmt.Ve;
 import edu.rit.goal.sdg.interpreter.stmt.While;
 import edu.rit.goal.sdg.interpreter.stmt.sw.DefaultCase;
 import edu.rit.goal.sdg.interpreter.stmt.sw.EmptySwitch;
@@ -66,8 +72,10 @@ import edu.rit.goal.sdg.interpreter.stmt.sw.Switch;;
 public class Interpreter {
 
   public int vtxId;
-  public final boolean PRINT = false;
-  public final boolean PRINT_RULES = false;
+  public final boolean PRINT = true;
+  public final boolean PRINT_RULES = true;
+
+  public Interpreter() {}
 
   public Program interpret(final Program program) {
     vtxId = 0;
@@ -90,6 +98,7 @@ public class Interpreter {
     if (!result.sd.isEmpty()) {
       final Stmt deferSeq = Translator.seq(result.sd);
       result.s = deferSeq;
+      result.sd.clear();
       result = _interpret(result);
     }
     result.sdg.setCfgs(result.F);
@@ -97,6 +106,15 @@ public class Interpreter {
   }
 
   //@formatter:off
+  private final PatternMatching edge = $(
+      caseof(Seq.class,
+          __ -> this::edgeSeqRule),
+      caseof(Skip.class,
+          __ -> this::edgeSkipRule),
+      otherwise(
+          __ -> this::edgeRule)
+    );
+  
   private final PatternMatching def = $(
       caseof(true, 
           __ -> this::defRule), 
@@ -179,6 +197,16 @@ public class Interpreter {
     );
   
   private final PatternMatching pm = $(
+          caseof(EdgeStmt.class, 
+              s -> edge.matchFor(s.s)),
+          caseof(CUnit.class,
+              __ -> this::compilationUnitRule),
+          caseof(Pkg.class,
+              __ -> this::packageRule),
+          caseof(Import.class,
+              __ -> this::importRule),
+          caseof(Cls.class,
+              __ -> this::classRule),
           caseof(Def.class, 
               s -> def.matchFor(s.b)),
           caseof(Seq.class,
@@ -207,6 +235,8 @@ public class Interpreter {
               s -> param.matchFor(s.t)),
           caseof(Vc.class,
               __ -> this::vcRule),
+          caseof(Ve.class,
+              __ -> this::veRule),
           caseof(CallEdge.class,
               __ -> this::callEdgeRule),
           caseof(ParamIn.class,
@@ -258,6 +288,73 @@ public class Interpreter {
     return result;
   }
 
+  private Program edgeRule(final Program program) {
+    printRule("edgeRule");
+    final EdgeStmt s = (EdgeStmt) program.s;
+    final Program p = small(program.cloneWithStmt(s.s));
+    p.s = new EdgeStmt(s.t, s.v, p.s);
+    return p;
+  }
+
+  private Program edgeSkipRule(final Program program) {
+    printRule("edgeSkipRule");
+    final EdgeStmt s = (EdgeStmt) program.s;
+    for (final Vertex ve : program.Ve) {
+      program.sdg.addEdge(s.v, ve, s.t);
+    }
+    program.Ve = new HashSet<>();
+    program.s = new Skip();
+    return program;
+  }
+
+  private Program edgeSeqRule(final Program program) {
+    printRule("edgeSeqRule");
+    final EdgeStmt s = (EdgeStmt) program.s;
+    final Seq seq = (Seq) s.s;
+    program.s = new Seq(new EdgeStmt(s.t, s.v, seq.s1), new EdgeStmt(s.t, s.v, seq.s2));
+    return program;
+  }
+
+  private Program compilationUnitRule(final Program program) {
+    printRule("compilationUnitRule");
+    final CUnit s = (CUnit) program.s;
+    final Vertex v = new Vertex(vtxId++, VertexType.CUNIT, s.x);
+    program.sdg.addVertex(v);
+    program.s = new EdgeStmt(EdgeType.MEMBER_OF, v, s.s);
+    return program;
+  }
+
+  private Program packageRule(final Program program) {
+    printRule("pkgRule");
+    final Pkg s = (Pkg) program.s;
+    final Vertex v = new Vertex(vtxId++, VertexType.PKG, s.x);
+    program.sdg.addVertex(v);
+    program.Ve.add(v);
+    program.s = new Skip();
+    return program;
+  }
+
+  private Program importRule(final Program program) {
+    printRule("importRule");
+    final Import s = (Import) program.s;
+    final String mod = s.mod != null ? s.mod + " " : "";
+    final Vertex v = new Vertex(vtxId++, VertexType.IMPORT, mod + s.x);
+    program.sdg.addVertex(v);
+    program.Ve.add(v);
+    program.s = new Skip();
+    return program;
+  }
+
+  private Program classRule(final Program program) {
+    printRule("classRule");
+    final Cls s = (Cls) program.s;
+    final Vertex v = new Vertex(vtxId++, VertexType.CLASS, s.x);
+    program.sdg.addVertex(v);
+    final EdgeStmt edge = new EdgeStmt(EdgeType.MEMBER_OF, v, s.s);
+    program.s = new Seq(edge, new Ve(v));
+    return program;
+  }
+
   private Program defRule(final Program program) {
     printRule("defRule");
     final Def s = (Def) program.s;
@@ -267,6 +364,7 @@ public class Interpreter {
     v.setEndLine(s.endLine);
     program.sdg.addVertex(v);
     program.cfg.addVertex(v);
+    program.Ve.add(v);
     final Param param = new Param(methodName, VertexType.FORMAL_IN, s.p);
     final Seq seq1 = new Seq(param, s.s);
     final CtrlEdge ctrlEdge = new CtrlEdge(true, v, seq1);
@@ -284,6 +382,7 @@ public class Interpreter {
     v.setEndLine(s.endLine);
     program.sdg.addVertex(v);
     program.cfg.addVertex(v);
+    program.Ve.add(v);
     final Param param = new Param(methodName, VertexType.FORMAL_IN, s.p);
     final Seq seq1 = new Seq(param, s.s);
     final CtrlEdge ctrlEdge = new CtrlEdge(true, v, seq1);
@@ -362,6 +461,14 @@ public class Interpreter {
     printRule("vcRule");
     final Vc vc = (Vc) program.s;
     program.Vc.add(vc.v);
+    program.s = new Skip();
+    return program;
+  }
+
+  private Program veRule(final Program program) {
+    printRule("veRule");
+    final Ve ve = (Ve) program.s;
+    program.Ve.add(ve.v);
     program.s = new Skip();
     return program;
   }

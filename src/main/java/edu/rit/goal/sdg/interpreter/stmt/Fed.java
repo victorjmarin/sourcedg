@@ -1,6 +1,6 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
-public class Fed extends Stmt {
+public class Fed extends BaseStmt {
 
   public String x;
 

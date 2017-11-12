@@ -2,7 +2,7 @@ package edu.rit.goal.sdg.interpreter.stmt;
 
 import edu.rit.goal.sdg.graph.VertexType;
 
-public class Param extends Stmt {
+public class Param extends BaseStmt {
 
   public String x;
   public VertexType t;

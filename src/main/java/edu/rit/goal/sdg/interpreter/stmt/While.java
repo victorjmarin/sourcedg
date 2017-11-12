@@ -1,6 +1,6 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
-public class While extends Stmt {
+public class While extends BaseStmt {
 
   public Expr e;
   public Stmt s;

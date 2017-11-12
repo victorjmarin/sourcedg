@@ -1,6 +1,6 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
-public abstract class IncrDecrOp extends Stmt {
+public abstract class IncrDecrOp extends BaseStmt {
 
   public String x;
   public String op;
