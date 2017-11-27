@@ -83,7 +83,19 @@ public class Utils {
   public static void exportAsDot(final Graph<Vertex, Edge> graph, final String path,
       final String fileName) {
     try {
-      exporter.exportGraph(graph, new File(path + "/" + fileName + ".dot"));
+      final String filePath = path + "/" + fileName + ".dot";
+      final File dotFile = new File(filePath);
+      exporter.exportGraph(graph, dotFile);
+
+      final Graphviz gv = new Graphviz();
+      gv.readSource(filePath);
+
+      final String type = "png";
+      final String repesentationType = "dot";
+      final File out = new File(path + "/" + fileName + "." + type);
+      gv.writeGraphToFile(gv.getGraph(gv.getDotSource(), type, repesentationType), out);
+
+      //dotFile.delete();
     } catch (final ExportException e) {
       e.printStackTrace();
     }
