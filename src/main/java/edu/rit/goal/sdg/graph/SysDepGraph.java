@@ -10,18 +10,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.jgrapht.DirectedGraph;
 import org.jgrapht.alg.ConnectivityInspector;
 import org.jgrapht.graph.DefaultDirectedGraph;
-
 import edu.rit.goal.sdg.interpreter.FlowGraph;
 
 public class SysDepGraph extends DefaultDirectedGraph<Vertex, Edge> {
 
   private static final long serialVersionUID = 5502017877788689016L;
 
-  private boolean hasDataFlow = false;
   private final List<Vertex> vertices;
   private Map<String, DirectedGraph<Vertex, Edge>> cfgs;
 
@@ -59,64 +56,102 @@ public class SysDepGraph extends DefaultDirectedGraph<Vertex, Edge> {
     exclusions.add("Math");
   }
 
+  public void computeDataDeps(final int vtxId) {
+    for (final DirectedGraph<Vertex, Edge> cfg : cfgs.values())
+      reachingDefinitions(cfg);
+    for (final Vertex useVtx : vertexSet()) {
+      for (final String use : useVtx.getReadingVariables()) {
+        boolean noEdgeForUse = true;
+        for (final Vertex inVtx : useVtx.getIn()) {
+          if (use.equals(inVtx.getAssignedVariable())) {
+            addEdge(inVtx, useVtx, new Edge(inVtx, useVtx, EdgeType.DATA));
+            noEdgeForUse = false;
+          }
+        }
+        if (noEdgeForUse) {
+          // TODO: Create initial state vertex
+        }
+      }
+    }
+  }
+
+  private void reachingDefinitions(final DirectedGraph<Vertex, Edge> cfg) {
+    boolean changes = true;
+    while (changes) {
+      changes = false;
+      for (final Vertex n : cfg.vertexSet()) {
+        final Set<Vertex> oldOut = n.getOut();
+        final Set<Vertex> oldIn = n.getIn();
+        final Set<Edge> incomingEdges = cfg.incomingEdgesOf(n);
+        final Set<Vertex> pred =
+            incomingEdges.stream().map(e -> e.getSource()).collect(Collectors.toSet());
+        if (VertexType.CTRL.equals(n.getType())) {
+          for (final Vertex p : pred)
+            n.getOut().addAll(p.getOut());
+        } else {
+          for (final Vertex p : pred)
+            n.getIn().addAll(p.getOut());
+          final Set<Vertex> out = new HashSet<>();
+          final Set<Vertex> diff = new HashSet<>(n.getIn());
+          Set<Vertex> kill = new HashSet<>();
+          if (n.getAssignedVariable() != null) {
+            out.add(n);
+            kill = n.getIn().stream()
+                .filter(v -> v.getAssignedVariable().equals(n.getAssignedVariable()))
+                .collect(Collectors.toSet());
+          }
+          diff.removeAll(kill);
+          out.addAll(diff);
+          n.setOut(out);
+
+        }
+        // Check if changes
+        changes = changes || !oldIn.equals(n.getIn()) || !oldOut.equals(n.getOut());
+      }
+    }
+  }
+
   public void computeDataFlow(int vtxId) {
-    if (!hasDataFlow) {
-      hasDataFlow = true;
-      for (final Entry<String, DirectedGraph<Vertex, Edge>> e : cfgs.entrySet()) {
-        final FlowGraph fg = new FlowGraph(e.getValue());
-        final Map<String, List<Vertex>> verticesByDef = fg.getVerticesByDef();
-        final Map<String, List<Vertex>> verticesByUse = fg.getVerticesByUse();
-        for (final Entry<String, List<Vertex>> vbu : verticesByUse.entrySet()) {
-          final String use = vbu.getKey();
-          List<Vertex> def = verticesByDef.get(use);
-          for (final Vertex useVtx : vbu.getValue()) {
-            // No def found for use. Create initial state vtx
-            if (def == null) {
-              if (exclusions.contains(use))
+    for (final Entry<String, DirectedGraph<Vertex, Edge>> e : cfgs.entrySet()) {
+      final FlowGraph fg = new FlowGraph(e.getValue());
+      final Map<String, List<Vertex>> verticesByDef = fg.getVerticesByDef();
+      final Map<String, List<Vertex>> verticesByUse = fg.getVerticesByUse();
+      for (final Entry<String, List<Vertex>> vbu : verticesByUse.entrySet()) {
+        final String use = vbu.getKey();
+        List<Vertex> def = verticesByDef.get(use);
+        for (final Vertex useVtx : vbu.getValue()) {
+          // No def found for use. Create initial state vtx
+          if (def == null) {
+            if (exclusions.contains(use))
+              continue;
+            // Prevent method invocations from creating initial states.
+            // Check comment in Translator.call for the reason why method
+            // invocations get here as dependencies
+            if (isMethod(use))
+              continue;
+            final Vertex v = new Vertex(vtxId++, VertexType.INITIAL_STATE, use);
+            v.setAssignedVariable(use);
+            final List<Vertex> initList = new LinkedList<>();
+            initList.add(v);
+            // Update to reuse the same initial state vertex for future
+            // references
+            verticesByDef.put(use, initList);
+            addVertex(v);
+            def = verticesByDef.get(use);
+            addEdge(v, useVtx, new Edge(v, useVtx, EdgeType.DATA));
+            // Add ctrl edge w.r.t. entry vtx
+            final Vertex entryVtx = fg.getEntryVertex();
+            addEdge(entryVtx, v, new Edge(entryVtx, v, EdgeType.CTRL_TRUE));
+          } else {
+            for (final Vertex defVtx : def) {
+              if (VertexType.INITIAL_STATE.equals(defVtx.getType())) {
+                addEdge(defVtx, useVtx, new Edge(defVtx, useVtx, EdgeType.DATA));
                 continue;
-              // Prevent method invocations from creating initial states.
-              // Check comment in Translator.call for the reason why method
-              // invocations get here as dependencies
-              if (isMethod(use))
-                continue;
-              final Vertex v = new Vertex(vtxId++, VertexType.INITIAL_STATE, use);
-              v.setAssignedVariable(use);
-              final List<Vertex> initList = new LinkedList<>();
-              initList.add(v);
-              // Update to reuse the same initial state vertex for future
-              // references
-              verticesByDef.put(use, initList);
-              addVertex(v);
-              def = verticesByDef.get(use);
-              addEdge(v, useVtx, new Edge(v, useVtx, EdgeType.DATA));
-              // Add ctrl edge w.r.t. entry vtx
-              final Vertex entryVtx = fg.getEntryVertex();
-              addEdge(entryVtx, v, new Edge(entryVtx, v, EdgeType.CTRL_TRUE));
-            } else {
-              for (final Vertex defVtx : def) {
-                if (VertexType.INITIAL_STATE.equals(defVtx.getType())) {
-                  addEdge(defVtx, useVtx, new Edge(defVtx, useVtx, EdgeType.DATA));
-                  continue;
-                }
-
-                // Find all paths from the def to the use vtx
-                if (hasXClearPath(fg.graph, defVtx, useVtx, use))
-                	addEdge(defVtx, useVtx, new Edge(defVtx, useVtx, EdgeType.DATA));
-
-                // Find all paths from the def to the use vtx
-//                final AllDirectedPaths<Vertex, Edge> adp = new AllDirectedPaths<>(fg.graph);
-//                final List<GraphPath<Vertex, Edge>> paths =
-//                    adp.getAllPaths(defVtx, useVtx, true, Integer.MAX_VALUE);
-//                // Add edge if we can find one x-clear path
-//                boolean xClear = false;
-//                for (final GraphPath<Vertex, Edge> p : paths) {
-//                  xClear = pathIsXClear(p.getVertexList(), defVtx, useVtx, use);
-//                  if (xClear) {
-//                    addEdge(defVtx, useVtx, new Edge(defVtx, useVtx, EdgeType.DATA));
-//                    break;
-//                  }
-//                }
               }
+
+              // Find all paths from the def to the use vtx
+              if (hasXClearPath(fg.graph, defVtx, useVtx, use))
+                addEdge(defVtx, useVtx, new Edge(defVtx, useVtx, EdgeType.DATA));
             }
           }
         }
@@ -166,11 +201,11 @@ public class SysDepGraph extends DefaultDirectedGraph<Vertex, Edge> {
 
           // If this path reaches a target, mark it.
           if (isXClear) {
-        	// Consider further extensions of this path.
+            // Consider further extensions of this path.
             incompletePaths.addFirst(newPath);
             if (target.equals(tgt))
-                return true;
-          } 
+              return true;
+          }
         }
       }
     }
