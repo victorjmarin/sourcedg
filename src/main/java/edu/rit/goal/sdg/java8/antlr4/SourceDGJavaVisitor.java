@@ -16,10 +16,12 @@ import edu.rit.goal.sdg.interpreter.stmt.CUnit;
 import edu.rit.goal.sdg.interpreter.stmt.Call;
 import edu.rit.goal.sdg.interpreter.stmt.Cls;
 import edu.rit.goal.sdg.interpreter.stmt.Continue;
+import edu.rit.goal.sdg.interpreter.stmt.Decl;
 import edu.rit.goal.sdg.interpreter.stmt.Def;
 import edu.rit.goal.sdg.interpreter.stmt.DoWhile;
 import edu.rit.goal.sdg.interpreter.stmt.Expr;
 import edu.rit.goal.sdg.interpreter.stmt.For;
+import edu.rit.goal.sdg.interpreter.stmt.ForControl;
 import edu.rit.goal.sdg.interpreter.stmt.IfThenElse;
 import edu.rit.goal.sdg.interpreter.stmt.Import;
 import edu.rit.goal.sdg.interpreter.stmt.Pkg;
@@ -56,12 +58,14 @@ import edu.rit.goal.sdg.java8.antlr4.JavaParser.TypeParametersContext;
 import edu.rit.goal.sdg.java8.antlr4.JavaParser.TypeTypeContext;
 import edu.rit.goal.sdg.java8.antlr4.JavaParser.TypeTypeOrVoidContext;
 import edu.rit.goal.sdg.java8.antlr4.JavaParser.VariableDeclaratorContext;
-import edu.rit.goal.sdg.java8.antlr4.JavaParser.VariableDeclaratorsContext;
 import edu.rit.goal.sdg.java8.antlr4.JavaParser.VariableInitializerContext;
 
 public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
 
   private String className;
+
+  // Current variable type
+  private String type;
 
   @Override
   protected ParseResult aggregateResult(final ParseResult aggregate, final ParseResult nextResult) {
@@ -169,6 +173,69 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
   @Override
   public ParseResult visitMemberDeclMethodDecl(final JavaParser.MemberDeclMethodDeclContext ctx) {
     return visitMethodDeclaration(ctx.methodDeclaration());
+  }
+
+  @Override
+  public ParseResult visitFieldDeclaration(final JavaParser.FieldDeclarationContext ctx) {
+    final ParseResult pr = visitTypeType(ctx.typeType());
+    type = pr.getValue();
+    return visitVariableDeclarators(ctx.variableDeclarators());
+  }
+
+  @Override
+  public ParseResult visitVariableDeclarators(final JavaParser.VariableDeclaratorsContext ctx) {
+    final List<Stmt> stmts = new ArrayList<>();
+    ParseResult pr = null;
+    for (final VariableDeclaratorContext c : ctx.variableDeclarator()) {
+      pr = visitVariableDeclarator(c);
+      stmts.add(pr.getStmt());
+    }
+    final Stmt seq = Translator.seq(stmts);
+    return new ParseResult(seq);
+  }
+
+  @Override
+  public ParseResult visitVariableDeclarator(final JavaParser.VariableDeclaratorContext ctx) {
+    Stmt stmt = new Skip();
+    final String x = ctx.variableDeclaratorId().getText();
+    final VariableInitializerContext varInitCtx = ctx.variableInitializer();
+    // Uninitialized variable
+    if (varInitCtx == null) {
+      final Decl decl = new Decl(type, x);
+      decl.setDef(x);
+      stmt = decl;
+    } else {
+      final ExpressionContext exprCtx = varInitCtx.expression();
+      final ArrayInitializerContext arrayInitCtx = varInitCtx.arrayInitializer();
+      ExpressionListContext exprLstCtx = null;
+      if (exprCtx != null) {
+        exprLstCtx = exprCtx.expressionList();
+        // Method call
+        if (exprLstCtx != null) {
+          final Call e = Translator.call(exprCtx, className);
+          final Assign assign = new Assign(x, e);
+          assign.setDef(x);
+          assign.setUses(e.getUses());
+          stmt = assign;
+        }
+        // Regular assignment
+        else {
+          final Assign assign = new Assign(x, new Str(exprCtx));
+          final Set<String> uses = JavaUtils.uses(exprCtx);
+          assign.setDef(x);
+          assign.setUses(uses);
+          stmt = assign;
+        }
+        // Array initialization
+      } else if (arrayInitCtx != null) {
+        final Assign assign = new Assign(x, new Str(arrayInitCtx));
+        final Set<String> uses = JavaUtils.uses(arrayInitCtx);
+        assign.setDef(x);
+        assign.setUses(uses);
+        stmt = assign;
+      }
+    }
+    return new ParseResult(stmt);
   }
 
   @Override
@@ -294,8 +361,7 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
 
   @Override
   public ParseResult visitMemberDeclFieldDecl(final JavaParser.MemberDeclFieldDeclContext ctx) {
-    printUnsupported("visitMemberDeclFieldDecl", ctx.getText());
-    return visitChildren(ctx);
+    return visitFieldDeclaration(ctx.fieldDeclaration());
   }
 
   @Override
@@ -362,48 +428,7 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
   @Override
   public ParseResult visitLocalVariableDeclaration(
       final JavaParser.LocalVariableDeclarationContext ctx) {
-    final List<Stmt> result = new ArrayList<>();
-    final VariableDeclaratorsContext varDeclCtx = ctx.variableDeclarators();
-    final List<VariableDeclaratorContext> varDeclLst = varDeclCtx.variableDeclarator();
-    for (final VariableDeclaratorContext vdc : varDeclLst) {
-      final String x = vdc.variableDeclaratorId().getText();
-      final VariableInitializerContext varInitCtx = vdc.variableInitializer();
-      // Skip variables that are not being initialized at declaration
-      if (varInitCtx == null)
-        continue;
-      final ExpressionContext exprCtx = varInitCtx.expression();
-      final ArrayInitializerContext arrayInitCtx = varInitCtx.arrayInitializer();
-      ExpressionListContext exprLstCtx = null;
-      if (exprCtx != null) {
-        exprLstCtx = exprCtx.expressionList();
-        // Method call
-        if (exprLstCtx != null) {
-          final Call e = Translator.call(exprCtx, className);
-          final Assign assign = new Assign(x, e);
-          assign.setDef(x);
-          assign.setUses(e.getUses());
-          result.add(assign);
-        }
-        // Regular assignment
-        else {
-          final Assign assign = new Assign(x, new Str(exprCtx));
-          final Set<String> uses = JavaUtils.uses(exprCtx);
-          assign.setDef(x);
-          assign.setUses(uses);
-          result.add(assign);
-        }
-        // Array initialization
-      } else if (arrayInitCtx != null) {
-        final Assign assign = new Assign(x, new Str(arrayInitCtx));
-        final Set<String> uses = JavaUtils.uses(arrayInitCtx);
-        assign.setDef(x);
-        assign.setUses(uses);
-        result.add(assign);
-      }
-
-    }
-    final Stmt seq = Translator.seq(result);
-    return new ParseResult(seq);
+    return visitVariableDeclarators(ctx.variableDeclarators());
   }
 
   @Override
@@ -448,11 +473,38 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
     Stmt result = null;
     final Stmt s = visit(ctx.statement()).getStmt();
     final ForControlContext forCtrlCtx = ctx.forControl();
-    final ForInitContext forInitCtx = forCtrlCtx.forInit();
+    final ParseResult pr = visit(forCtrlCtx);
+    final ForControl forControl = (ForControl) pr.getStmt();
     // TODO: Support for initialization and update of multiple variables
+    final Stmt si = forControl.si;
+    final Stmt sc = forControl.sc;
+    final Stmt su = forControl.su;
+    result = new For(si, sc, su, s);
+    return new ParseResult(result);
+  }
+
+  @Override
+  public ParseResult visitForControlEnhanced(final JavaParser.ForControlEnhancedContext ctx) {
+    final ExpressionContext exprCtx = ctx.enhancedForControl().expression();
+    final String varId = ctx.enhancedForControl().variableDeclaratorId().getText();
+    final Stmt stmt = expr(exprCtx);
+    final Stmt si = new Skip();
+    final Stmt sc = new Str(stmt.toString() + ".hasNext()");
+    final Set<String> uses = JavaUtils.uses(exprCtx);
+    sc.setUses(uses);
+    final Stmt su = new Assign(varId, new Str(stmt.toString() + ".next()"));
+    su.setDef(varId);
+    su.setUses(uses);
+    final ForControl forControl = new ForControl(si, sc, su);
+    return new ParseResult(forControl);
+  }
+
+  @Override
+  public ParseResult visitForControlRegular(final JavaParser.ForControlRegularContext ctx) {
     Stmt si = new Skip();
     Stmt sc = new Str("");
     Stmt su = new Skip();
+    final ForInitContext forInitCtx = ctx.forInit();
     if (forInitCtx != null) {
       final LocalVariableDeclarationContext lclVarDeclCtx = forInitCtx.localVariableDeclaration();
       if (lclVarDeclCtx != null)
@@ -461,15 +513,15 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
         // We are assumming only one expression
         si = expr(forInitCtx.expressionList().expression(0));
     }
-    final ExpressionContext exprCtx = forCtrlCtx.expression();
+    final ExpressionContext exprCtx = ctx.expression();
     if (exprCtx != null)
       sc = expr(exprCtx);
-    final ExpressionListContext exprListCtx = forCtrlCtx.expressionList();
+    final ExpressionListContext exprListCtx = ctx.expressionList();
     if (exprListCtx != null)
       // We are assumming only one expression
       su = expr(exprListCtx.expression(0));
-    result = new For(si, sc, su, s);
-    return new ParseResult(result);
+    final ForControl forControl = new ForControl(si, sc, su);
+    return new ParseResult(forControl);
   }
 
   @Override
@@ -540,7 +592,9 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
   @Override
   public ParseResult visitReturnStmt(final JavaParser.ReturnStmtContext ctx) {
     final ExpressionContext expr = ctx.expression();
-    final String e = expr.getText();
+    String e = "";
+    if (expr != null)
+      e = expr.getText();
     final Set<String> uses = JavaUtils.uses(expr);
     final Return ret = new Return(e);
     ret.setUses(uses);

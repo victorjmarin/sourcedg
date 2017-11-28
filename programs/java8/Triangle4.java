@@ -4,6 +4,8 @@ import java.util.Scanner;
 
 public class Triangle4 {
 
+  int attr;
+
   void triangle4() {
     int he = 0;
     Scanner in = new Scanner(System.in);

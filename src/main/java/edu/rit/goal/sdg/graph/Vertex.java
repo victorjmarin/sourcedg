@@ -15,12 +15,19 @@ public class Vertex implements Serializable {
   private Set<String> readingVariables;
   private Integer startLine;
   private Integer endLine;
+  private final Set<Vertex> in;
+  private Set<Vertex> out;
 
-  public Vertex() {}
+  public Vertex() {
+    in = new HashSet<>();
+    out = new HashSet<>();
+  }
 
   public Vertex(final int id) {
     this.id = id;
     readingVariables = new HashSet<>();
+    in = new HashSet<>();
+    out = new HashSet<>();
   }
 
   public Vertex(final int id, final VertexType type, final String label) {
@@ -28,12 +35,13 @@ public class Vertex implements Serializable {
   }
 
   public Vertex(final int id, final VertexType type, final String label, final String lookupId) {
-    super();
     this.id = id;
     this.type = type;
     this.label = label;
     this.lookupId = lookupId;
     readingVariables = new HashSet<>();
+    in = new HashSet<>();
+    out = new HashSet<>();
   }
 
   public int getId() {
@@ -100,6 +108,18 @@ public class Vertex implements Serializable {
 
   public void setEndLine(final Integer endLine) {
     this.endLine = endLine;
+  }
+
+  public Set<Vertex> getIn() {
+    return in;
+  }
+
+  public Set<Vertex> getOut() {
+    return out;
+  }
+
+  public void setOut(final Set<Vertex> out) {
+    this.out = out;
   }
 
   @Override

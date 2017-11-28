@@ -684,12 +684,12 @@ public interface JavaParserListener extends ParseTreeListener {
 	 */
 	void exitLastFormalParameter(JavaParser.LastFormalParameterContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link JavaParser#x}.
+	 * Enter a parse tree produced by {@link JavaParser#qualifiedName}.
 	 * @param ctx the parse tree
 	 */
 	void enterQualifiedName(JavaParser.QualifiedNameContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link JavaParser#x}.
+	 * Exit a parse tree produced by {@link JavaParser#qualifiedName}.
 	 * @param ctx the parse tree
 	 */
 	void exitQualifiedName(JavaParser.QualifiedNameContext ctx);
@@ -1204,15 +1204,29 @@ public interface JavaParserListener extends ParseTreeListener {
 	 */
 	void exitSwitchLabel(JavaParser.SwitchLabelContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link JavaParser#forControl}.
+	 * Enter a parse tree produced by the {@code ForControlEnhanced}
+	 * labeled alternative in {@link JavaParser#forControl}.
 	 * @param ctx the parse tree
 	 */
-	void enterForControl(JavaParser.ForControlContext ctx);
+	void enterForControlEnhanced(JavaParser.ForControlEnhancedContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link JavaParser#forControl}.
+	 * Exit a parse tree produced by the {@code ForControlEnhanced}
+	 * labeled alternative in {@link JavaParser#forControl}.
 	 * @param ctx the parse tree
 	 */
-	void exitForControl(JavaParser.ForControlContext ctx);
+	void exitForControlEnhanced(JavaParser.ForControlEnhancedContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code ForControlRegular}
+	 * labeled alternative in {@link JavaParser#forControl}.
+	 * @param ctx the parse tree
+	 */
+	void enterForControlRegular(JavaParser.ForControlRegularContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code ForControlRegular}
+	 * labeled alternative in {@link JavaParser#forControl}.
+	 * @param ctx the parse tree
+	 */
+	void exitForControlRegular(JavaParser.ForControlRegularContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link JavaParser#forInit}.
 	 * @param ctx the parse tree

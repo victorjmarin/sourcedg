@@ -36,6 +36,7 @@ import edu.rit.goal.sdg.interpreter.stmt.CfgEdge;
 import edu.rit.goal.sdg.interpreter.stmt.Cls;
 import edu.rit.goal.sdg.interpreter.stmt.Continue;
 import edu.rit.goal.sdg.interpreter.stmt.CtrlEdge;
+import edu.rit.goal.sdg.interpreter.stmt.Decl;
 import edu.rit.goal.sdg.interpreter.stmt.Def;
 import edu.rit.goal.sdg.interpreter.stmt.DoWhile;
 import edu.rit.goal.sdg.interpreter.stmt.EdgeStmt;
@@ -80,7 +81,8 @@ public class Interpreter {
   public Program interpret(final Program program) {
     vtxId = 0;
     final Program result = _interpret(program);
-    result.sdg.computeDataFlow(vtxId);
+    result.sdg.computeDataDeps(vtxId);
+    // result.sdg.computeDataFlow(vtxId);
     return result;
   }
 
@@ -211,6 +213,8 @@ public class Interpreter {
               s -> def.matchFor(s.b)),
           caseof(Seq.class,
               s -> seq.matchFor(s.s1)),
+          caseof(Decl.class,
+              __ -> this::declRule),
           caseof(Assign.class,
               s -> assign.matchFor(s.e)),
           caseof(CtrlEdge.class,
@@ -302,7 +306,11 @@ public class Interpreter {
     for (final Vertex ve : program.Ve) {
       program.sdg.addEdge(s.v, ve, s.t);
     }
+    for (final Vertex vc : program.Vc) {
+      program.sdg.addEdge(s.v, vc, s.t);
+    }
     program.Ve = new HashSet<>();
+    program.Vc = new HashSet<>();
     program.s = new Skip();
     return program;
   }
@@ -403,6 +411,16 @@ public class Interpreter {
     printRule("seqSkipRule");
     final Seq s = (Seq) program.s;
     program.s = s.s2;
+    return program;
+  }
+
+  private Program declRule(final Program program) {
+    printRule("declRule");
+    final Decl s = (Decl) program.s;
+    final Vertex v = new Vertex(vtxId++, VertexType.DECL, s.toString());
+    program.sdg.addVertex(v);
+    program.Vc.add(v);
+    program.s = new Skip();
     return program;
   }
 

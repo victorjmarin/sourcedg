@@ -2,7 +2,7 @@ package edu.rit.goal.sdg.graph;
 
 public enum VertexType {
 
-  CUNIT, PKG, IMPORT, CLASS, ENTRY, FORMAL_IN, FORMAL_OUT, ACTUAL_IN, ACTUAL_OUT, CALL, ASSIGN, RETURN, INITIAL_STATE, BREAK, CONTINUE, CTRL;
+  CUNIT, PKG, IMPORT, CLASS, ENTRY, FORMAL_IN, FORMAL_OUT, ACTUAL_IN, ACTUAL_OUT, CALL, DECL, ASSIGN, RETURN, INITIAL_STATE, BREAK, CONTINUE, CTRL;
 
   public boolean isFormalParam() {
     return FORMAL_IN.equals(this) || FORMAL_OUT.equals(this);

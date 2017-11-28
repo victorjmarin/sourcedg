@@ -12,10 +12,9 @@ import edu.rit.goal.sdg.interpreter.stmt.Stmt;
 
 public class Main {
 
-  private static final File FILE = new File("programs/java8/Triangle4.java");
+  private static final File FILE = new File("programs/java8/normalization/Foreach.java");
 
   public static void main(final String[] args) throws IOException {
-    final long t = System.currentTimeMillis();
     final Translator translator = new Translator();
     final Stmt stmt = translator.from(FILE);
     final Interpreter intrprtr = new Interpreter();
@@ -23,8 +22,6 @@ public class Main {
     final Program p = intrprtr.interpret(pstmt);
     final SysDepGraph sdg = p.sdg;
     final Map<String, DirectedGraph<Vertex, Edge>> methodSubgraphs = sdg.getMethodSubgraphs();
-    System.out.println(System.currentTimeMillis() - t + " ms. to build the PDG");
-    System.out.println(sdg);
     final DirectedGraph<Vertex, Edge> und = p.F.get("RunningExample.f");
     Utils.exportAsDot(sdg, "/Users/goal/Desktop", "und");
     // for (final Entry<String, DirectedGraph<Vertex, Edge>> e :

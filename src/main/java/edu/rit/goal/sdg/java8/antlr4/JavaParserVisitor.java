@@ -412,7 +412,7 @@ public interface JavaParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitLastFormalParameter(JavaParser.LastFormalParameterContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link JavaParser#x}.
+	 * Visit a parse tree produced by {@link JavaParser#qualifiedName}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
@@ -720,11 +720,19 @@ public interface JavaParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitSwitchLabel(JavaParser.SwitchLabelContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link JavaParser#forControl}.
+	 * Visit a parse tree produced by the {@code ForControlEnhanced}
+	 * labeled alternative in {@link JavaParser#forControl}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitForControl(JavaParser.ForControlContext ctx);
+	T visitForControlEnhanced(JavaParser.ForControlEnhancedContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code ForControlRegular}
+	 * labeled alternative in {@link JavaParser#forControl}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitForControlRegular(JavaParser.ForControlRegularContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link JavaParser#forInit}.
 	 * @param ctx the parse tree

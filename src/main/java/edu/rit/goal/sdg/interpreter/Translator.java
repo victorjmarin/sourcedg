@@ -32,6 +32,7 @@ import edu.rit.goal.sdg.java8.antlr4.JavaParser.ExpressionListContext;
 import edu.rit.goal.sdg.java8.antlr4.JavaParser.FormalParameterContext;
 import edu.rit.goal.sdg.java8.antlr4.ParseResult;
 import edu.rit.goal.sdg.java8.antlr4.SourceDGJavaVisitor;
+import edu.rit.goal.sdg.java8.normalization.Normalizer;
 
 public class Translator {
 
@@ -43,8 +44,11 @@ public class Translator {
 
   public Stmt from(final File file) throws IOException {
     cUnitName = file.getName();
+    final Normalizer exprNorm = new Normalizer(file);
+    final String normalizedProgram = exprNorm.normalize();
     final String path = file.getPath();
-    return parse(CharStreams.fromFileName(path), detectLang(path));
+    final CharStream charStream = CharStreams.fromString(normalizedProgram);
+    return parse(charStream, detectLang(path));
   }
 
   private Stmt parse(final CharStream chrStream, final Language lang) {

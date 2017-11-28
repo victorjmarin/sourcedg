@@ -1348,13 +1348,25 @@ public class JavaParserBaseListener implements JavaParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterForControl(JavaParser.ForControlContext ctx) { }
+	@Override public void enterForControlEnhanced(JavaParser.ForControlEnhancedContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitForControl(JavaParser.ForControlContext ctx) { }
+	@Override public void exitForControlEnhanced(JavaParser.ForControlEnhancedContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterForControlRegular(JavaParser.ForControlRegularContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitForControlRegular(JavaParser.ForControlRegularContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

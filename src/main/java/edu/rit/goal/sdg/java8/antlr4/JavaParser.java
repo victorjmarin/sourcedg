@@ -7145,10 +7145,37 @@ public class JavaParser extends Parser {
 	}
 
 	public static class ForControlContext extends ParserRuleContext {
-		public ExpressionListContext forUpdate;
+		public ForControlContext(ParserRuleContext parent, int invokingState) {
+			super(parent, invokingState);
+		}
+		@Override public int getRuleIndex() { return RULE_forControl; }
+	 
+		public ForControlContext() { }
+		public void copyFrom(ForControlContext ctx) {
+			super.copyFrom(ctx);
+		}
+	}
+	public static class ForControlEnhancedContext extends ForControlContext {
 		public EnhancedForControlContext enhancedForControl() {
 			return getRuleContext(EnhancedForControlContext.class,0);
 		}
+		public ForControlEnhancedContext(ForControlContext ctx) { copyFrom(ctx); }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof JavaParserListener ) ((JavaParserListener)listener).enterForControlEnhanced(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof JavaParserListener ) ((JavaParserListener)listener).exitForControlEnhanced(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof JavaParserVisitor ) return ((JavaParserVisitor<? extends T>)visitor).visitForControlEnhanced(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+	public static class ForControlRegularContext extends ForControlContext {
+		public ExpressionListContext forUpdate;
 		public ForInitContext forInit() {
 			return getRuleContext(ForInitContext.class,0);
 		}
@@ -7158,21 +7185,18 @@ public class JavaParser extends Parser {
 		public ExpressionListContext expressionList() {
 			return getRuleContext(ExpressionListContext.class,0);
 		}
-		public ForControlContext(ParserRuleContext parent, int invokingState) {
-			super(parent, invokingState);
-		}
-		@Override public int getRuleIndex() { return RULE_forControl; }
+		public ForControlRegularContext(ForControlContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof JavaParserListener ) ((JavaParserListener)listener).enterForControl(this);
+			if ( listener instanceof JavaParserListener ) ((JavaParserListener)listener).enterForControlRegular(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof JavaParserListener ) ((JavaParserListener)listener).exitForControl(this);
+			if ( listener instanceof JavaParserListener ) ((JavaParserListener)listener).exitForControlRegular(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof JavaParserVisitor ) return ((JavaParserVisitor<? extends T>)visitor).visitForControl(this);
+			if ( visitor instanceof JavaParserVisitor ) return ((JavaParserVisitor<? extends T>)visitor).visitForControlRegular(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -7186,6 +7210,7 @@ public class JavaParser extends Parser {
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,123,_ctx) ) {
 			case 1:
+				_localctx = new ForControlEnhancedContext(_localctx);
 				enterOuterAlt(_localctx, 1);
 				{
 				setState(1017);
@@ -7193,6 +7218,7 @@ public class JavaParser extends Parser {
 				}
 				break;
 			case 2:
+				_localctx = new ForControlRegularContext(_localctx);
 				enterOuterAlt(_localctx, 2);
 				{
 				setState(1019);
@@ -7225,7 +7251,7 @@ public class JavaParser extends Parser {
 				if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << BOOLEAN) | (1L << BYTE) | (1L << CHAR) | (1L << DOUBLE) | (1L << FLOAT) | (1L << INT) | (1L << LONG) | (1L << NEW) | (1L << SHORT) | (1L << SUPER) | (1L << THIS) | (1L << VOID) | (1L << DECIMAL_LITERAL) | (1L << HEX_LITERAL) | (1L << OCT_LITERAL) | (1L << BINARY_LITERAL) | (1L << FLOAT_LITERAL) | (1L << HEX_FLOAT_LITERAL) | (1L << BOOL_LITERAL) | (1L << CHAR_LITERAL) | (1L << STRING_LITERAL) | (1L << NULL_LITERAL) | (1L << LPAREN))) != 0) || ((((_la - 72)) & ~0x3f) == 0 && ((1L << (_la - 72)) & ((1L << (LT - 72)) | (1L << (BANG - 72)) | (1L << (TILDE - 72)) | (1L << (INC - 72)) | (1L << (DEC - 72)) | (1L << (ADD - 72)) | (1L << (SUB - 72)) | (1L << (AT - 72)) | (1L << (IDENTIFIER - 72)))) != 0)) {
 					{
 					setState(1026);
-					((ForControlContext)_localctx).forUpdate = expressionList();
+					((ForControlRegularContext)_localctx).forUpdate = expressionList();
 					}
 				}
 
