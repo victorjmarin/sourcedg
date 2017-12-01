@@ -11,16 +11,21 @@ public class Str extends BaseStmt implements Expr, edu.rit.goal.sdg.interpreter.
     super();
     this.value = value;
   }
-
-  public Str(final ParseTree pt) {
+  
+  public Str(final String value, final ParseTree pt) {
     super();
-    value = pt.getText();
+    this.value = value;
     this.pt = pt;
   }
 
   @Override
   public String toString() {
     return value;
+  }
+
+  @Override
+  public int size() {
+    return 1;
   }
 
 }

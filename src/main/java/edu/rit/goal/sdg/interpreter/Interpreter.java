@@ -9,20 +9,23 @@ import static edu.rit.goal.sdg.interpreter.pattern.ClassPattern.caseof;
 import static edu.rit.goal.sdg.interpreter.pattern.OtherwisePattern.otherwise;
 import static edu.rit.goal.sdg.interpreter.pattern.PatternMatching.$;
 import static edu.rit.goal.sdg.interpreter.pattern.VertexTypePattern.caseof;
+import java.io.File;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import edu.rit.goal.sdg.DefUsesUtils;
+import edu.rit.goal.sdg.graph.DefaultVertexCreator;
 import edu.rit.goal.sdg.graph.Edge;
 import edu.rit.goal.sdg.graph.EdgeType;
 import edu.rit.goal.sdg.graph.SysDepGraph;
 import edu.rit.goal.sdg.graph.Vertex;
+import edu.rit.goal.sdg.graph.VertexCreator;
 import edu.rit.goal.sdg.graph.VertexType;
 import edu.rit.goal.sdg.interpreter.params.EmptyParam;
 import edu.rit.goal.sdg.interpreter.params.Params;
@@ -72,17 +75,31 @@ import edu.rit.goal.sdg.interpreter.stmt.sw.Switch;;
 
 public class Interpreter {
 
-  public int vtxId;
   public final boolean PRINT = false;
   public final boolean PRINT_RULES = true;
+  private final Stmt originalStmt;
+  private final VertexCreator vertexCreator;
+  private final HashMap<String, Vertex> mEntryVertices;
 
-  public Interpreter() {}
+  public Interpreter(final File file) {
+    this(new Translator(file).parse());
+  }
 
-  public Program interpret(final Program program) {
-    vtxId = 0;
+  public Interpreter(final Stmt stmt) {
+    this(stmt, new DefaultVertexCreator());
+  }
+
+  public Interpreter(final Stmt stmt, final VertexCreator vertexCreator) {
+    originalStmt = stmt;
+    this.vertexCreator = vertexCreator;
+    mEntryVertices = new HashMap<>();
+  }
+
+  public Program interpret() {
+    vertexCreator.resetId();
+    final Program program = new Program(originalStmt);
     final Program result = _interpret(program);
-    result.sdg.computeDataDeps(vtxId);
-    // result.sdg.computeDataFlow(vtxId);
+    result.sdg.computeDataDeps(vertexCreator.getId());
     return result;
   }
 
@@ -326,7 +343,7 @@ public class Interpreter {
   private Program compilationUnitRule(final Program program) {
     printRule("compilationUnitRule");
     final CUnit s = (CUnit) program.s;
-    final Vertex v = new Vertex(vtxId++, VertexType.CUNIT, s.x);
+    final Vertex v = vertexCreator.compilationUnitVertex(s);
     program.sdg.addVertex(v);
     program.s = new EdgeStmt(EdgeType.MEMBER_OF, v, s.s);
     return program;
@@ -335,7 +352,7 @@ public class Interpreter {
   private Program packageRule(final Program program) {
     printRule("pkgRule");
     final Pkg s = (Pkg) program.s;
-    final Vertex v = new Vertex(vtxId++, VertexType.PKG, s.x);
+    final Vertex v = vertexCreator.packageVertex(s);
     program.sdg.addVertex(v);
     program.Ve.add(v);
     program.s = new Skip();
@@ -345,8 +362,7 @@ public class Interpreter {
   private Program importRule(final Program program) {
     printRule("importRule");
     final Import s = (Import) program.s;
-    final String mod = s.mod != null ? s.mod + " " : "";
-    final Vertex v = new Vertex(vtxId++, VertexType.IMPORT, mod + s.x);
+    final Vertex v = vertexCreator.importVertex(s);
     program.sdg.addVertex(v);
     program.Ve.add(v);
     program.s = new Skip();
@@ -356,7 +372,7 @@ public class Interpreter {
   private Program classRule(final Program program) {
     printRule("classRule");
     final Cls s = (Cls) program.s;
-    final Vertex v = new Vertex(vtxId++, VertexType.CLASS, s.x);
+    final Vertex v = vertexCreator.classVertex(s);
     program.sdg.addVertex(v);
     final EdgeStmt edge = new EdgeStmt(EdgeType.MEMBER_OF, v, s.s);
     program.s = new Seq(edge, new Ve(v));
@@ -366,36 +382,36 @@ public class Interpreter {
   private Program defRule(final Program program) {
     printRule("defRule");
     final Def s = (Def) program.s;
-    final String methodName = Translator.removeClassName(s.x);
-    final Vertex v = new Vertex(vtxId++, VertexType.ENTRY, methodName);
+    final Vertex v = vertexCreator.defVertex(s);
     v.setStartLine(s.startLine);
     v.setEndLine(s.endLine);
     program.sdg.addVertex(v);
     program.cfg.addVertex(v);
     program.Ve.add(v);
-    final Param param = new Param(methodName, VertexType.FORMAL_IN, s.p);
+    final Param param = new Param(s.methodName, VertexType.FORMAL_IN, s.p);
     final Seq seq1 = new Seq(param, s.s);
     final CtrlEdge ctrlEdge = new CtrlEdge(true, v, seq1);
     final Io io = new Io(set(v), set(v));
     program.s = new Seq(new CfgEdge(io, ctrlEdge), new Fed(s.x));
+    mEntryVertices.put(s.methodName, v);
     return program;
   }
 
   private Program voidDefRule(final Program program) {
     printRule("voidDefRule");
     final Def s = (Def) program.s;
-    final String methodName = Translator.removeClassName(s.x);
-    final Vertex v = new Vertex(vtxId++, VertexType.ENTRY, methodName);
+    final Vertex v = vertexCreator.defVertex(s);
     v.setStartLine(s.startLine);
     v.setEndLine(s.endLine);
     program.sdg.addVertex(v);
     program.cfg.addVertex(v);
     program.Ve.add(v);
-    final Param param = new Param(methodName, VertexType.FORMAL_IN, s.p);
+    final Param param = new Param(s.methodName, VertexType.FORMAL_IN, s.p);
     final Seq seq1 = new Seq(param, s.s);
     final CtrlEdge ctrlEdge = new CtrlEdge(true, v, seq1);
     final Io io = new Io(set(v), set(v));
     program.s = new Seq(new CfgEdge(io, ctrlEdge), new Fed(s.x));
+    mEntryVertices.put(s.methodName, v);
     return program;
   }
 
@@ -417,7 +433,7 @@ public class Interpreter {
   private Program declRule(final Program program) {
     printRule("declRule");
     final Decl s = (Decl) program.s;
-    final Vertex v = new Vertex(vtxId++, VertexType.DECL, s.toString());
+    final Vertex v = vertexCreator.declVertex(s);
     program.sdg.addVertex(v);
     program.Vc.add(v);
     program.s = new Skip();
@@ -427,20 +443,20 @@ public class Interpreter {
   private Program assignRule(final Program program) {
     printRule("assignRule");
     final Assign assign = (Assign) program.s;
-    final Vertex va = new Vertex(vtxId++, VertexType.ASSIGN, assign.x + assign.op + assign.e);
-    va.setAssignedVariable(assign.getDef());
-    va.setReadingVariables(assign.getUses());
-    program.sdg.addVertex(va);
-    program.cfg.addVertex(va);
-    program.Vc.add(va);
-    program.s = new Io(set(va), set(va));
+    final Vertex v = vertexCreator.assignVertex(assign);
+    v.setAssignedVariable(assign.getDef());
+    v.setReadingVariables(assign.getUses());
+    program.sdg.addVertex(v);
+    program.cfg.addVertex(v);
+    program.Vc.add(v);
+    program.s = new Io(set(v), set(v));
     return program;
   }
 
   private Program preOpRule(final Program program) {
     printRule("preOpRule");
     final PreOp preOp = (PreOp) program.s;
-    final Vertex v = new Vertex(vtxId++, VertexType.ASSIGN, preOp.op + preOp.x);
+    final Vertex v = vertexCreator.preOpVertex(preOp);
     v.setAssignedVariable(preOp.getDef());
     v.setReadingVariables(preOp.getUses());
     program.sdg.addVertex(v);
@@ -453,7 +469,7 @@ public class Interpreter {
   private Program postOpRule(final Program program) {
     printRule("postOpRule");
     final PostOp postOp = (PostOp) program.s;
-    final Vertex v = new Vertex(vtxId++, VertexType.ASSIGN, postOp.x + postOp.op);
+    final Vertex v = vertexCreator.postOpVertex(postOp);
     v.setAssignedVariable(postOp.getDef());
     v.setReadingVariables(postOp.getUses());
     program.sdg.addVertex(v);
@@ -466,7 +482,7 @@ public class Interpreter {
   private Program returnRule(final Program program) {
     printRule("returnRule");
     final Return ret = (Return) program.s;
-    final Vertex v = new Vertex(vtxId++, VertexType.RETURN, ret.e);
+    final Vertex v = vertexCreator.returnVertex(ret);
     v.setReadingVariables(ret.getUses());
     program.sdg.addVertex(v);
     program.cfg.addVertex(v);
@@ -520,7 +536,7 @@ public class Interpreter {
   private Program ifThenElseRule(final Program program) {
     printRule("ifThenElseRule");
     final IfThenElse s = (IfThenElse) program.s;
-    final Vertex v = new Vertex(vtxId++, VertexType.CTRL, s.e.toString());
+    final Vertex v = vertexCreator.ifThenElseVertex(s);
     v.setAssignedVariable(s.getDef());
     v.setReadingVariables(s.getUses());
     program.sdg.addVertex(v);
@@ -539,7 +555,7 @@ public class Interpreter {
   private Program whileRule(final Program program) {
     printRule("whileRule");
     final While s = (While) program.s;
-    final Vertex v = new Vertex(vtxId++, VertexType.CTRL, s.e.toString());
+    final Vertex v = vertexCreator.whileVertex(s);
     v.setAssignedVariable(s.getDef());
     v.setReadingVariables(s.getUses());
     program.sdg.addVertex(v);
@@ -557,7 +573,7 @@ public class Interpreter {
   private Program doWhileRule(final Program program) {
     printRule("doWhileRule");
     final DoWhile s = (DoWhile) program.s;
-    final Vertex v = new Vertex(vtxId++, VertexType.CTRL, s.e.toString());
+    final Vertex v = vertexCreator.doWhileVertex(s);
     v.setAssignedVariable(s.getDef());
     v.setReadingVariables(s.getUses());
     program.sdg.addVertex(v);
@@ -577,7 +593,7 @@ public class Interpreter {
     printRule("ctrlEdgeDoWhileRule");
     final CtrlEdge s = (CtrlEdge) program.s;
     final DoWhile doWhile = (DoWhile) s.s;
-    final Vertex v = new Vertex(vtxId++, VertexType.CTRL, doWhile.e.toString());
+    final Vertex v = vertexCreator.doWhileVertex(doWhile);
     v.setAssignedVariable(doWhile.getDef());
     v.setReadingVariables(doWhile.getUses());
     program.sdg.addVertex(v);
@@ -596,7 +612,7 @@ public class Interpreter {
   private Program forRule(final Program program) {
     printRule("forRule");
     final For s = (For) program.s;
-    final Vertex v = new Vertex(vtxId++, VertexType.CTRL, s.sc.toString());
+    final Vertex v = vertexCreator.forVertex(s);
     v.setAssignedVariable(s.sc.getDef());
     v.setReadingVariables(s.sc.getUses());
     program.sdg.addVertex(v);
@@ -617,7 +633,8 @@ public class Interpreter {
   private Program switchEmptyRule(final Program program) {
     printRule("switchEmptyRule");
     final Switch s = (Switch) program.s;
-    final Vertex v = new Vertex(vtxId++, VertexType.CTRL, s.e.toString());
+    final Vertex v = new Vertex(VertexType.CTRL, s.e.toString());
+    vertexCreator.setId(v);
     program.sdg.addVertex(v);
     program.Vc.add(v);
     program.s = new Skip();
@@ -647,7 +664,8 @@ public class Interpreter {
 
   private Program breakRule(final Program program) {
     printRule("breakRule");
-    final Vertex v = new Vertex(vtxId++, VertexType.BREAK, "break");
+    final Break s = (Break) program.s;
+    final Vertex v = vertexCreator.breakVertex(s);
     program.sdg.addVertex(v);
     program.Vc.add(v);
     program.s = new Skip();
@@ -656,7 +674,8 @@ public class Interpreter {
 
   private Program continueRule(final Program program) {
     printRule("continueRule");
-    final Vertex v = new Vertex(vtxId++, VertexType.CONTINUE, "continue");
+    final Continue s = (Continue) program.s;
+    final Vertex v = vertexCreator.continueVertex(s);
     program.sdg.addVertex(v);
     program.Vc.add(v);
     program.s = new Skip();
@@ -771,7 +790,7 @@ public class Interpreter {
     printRule("callRule");
     final Call s = (Call) program.s;
     final String methodName = Translator.removeClassName(s.x);
-    final Vertex vc = new Vertex(vtxId++, VertexType.CALL, s.toString());
+    final Vertex vc = vertexCreator.callVertex(s);
     vc.setAssignedVariable(s.getDef());
     vc.setReadingVariables(s.getUses());
     program.sdg.addVertex(vc);
@@ -789,8 +808,7 @@ public class Interpreter {
     final Assign assign = (Assign) program.s;
     final Call call = (Call) assign.e;
     final String methodName = Translator.removeClassName(call.x);
-    final Vertex va =
-        new Vertex(vtxId++, VertexType.ASSIGN, assign.x + assign.op + call.toString());
+    final Vertex va = vertexCreator.assignCallVertex(assign);
     va.setAssignedVariable(assign.getDef());
     va.setReadingVariables(call.getUses());
     program.sdg.addVertex(va);
@@ -806,14 +824,13 @@ public class Interpreter {
   private Program callEdgeRule(final Program program) {
     printRule("callEdgeRule");
     final CallEdge callEdge = (CallEdge) program.s;
-    final Optional<Vertex> ve = program.sdg.vertexSet().stream()
-        .filter(v -> v.getType().equals(VertexType.ENTRY) && v.getLabel().equals(callEdge.x))
-        .findFirst();
-    if (!ve.isPresent()) {
+    final Vertex ve = mEntryVertices.get(callEdge.x);
+    if (ve == null) {
       if (PRINT)
         System.out.println("[WARN] Cannot find ENTER vertex for method '" + callEdge.x + "'");
     } else {
-      program.sdg.addEdge(callEdge.v, ve.get(), EdgeType.CALL);
+      program.sdg.addEdge(callEdge.v, ve, EdgeType.CALL);
+      vertexCreator.selfCall(callEdge.v);
     }
     program.s = new Skip();
     return program;
@@ -980,7 +997,8 @@ public class Interpreter {
   private LinkedHashSet<Vertex> largeParamRule(final Param param) {
     final Str str = (Str) param.p;
     final LinkedHashSet<Vertex> V = new LinkedHashSet<>();
-    final Vertex v = new Vertex(vtxId++, param.t, str.value);
+    final Vertex v = new Vertex(param.t, str.value);
+    vertexCreator.setId(v);
     // Def and uses for data dependences
     v.setAssignedVariable(str.getDef());
     v.setReadingVariables(str.getUses());
@@ -992,7 +1010,8 @@ public class Interpreter {
   private LinkedHashSet<Vertex> largeParamsRule(final Param param) {
     final Params params = (Params) param.p;
     final LinkedHashSet<Vertex> V = largeParam(new Param(param.t, params.p));
-    final Vertex v = new Vertex(vtxId++, param.t, params.x);
+    final Vertex v = new Vertex(param.t, params.x);
+    vertexCreator.setId(v);
     // Def and uses for data dependences
     v.setAssignedVariable(params.getDef());
     v.setReadingVariables(params.getUses());

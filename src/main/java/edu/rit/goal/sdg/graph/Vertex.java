@@ -10,15 +10,17 @@ public class Vertex implements Serializable {
   private int id;
   private VertexType type;
   private String label;
-  private String lookupId;
   private String assignedVariable;
   private Set<String> readingVariables;
+  private Set<VertexSubtype> subtypes;
   private Integer startLine;
   private Integer endLine;
   private final Set<Vertex> in;
   private Set<Vertex> out;
 
   public Vertex() {
+    readingVariables = new HashSet<>();
+    subtypes = new HashSet<>();
     in = new HashSet<>();
     out = new HashSet<>();
   }
@@ -26,20 +28,21 @@ public class Vertex implements Serializable {
   public Vertex(final int id) {
     this.id = id;
     readingVariables = new HashSet<>();
+    subtypes = new HashSet<>();
     in = new HashSet<>();
     out = new HashSet<>();
   }
 
-  public Vertex(final int id, final VertexType type, final String label) {
-    this(id, type, label, null);
+  public Vertex(final VertexType type, final String label) {
+    this(-1, type, label);
   }
 
-  public Vertex(final int id, final VertexType type, final String label, final String lookupId) {
+  public Vertex(final int id, final VertexType type, final String label) {
     this.id = id;
     this.type = type;
     this.label = label;
-    this.lookupId = lookupId;
     readingVariables = new HashSet<>();
+    subtypes = new HashSet<>();
     in = new HashSet<>();
     out = new HashSet<>();
   }
@@ -66,14 +69,6 @@ public class Vertex implements Serializable {
 
   public void setLabel(final String label) {
     this.label = label;
-  }
-
-  public String getLookupId() {
-    return lookupId;
-  }
-
-  public void setLookupId(final String lookupId) {
-    this.lookupId = lookupId;
   }
 
   public String getAssignedVariable() {
@@ -120,6 +115,14 @@ public class Vertex implements Serializable {
 
   public void setOut(final Set<Vertex> out) {
     this.out = out;
+  }
+
+  public Set<VertexSubtype> getSubtypes() {
+    return subtypes;
+  }
+
+  public void setSubtypes(final Set<VertexSubtype> subtypes) {
+    this.subtypes = subtypes;
   }
 
   @Override

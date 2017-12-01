@@ -1,5 +1,7 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
+import com.github.javaparser.JavaParser;
+
 public class Assign extends BaseStmt {
 
   public String x;
@@ -7,20 +9,15 @@ public class Assign extends BaseStmt {
   public Expr e;
 
   public Assign(final String x, final Expr e) {
-    super();
-    this.x = x;
-    op = ":=";
-    this.e = e;
+    this(x, "=", e);
   }
 
   public Assign(final String x, final String op, final Expr e) {
     super();
     this.x = x;
-    if ("=".equals(op))
-      this.op = ":=";
-    else
-      this.op = op;
+    this.op = op;
     this.e = e;
+    ast = JavaParser.parseExpression(toString());
   }
 
   @Override

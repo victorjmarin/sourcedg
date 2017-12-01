@@ -1,5 +1,6 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
+import edu.rit.goal.sdg.interpreter.Translator;
 import edu.rit.goal.sdg.interpreter.params.EmptyParam;
 import edu.rit.goal.sdg.interpreter.params.Param;
 
@@ -10,6 +11,8 @@ public class Def extends BaseStmt {
   public String x;
   public Param p;
   public Stmt s;
+  // Name of the method without the class
+  public String methodName;
   public Integer startLine;
   public Integer endLine;
 
@@ -19,6 +22,7 @@ public class Def extends BaseStmt {
     this.x = x;
     p = new EmptyParam();
     this.s = s;
+    methodName = Translator.removeClassName(x);
   }
 
   public Def(final boolean b, final String x, final Param p, final Stmt s) {
@@ -27,6 +31,7 @@ public class Def extends BaseStmt {
     this.x = x;
     this.p = p;
     this.s = s;
+    methodName = Translator.removeClassName(x);
   }
 
   @Override

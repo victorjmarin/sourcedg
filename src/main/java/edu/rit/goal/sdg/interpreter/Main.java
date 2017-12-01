@@ -8,18 +8,14 @@ import edu.rit.goal.sdg.Utils;
 import edu.rit.goal.sdg.graph.Edge;
 import edu.rit.goal.sdg.graph.SysDepGraph;
 import edu.rit.goal.sdg.graph.Vertex;
-import edu.rit.goal.sdg.interpreter.stmt.Stmt;
 
 public class Main {
 
-  private static final File FILE = new File("programs/java8/normalization/Foreach.java");
+  private static final File FILE = new File("programs/java8/Triangle4.java");
 
   public static void main(final String[] args) throws IOException {
-    final Translator translator = new Translator();
-    final Stmt stmt = translator.from(FILE);
-    final Interpreter intrprtr = new Interpreter();
-    final Program pstmt = new Program(stmt);
-    final Program p = intrprtr.interpret(pstmt);
+    final Interpreter intrprtr = new Interpreter(FILE);
+    final Program p = intrprtr.interpret();
     final SysDepGraph sdg = p.sdg;
     final Map<String, DirectedGraph<Vertex, Edge>> methodSubgraphs = sdg.getMethodSubgraphs();
     final DirectedGraph<Vertex, Edge> und = p.F.get("RunningExample.f");

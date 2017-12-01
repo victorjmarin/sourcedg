@@ -1,27 +1,33 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
 import java.util.Set;
+import com.github.javaparser.ast.expr.Expression;
 
 public abstract class BaseStmt implements Stmt {
 
   protected int indentationLevel;
   protected String indentation;
+  public Expression ast;
 
   private String def;
   private Set<String> uses;
 
+  @Override
   public String getDef() {
     return def;
   }
 
+  @Override
   public Set<String> getUses() {
     return uses;
   }
 
+  @Override
   public void setDef(final String def) {
     this.def = def;
   }
 
+  @Override
   public void setUses(final Set<String> uses) {
     this.uses = uses;
   }

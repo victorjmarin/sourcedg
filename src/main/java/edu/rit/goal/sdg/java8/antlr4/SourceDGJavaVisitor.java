@@ -63,9 +63,14 @@ import edu.rit.goal.sdg.java8.antlr4.JavaParser.VariableInitializerContext;
 public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
 
   private String className;
+  private final Translator translator;
 
   // Current variable type
   private String type;
+
+  public SourceDGJavaVisitor(final Translator translator) {
+    this.translator = translator;
+  }
 
   @Override
   protected ParseResult aggregateResult(final ParseResult aggregate, final ParseResult nextResult) {
@@ -210,9 +215,10 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
       ExpressionListContext exprLstCtx = null;
       if (exprCtx != null) {
         exprLstCtx = exprCtx.expressionList();
-        // Method call
+        // TODO: Method calls without arguments not detected
+        // Method call with arguments
         if (exprLstCtx != null) {
-          final Call e = Translator.call(exprCtx, className);
+          final Call e = translator.call(exprCtx, className);
           final Assign assign = new Assign(x, e);
           assign.setDef(x);
           assign.setUses(e.getUses());
@@ -220,7 +226,8 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
         }
         // Regular assignment
         else {
-          final Assign assign = new Assign(x, new Str(exprCtx));
+          final String txt = translator.originalCode(exprCtx);
+          final Assign assign = new Assign(x, new Str(txt, exprCtx));
           final Set<String> uses = JavaUtils.uses(exprCtx);
           assign.setDef(x);
           assign.setUses(uses);
@@ -228,7 +235,8 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
         }
         // Array initialization
       } else if (arrayInitCtx != null) {
-        final Assign assign = new Assign(x, new Str(arrayInitCtx));
+        final String txt = translator.originalCode(arrayInitCtx);
+        final Assign assign = new Assign(x, new Str(txt, arrayInitCtx));
         final Set<String> uses = JavaUtils.uses(arrayInitCtx);
         assign.setDef(x);
         assign.setUses(uses);
@@ -461,7 +469,8 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
       s2 = visit(elseBranch).getStmt();
     }
     final ExpressionContext exprCtx = ctx.parExpression().expression();
-    final Expr e = new Str(exprCtx);
+    final String txt = translator.originalCode(exprCtx);
+    final Expr e = new Str(txt, exprCtx);
     final IfThenElse ifThenElse = new IfThenElse(e, s1, s2);
     final Set<String> uses = JavaUtils.uses(exprCtx);
     ifThenElse.setUses(uses);
@@ -481,22 +490,6 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
     final Stmt su = forControl.su;
     result = new For(si, sc, su, s);
     return new ParseResult(result);
-  }
-
-  @Override
-  public ParseResult visitForControlEnhanced(final JavaParser.ForControlEnhancedContext ctx) {
-    final ExpressionContext exprCtx = ctx.enhancedForControl().expression();
-    final String varId = ctx.enhancedForControl().variableDeclaratorId().getText();
-    final Stmt stmt = expr(exprCtx);
-    final Stmt si = new Skip();
-    final Stmt sc = new Str(stmt.toString() + ".hasNext()");
-    final Set<String> uses = JavaUtils.uses(exprCtx);
-    sc.setUses(uses);
-    final Stmt su = new Assign(varId, new Str(stmt.toString() + ".next()"));
-    su.setDef(varId);
-    su.setUses(uses);
-    final ForControl forControl = new ForControl(si, sc, su);
-    return new ParseResult(forControl);
   }
 
   @Override
@@ -527,7 +520,8 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
   @Override
   public ParseResult visitWhileStmt(final JavaParser.WhileStmtContext ctx) {
     final ExpressionContext exprCtx = ctx.parExpression().expression();
-    final Expr e = new Str(exprCtx);
+    final String txt = translator.originalCode(exprCtx);
+    final Expr e = new Str(txt, exprCtx);
     final StatementContext stmtCtx = ctx.statement();
     final Stmt s = visit(stmtCtx).getStmt();
     final While result = new While(e, s);
@@ -539,7 +533,8 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
   @Override
   public ParseResult visitDoStmt(final JavaParser.DoStmtContext ctx) {
     final ExpressionContext exprCtx = ctx.parExpression().expression();
-    final Expr e = new Str(exprCtx);
+    final String txt = translator.originalCode(exprCtx);
+    final Expr e = new Str(txt, exprCtx);
     final StatementContext stmtCtx = ctx.statement();
     final Stmt s = visit(stmtCtx).getStmt();
     final DoWhile result = new DoWhile(s, e);
@@ -651,7 +646,7 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
       final boolean isAssign = isShortHand || "=".equals(bop.getText());
       if (isAssign && isAssignCall(exprCtx)) {
         final String x = exprCtx.expression(0).getText();
-        final Call e = Translator.call(exprCtx.expression(1), className);
+        final Call e = translator.call(exprCtx.expression(1), className);
         final Assign assignCall = new Assign(x, e);
         assignCall.setDef(x);
         assignCall.setUses(e.getUses());
@@ -662,7 +657,8 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
         result = assign(exprCtx, isShortHand);
       } else {
         // TODO: Assuming a plain condition
-        result = new Str(exprCtx);
+        final String txt = translator.originalCode(exprCtx);
+        result = new Str(txt, exprCtx);
         final Set<String> uses = JavaUtils.uses(exprCtx);
         result.setUses(uses);
       }
@@ -683,12 +679,13 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
       uses.add(x);
       result.setUses(uses);
     } else if (isMethodCall) {
-      result = Translator.call(exprCtx, className);
+      result = translator.call(exprCtx, className);
     } else if (isCreator) {
       result = creator(exprCtx.creator());
     } else {
       // TODO: Assuming multiple conditions
-      result = new Str(exprCtx);
+      final String txt = translator.originalCode(exprCtx);
+      result = new Str(txt, exprCtx);
       final Set<String> uses = JavaUtils.uses(exprCtx);
       result.setUses(uses);
     }
@@ -719,7 +716,7 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
   public Stmt creator(final CreatorContext ctx) {
     final String methodName = ctx.createdName().getText();
     final ExpressionListContext exprLstCtx = ctx.classCreatorRest().arguments().expressionList();
-    final List<Str> params = Translator.params(exprLstCtx);
+    final List<Str> params = params(exprLstCtx);
     final Param p = Translator.param(params, false);
     final String x = Translator.fullMethodName(methodName, className);
     final Call result = new Call(x, p);
@@ -734,5 +731,16 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
     System.err.println(methodName + "\n\t" + sourceCode);
   }
 
+  public List<Str> params(final ExpressionListContext ctx) {
+    final List<Str> result = new ArrayList<>();
+    if (ctx == null)
+      return result;
+    for (final ExpressionContext exprCtx : ctx.expression()) {
+      final String txt = translator.originalCode(exprCtx);
+      final Str str = new Str(txt, exprCtx);
+      result.add(str);
+    }
+    return result;
+  }
 
 }

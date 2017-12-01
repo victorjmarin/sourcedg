@@ -1,28 +1,11 @@
 package edu.rit.goal.sdg;
 
-// GraphViz.java - a simple API to call dot from Java programs
-
-/* $Id$ */
-/*
- ******************************************************************************
- * * (c) Copyright Laszlo Szathmary * * This program is free software; you can redistribute it
- * and/or modify it * under the terms of the GNU Lesser General Public License as published by * the
- * Free Software Foundation; either version 2.1 of the License, or * (at your option) any later
- * version. * * This program is distributed in the hope that it will be useful, but * WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY * or FITNESS FOR A PARTICULAR
- * PURPOSE. See the GNU Lesser General Public * License for more details. * * You should have
- * received a copy of the GNU Lesser General Public License * along with this program; if not, write
- * to the Free Software Foundation, * Inc., 675 Mass Ave, Cambridge, MA 02139, USA. * *
- ******************************************************************************
- */
-
-import java.io.BufferedReader;
-import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
-import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /**
  * <dl>
@@ -368,16 +351,9 @@ public class Graphviz {
    */
   public void readSource(final String input) {
     final StringBuilder sb = new StringBuilder();
-
     try {
-      final FileInputStream fis = new FileInputStream(input);
-      final DataInputStream dis = new DataInputStream(fis);
-      final BufferedReader br = new BufferedReader(new InputStreamReader(dis));
-      String line;
-      while ((line = br.readLine()) != null) {
-        sb.append(line);
-      }
-      dis.close();
+      final String content = new String(Files.readAllBytes(Paths.get(input)));
+      sb.append(content);
     } catch (final Exception e) {
       System.err.println("Error: " + e.getMessage());
     }
@@ -385,4 +361,4 @@ public class Graphviz {
     graph = sb;
   }
 
-} // end of class GraphViz
+}

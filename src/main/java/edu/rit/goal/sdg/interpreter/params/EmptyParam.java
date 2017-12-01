@@ -11,4 +11,9 @@ public class EmptyParam extends BaseStmt implements Param {
     return emptySetChar.toString();
   }
 
+  @Override
+  public int size() {
+    return 0;
+  }
+
 }

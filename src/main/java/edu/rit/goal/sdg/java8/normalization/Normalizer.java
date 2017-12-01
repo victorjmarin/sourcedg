@@ -15,7 +15,6 @@ import com.github.javaparser.ast.expr.AssignExpr.Operator;
 import com.github.javaparser.ast.expr.BinaryExpr;
 import com.github.javaparser.ast.expr.EnclosedExpr;
 import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.LiteralExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
@@ -105,7 +104,7 @@ public class Normalizer {
       AssignExpr assign = null;
       for (final ExpressionStmt n : exprs) {
         assign = varDecl2Assign(n);
-        addToBody((BlockStmt) body, assign);
+        addToBody(body, assign);
       }
     } else if (condition instanceof BinaryExpr) {
       final BinaryExpr binCond = (BinaryExpr) condition;
@@ -148,6 +147,17 @@ public class Normalizer {
       addToBody((BlockStmt) stmt.getBody(), nextExpr, 0);
       return result;
     }
+  }
+
+  private void addToBody(final Statement body, final Expression n) {
+    if (body instanceof BlockStmt)
+      addToBody((BlockStmt) body, n);
+    else if (body instanceof ExpressionStmt)
+      addToBody((ExpressionStmt) body, n);
+  }
+
+  private void addToBody(final ExpressionStmt body, final Expression n) {
+    System.out.println("TODO: Implement expression body.");
   }
 
   private void addToBody(final BlockStmt body, final Expression n, final int pos) {
@@ -330,11 +340,6 @@ public class Normalizer {
       mAss.put((NameExpr) result, expr);
     }
     return result;
-  }
-
-  private boolean isLeaf(final Expression expr) {
-    return expr instanceof NameExpr || expr instanceof IntegerLiteralExpr
-        || expr instanceof NullLiteralExpr || expr instanceof MethodCallExpr;
   }
 
   private VariableDeclarationExpr variableDeclaratorExpr(final String variableName,

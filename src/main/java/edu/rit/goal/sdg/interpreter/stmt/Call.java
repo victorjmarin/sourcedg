@@ -1,5 +1,6 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
+import com.github.javaparser.JavaParser;
 import edu.rit.goal.sdg.interpreter.Translator;
 import edu.rit.goal.sdg.interpreter.params.Param;
 
@@ -12,6 +13,7 @@ public class Call extends BaseStmt implements Expr {
     super();
     this.x = x;
     this.p = p;
+    ast = JavaParser.parseExpression(toString());
   }
 
   @Override

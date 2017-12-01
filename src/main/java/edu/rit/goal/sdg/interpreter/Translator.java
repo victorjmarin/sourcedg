@@ -1,7 +1,6 @@
 package edu.rit.goal.sdg.interpreter;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -12,8 +11,11 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.Parser;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import edu.rit.goal.sdg.DefUsesUtils;
 import edu.rit.goal.sdg.interpreter.params.EmptyParam;
 import edu.rit.goal.sdg.interpreter.params.Param;
@@ -36,22 +38,24 @@ import edu.rit.goal.sdg.java8.normalization.Normalizer;
 
 public class Translator {
 
-  private String cUnitName;
+  private final String cUnitName;
+  private final Language lang;
+  private final CharStream charStream;
 
   private enum Language {
     JAVA, PYTHON
   }
 
-  public Stmt from(final File file) throws IOException {
+  public Translator(final File file) {
     cUnitName = file.getName();
+    final String path = file.getPath();
+    lang = detectLang(path);
     final Normalizer exprNorm = new Normalizer(file);
     final String normalizedProgram = exprNorm.normalize();
-    final String path = file.getPath();
-    final CharStream charStream = CharStreams.fromString(normalizedProgram);
-    return parse(charStream, detectLang(path));
+    charStream = CharStreams.fromString(normalizedProgram);
   }
 
-  private Stmt parse(final CharStream chrStream, final Language lang) {
+  public Stmt parse() {
     Stmt result = null;
     final Lexer lexer;
     CommonTokenStream tokens;
@@ -61,11 +65,11 @@ public class Translator {
 
     switch (lang) {
       case JAVA:
-        lexer = new JavaLexer(chrStream);
+        lexer = new JavaLexer(charStream);
         tokens = new CommonTokenStream(lexer);
         parser = new JavaParser(tokens);
         tree = ((JavaParser) parser).compilationUnit();
-        visitor = new SourceDGJavaVisitor();
+        visitor = new SourceDGJavaVisitor(this);
         result = visitor.visit(tree).getStmt();
         ((CUnit) result).x = cUnitName;
         break;
@@ -97,14 +101,13 @@ public class Translator {
     return result;
   }
 
-  // TODO: Make more complete conversion. There will be cases in which there will be
-  // nested calls as an argument, for example. This will not work in such cases.
-  public static List<Str> params(final ExpressionListContext ctx) {
+  public List<Str> params(final ExpressionListContext ctx) {
     final List<Str> result = new ArrayList<>();
     if (ctx == null)
       return result;
     for (final ExpressionContext exprCtx : ctx.expression()) {
-      final Str str = new Str(exprCtx);
+      final String txt = originalCode(exprCtx);
+      final Str str = new Str(txt, exprCtx);
       result.add(str);
     }
     return result;
@@ -114,7 +117,9 @@ public class Translator {
     final List<Str> result = new LinkedList<>();
     if (ctx != null) {
       for (final FormalParameterContext formalParamCtx : ctx) {
-        final Str str = new Str(formalParamCtx.variableDeclaratorId().IDENTIFIER());
+        final TerminalNode identifier = formalParamCtx.variableDeclaratorId().IDENTIFIER();
+        final String paramName = identifier.getText();
+        final Str str = new Str(paramName, identifier);
         result.add(str);
       }
     }
@@ -136,13 +141,13 @@ public class Translator {
     return result;
   }
 
-  public static Call call(final ExpressionContext ctx, final String className) {
+  public Call call(final ExpressionContext ctx, final String className) {
     final List<ExpressionContext> exprCtxLst = ctx.expression();
     final String methodName =
         exprCtxLst.stream().map(c -> c.getText()).collect(Collectors.joining());
     final ExpressionListContext exprLstCtx = ctx.expressionList();
-    final List<Str> params = Translator.params(exprLstCtx);
-    final Param p = Translator.param(params, false);
+    final List<Str> params = params(exprLstCtx);
+    final Param p = param(params, false);
     final String x = fullMethodName(methodName, className);
     final Call result = new Call(x, p);
     // Using ctx instead of exprLstCtx to compute used because we are interested in
@@ -197,6 +202,14 @@ public class Translator {
         result = true;
     }
     return result;
+  }
+
+  // Returns the original code with whitespaces and comments
+  public String originalCode(final ParserRuleContext ctx) {
+    final int a = ctx.start.getStartIndex();
+    final int b = ctx.stop.getStopIndex();
+    final Interval interval = new Interval(a, b);
+    return charStream.getText(interval);
   }
 
 }

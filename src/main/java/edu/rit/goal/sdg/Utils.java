@@ -3,6 +3,7 @@ package edu.rit.goal.sdg;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import org.jgrapht.Graph;
 import org.jgrapht.ext.ComponentAttributeProvider;
 import org.jgrapht.ext.ComponentNameProvider;
@@ -11,6 +12,7 @@ import org.jgrapht.ext.ExportException;
 import org.jgrapht.ext.IntegerComponentNameProvider;
 import edu.rit.goal.sdg.graph.Edge;
 import edu.rit.goal.sdg.graph.Vertex;
+import edu.rit.goal.sdg.graph.VertexSubtype;
 
 public class Utils {
 
@@ -18,8 +20,12 @@ public class Utils {
       new ComponentNameProvider<Vertex>() {
         @Override
         public String getName(final Vertex component) {
-          return component.getId() + "-" + component.getType() + "\n"
-              + component.getLabel().replaceAll("\"", "'");
+          String result = component.getId() + "-" + component.getType() + "\n";
+          final Set<VertexSubtype> subtypes = component.getSubtypes();
+          if (!subtypes.isEmpty())
+            result += subtypes + "\n";
+          result += component.getLabel().replaceAll("\"", "'");
+          return result;
         }
       };
 
@@ -41,6 +47,7 @@ public class Utils {
             switch (component.getType()) {
               default:
                 result.put("fontname", "helvetica");
+                result.put("shape", "box");
                 break;
             }
           }
@@ -95,7 +102,7 @@ public class Utils {
       final File out = new File(path + "/" + fileName + "." + type);
       gv.writeGraphToFile(gv.getGraph(gv.getDotSource(), type, repesentationType), out);
 
-      //dotFile.delete();
+      // dotFile.delete();
     } catch (final ExportException e) {
       e.printStackTrace();
     }

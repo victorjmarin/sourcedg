@@ -18,4 +18,9 @@ public class Params extends BaseStmt implements Param {
     return x + "," + p;
   }
 
+  @Override
+  public int size() {
+    return 1 + p.size();
+  }
+
 }
