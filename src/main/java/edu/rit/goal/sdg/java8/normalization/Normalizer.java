@@ -5,11 +5,13 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.VariableDeclarator;
+import com.github.javaparser.ast.expr.ArrayCreationExpr;
 import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.AssignExpr.Operator;
 import com.github.javaparser.ast.expr.BinaryExpr;
@@ -22,6 +24,7 @@ import com.github.javaparser.ast.expr.NullLiteralExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.DoStmt;
+import com.github.javaparser.ast.stmt.ExplicitConstructorInvocationStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ForStmt;
 import com.github.javaparser.ast.stmt.ForeachStmt;
@@ -52,13 +55,15 @@ public class Normalizer {
       visitors.add(new MethodCallVisitor());
       visitors.add(new AssignExprVisitor());
       visitors.add(new BinaryExprVisitor());
+      visitors.add(new ArrayCreationExprVisitor());
       visitors.add(new WhileStmtVisitor());
       visitors.add(new ForStmtVisitor());
+      visitors.add(new DoStmtVisitor());
       visitors.add(new EnclosedExprVisitor());
 
       CompilationUnit cu;
       cu = JavaParser.parse(program);
-      String newCu;
+      String newCu = null;
       for (final ModifierVisitor<Void> mv : visitors) {
         cu.accept(mv, null);
         newCu = cu.toString();
@@ -74,12 +79,30 @@ public class Normalizer {
     return null;
   }
 
+  private class ArrayCreationExprVisitor extends ModifierVisitor<Void> {
+    @Override
+    public Node visit(final ArrayCreationExpr expr, final Void args) {
+      super.visit(expr, args);
+      final String variableName = nextVarId();
+      final SearchResult sr = findBlockStmt(expr);
+      if (sr == null)
+        return expr;
+      final VariableDeclarationExpr varDeclExpr = variableDeclaratorExpr(variableName, expr);
+      final ExpressionStmt exprStmt = new ExpressionStmt(varDeclExpr);
+      addToBody(sr.blk, exprStmt, sr.idx);
+      return new NameExpr(variableName);
+    }
+  }
+
   private class ForStmtVisitor extends ModifierVisitor<Void> {
     @Override
     public Node visit(final ForStmt stmt, final Void args) {
       super.visit(stmt, args);
-      final Expression cond = stmt.getCompare().get();
-      solveCondDeps(cond, stmt.getBody());
+      final Optional<Expression> cond = stmt.getCompare();
+      if (cond.isPresent()) {
+        final Statement newBody = solveCondDeps(cond.get(), stmt.getBody());
+        stmt.setBody(newBody);
+      }
       return stmt;
     }
   }
@@ -94,7 +117,18 @@ public class Normalizer {
     }
   }
 
-  private void solveCondDeps(Expression condition, final Statement body) {
+  private class DoStmtVisitor extends ModifierVisitor<Void> {
+    @Override
+    public Node visit(final DoStmt stmt, final Void args) {
+      super.visit(stmt, args);
+      final Expression cond = stmt.getCondition();
+      solveCondDeps(cond, stmt.getBody());
+      return stmt;
+    }
+  }
+
+  private Statement solveCondDeps(Expression condition, final Statement body) {
+    Statement result = body;
     while (condition instanceof EnclosedExpr) {
       condition = ((EnclosedExpr) condition).getInner();
     }
@@ -104,7 +138,7 @@ public class Normalizer {
       AssignExpr assign = null;
       for (final ExpressionStmt n : exprs) {
         assign = varDecl2Assign(n);
-        addToBody(body, assign);
+        result = addToBody(body, assign);
       }
     } else if (condition instanceof BinaryExpr) {
       final BinaryExpr binCond = (BinaryExpr) condition;
@@ -118,13 +152,14 @@ public class Normalizer {
       AssignExpr assign = null;
       for (final ExpressionStmt n : leftExpr) {
         assign = varDecl2Assign(n);
-        addToBody((BlockStmt) body, assign);
+        result = addToBody(body, assign);
       }
       for (final ExpressionStmt n : rightExpr) {
         assign = varDecl2Assign(n);
-        addToBody((BlockStmt) body, assign);
+        result = addToBody(body, assign);
       }
     }
+    return result;
   }
 
   private class ForeachStmtVisitor extends ModifierVisitor<Void> {
@@ -144,36 +179,61 @@ public class Normalizer {
       final SearchResult sr = findBlockStmt(stmt);
       sr.blk.addStatement(sr.idx, iterator);
       final ExpressionStmt nextExpr = getNextExpr(new NameExpr(varDecl.getName()), currentVar);
-      addToBody((BlockStmt) stmt.getBody(), nextExpr, 0);
+      addToBody(stmt.getBody(), nextExpr, 0);
       return result;
     }
   }
 
-  private void addToBody(final Statement body, final Expression n) {
+  private Statement addToBody(final Statement body, final Expression n) {
+    Statement result = body;
     if (body instanceof BlockStmt)
-      addToBody((BlockStmt) body, n);
+      result = addToBody((BlockStmt) body, n);
     else if (body instanceof ExpressionStmt)
-      addToBody((ExpressionStmt) body, n);
+      result = addToBody((ExpressionStmt) body, n);
+    return result;
   }
 
-  private void addToBody(final ExpressionStmt body, final Expression n) {
-    System.out.println("TODO: Implement expression body.");
+  private Statement addToBody(final Statement body, final Statement n, final int pos) {
+    Statement result = body;
+    if (body instanceof BlockStmt)
+      result = addToBody((BlockStmt) body, n, pos);
+    else if (body instanceof ExpressionStmt)
+      result = addToBody((ExpressionStmt) body, n, pos);
+    return result;
   }
 
-  private void addToBody(final BlockStmt body, final Expression n, final int pos) {
+  private Statement addToBody(final ExpressionStmt body, final Expression n) {
+    final BlockStmt result = new BlockStmt();
+    result.addStatement(body.getExpression());
+    result.addStatement(n);
+    return result;
+  }
+
+  private Statement addToBody(final ExpressionStmt body, final Statement n, final int pos) {
+    final BlockStmt result = new BlockStmt();
+    result.addStatement(body.getExpression());
+    result.addStatement(pos, n);
+    return result;
+  }
+
+  private Statement addToBody(final BlockStmt body, final Expression n, final int pos) {
     body.addStatement(pos, n);
+    return body;
   }
 
-  private void addToBody(final BlockStmt body, final Expression n) {
+  private Statement addToBody(final BlockStmt body, final Expression n) {
     body.addStatement(n);
+    return body;
   }
 
-  private void addToBody(final BlockStmt body, final Statement n, final int pos) {
+  private Statement addToBody(final BlockStmt body, final Statement n, final int pos) {
     body.addStatement(pos, n);
+    return body;
   }
 
-  private void addToBody(final BlockStmt body, final Statement n) {
+  private Statement addToBody(final BlockStmt body, final Statement n) {
     body.addStatement(n);
+    return body;
   }
 
   private ExpressionStmt getNextExpr(final Expression target, final Expression scope) {
@@ -190,8 +250,9 @@ public class Normalizer {
   }
 
   private ExpressionStmt getForIteratorStmt(final Type type, final Expression list) {
+    final Type wrapperType = toWrapperType(type);
     final ClassOrInterfaceType itType =
-        JavaParser.parseClassOrInterfaceType("Iterator<" + type + ">");
+        JavaParser.parseClassOrInterfaceType("Iterator<" + wrapperType + ">");
     final String name = nextVarId();
     final MethodCallExpr init = new MethodCallExpr(list, "iterator");
     final VariableDeclarator varDecl = new VariableDeclarator(itType, name, init);
@@ -232,12 +293,14 @@ public class Normalizer {
     @Override
     public Node visit(final MethodCallExpr expr, final Void args) {
       super.visit(expr, args);
-      // Do not extract to variable if parent is assign
+      // Do not extract to variable if parent is assign or super
       final Node parent = expr.getParentNode().get();
       if (parent instanceof AssignExpr || parent instanceof ExpressionStmt
-          || parent instanceof VariableDeclarator)
+          || parent instanceof VariableDeclarator || hasSuperParent(parent))
         return expr;
       final SearchResult sr = findBlockStmt(expr);
+      if (sr == null)
+        return expr;
       final Expression result = recNorm(expr);
       for (final ExpressionStmt e : expressions)
         sr.blk.addStatement(sr.idx, e);
@@ -257,9 +320,12 @@ public class Normalizer {
       // Avoid final int _v3 = a + b + c; or int _v0 = (a + 1) / 2; with parent and enclosed check
       if ((left instanceof NameExpr || left instanceof LiteralExpr)
           && (right instanceof NameExpr || right instanceof LiteralExpr)
-          && !(parent instanceof BinaryExpr || parent instanceof EnclosedExpr))
+          && !(parent instanceof BinaryExpr || parent instanceof EnclosedExpr)
+          || hasSuperParent(parent))
         return expr;
       final SearchResult sr = findBlockStmt(expr);
+      if (sr == null)
+        return expr;
       final Expression result = recNorm(expr);
       for (final ExpressionStmt e : expressions)
         sr.blk.addStatement(sr.idx, e);
@@ -344,48 +410,87 @@ public class Normalizer {
 
   private VariableDeclarationExpr variableDeclaratorExpr(final String variableName,
       final Expression initializer) {
-    final Type type = typeFor((BinaryExpr) initializer);
+    final Type type = typeFor(initializer);
     final VariableDeclarator varDeclarator =
         new VariableDeclarator(type, variableName, initializer);
     return new VariableDeclarationExpr(varDeclarator);
   }
 
   private SearchResult findBlockStmt(final Node expr) {
+    return findBlockStmt(expr, expr);
+  }
+
+
+  private SearchResult findBlockStmt(final Node expr, final Node original) {
     // TODO: Body might be an expression instead of a block
-    final Node n = expr.getParentNode().get();
-    if (n instanceof DoStmt) {
-      final DoStmt doStmt = (DoStmt) n;
-      final Statement body = doStmt.getBody();
-      final BlockStmt blk = (BlockStmt) body;
-      final int indexOf = blk.getStatements().size();
-      return new SearchResult(blk, indexOf, expr);
-    } else if (n instanceof BlockStmt) {
-      final BlockStmt blk = (BlockStmt) n;
+    final Optional<Node> n = expr.getParentNode();
+    if (!n.isPresent()) {
+      System.out.println("[WARN] No parent block found for " + original.toString());
+      return null;
+    }
+    if (n.get() instanceof BlockStmt) {
+      final BlockStmt blk = (BlockStmt) n.get();
       final int indexOf = blk.getStatements().indexOf(expr);
       return new SearchResult(blk, indexOf, expr);
     }
-    return findBlockStmt(expr.getParentNode().get());
+    return findBlockStmt(expr.getParentNode().get(), original);
   }
 
-  private Type typeFor(final BinaryExpr expr) {
-    switch (expr.getOperator()) {
-      case PLUS:
-      case MINUS:
-      case MULTIPLY:
-      case DIVIDE:
-      case REMAINDER:
-        return JavaParser.parseClassOrInterfaceType("Number");
-      case AND:
-      case OR:
-      case EQUALS:
-      case GREATER:
-      case GREATER_EQUALS:
-      case LESS:
-      case LESS_EQUALS:
-      case NOT_EQUALS:
-        return PrimitiveType.booleanType();
+  private boolean hasSuperParent(final Node n) {
+    if (n == null)
+      return false;
+    if (n instanceof ExplicitConstructorInvocationStmt)
+      return true;
+    final Optional<Node> parent = n.getParentNode();
+    return hasSuperParent(parent.orElse(null));
+  }
+
+  private Type typeFor(final Expression expr) {
+    if (expr instanceof BinaryExpr) {
+      final BinaryExpr binExpr = (BinaryExpr) expr;
+      switch (binExpr.getOperator()) {
+        case PLUS:
+        case MINUS:
+        case MULTIPLY:
+        case DIVIDE:
+        case REMAINDER:
+          return JavaParser.parseClassOrInterfaceType("Number");
+        case AND:
+        case OR:
+        case EQUALS:
+        case GREATER:
+        case GREATER_EQUALS:
+        case LESS:
+        case LESS_EQUALS:
+        case NOT_EQUALS:
+          return PrimitiveType.booleanType();
+        default:
+          return defaultType();
+      }
+    }
+    return defaultType();
+  }
+
+  private Type toWrapperType(final Type type) {
+    switch (type.asString()) {
+      case "byte":
+        return JavaParser.parseClassOrInterfaceType("Byte");
+      case "short":
+        return JavaParser.parseClassOrInterfaceType("Short");
+      case "int":
+        return JavaParser.parseClassOrInterfaceType("Integer");
+      case "long":
+        return JavaParser.parseClassOrInterfaceType("Long");
+      case "float":
+        return JavaParser.parseClassOrInterfaceType("Float");
+      case "double":
+        return JavaParser.parseClassOrInterfaceType("Double");
+      case "char":
+        return JavaParser.parseClassOrInterfaceType("Character");
+      case "boolean":
+        return JavaParser.parseClassOrInterfaceType("Boolean");
       default:
-        return defaultType();
+        return type;
     }
   }
 

@@ -15,7 +15,8 @@ public class For extends BaseStmt {
 
   @Override
   public String toString() {
-    return "for (" + si + ";" + sc + ";" + su + ") {" + s + "}";
+    return "for (" + si + ";" + sc + ";" + su + ") {\n" + s.toString(indentationLevel + 1) + "\n"
+        + indentation + "}";
   }
 
 }

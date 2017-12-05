@@ -1,13 +1,13 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
 import java.util.Set;
-import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.Node;
 
 public abstract class BaseStmt implements Stmt {
 
   protected int indentationLevel;
   protected String indentation;
-  public Expression ast;
+  public Node ast;
 
   private String def;
   private Set<String> uses;

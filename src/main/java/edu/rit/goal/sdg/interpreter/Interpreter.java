@@ -76,7 +76,7 @@ import edu.rit.goal.sdg.interpreter.stmt.sw.Switch;;
 public class Interpreter {
 
   public final boolean PRINT = false;
-  public final boolean PRINT_RULES = true;
+  public final boolean PRINT_RULES = false;
   private final Stmt originalStmt;
   private final VertexCreator vertexCreator;
   private final HashMap<String, Vertex> mEntryVertices;

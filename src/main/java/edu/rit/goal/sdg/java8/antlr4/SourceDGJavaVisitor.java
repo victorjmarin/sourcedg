@@ -255,6 +255,7 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
     final ParseResult pr2 = visitFormalParameters(ctx.formalParameters());
     final Param params = (Param) pr2.getStmt();
     final boolean b = !returnType.equals("void");
+    // if pr3 is null, then the method is abstract most likely
     final ParseResult pr3 = visit(ctx.methodBody());
     final Stmt body = pr3.getStmt();
     final Def def = new Def(b, methodName, params, body);
@@ -289,7 +290,8 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
     if (blockStmtCtx != null) {
       for (final BlockStatementContext bsc : blockStmtCtx) {
         pr = visit(bsc);
-        stmts.add(pr.getStmt());
+        if (pr != null)
+          stmts.add(pr.getStmt());
       }
       result = Translator.seq(stmts);
     }
@@ -462,11 +464,19 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
     Stmt s2 = new Skip();
     if (size > 0) {
       final StatementContext thenBranch = ctx.statement(0);
-      s1 = visit(thenBranch).getStmt();
+      final ParseResult pr = visit(thenBranch);
+      if (pr == null)
+        s1 = new Skip();
+      else
+        s1 = pr.getStmt();
     }
     if (size > 1) {
       final StatementContext elseBranch = ctx.statement(1);
-      s2 = visit(elseBranch).getStmt();
+      final ParseResult pr = visit(elseBranch);
+      if (pr == null)
+        s2 = new Skip();
+      else
+        s2 = pr.getStmt();
     }
     final ExpressionContext exprCtx = ctx.parExpression().expression();
     final String txt = translator.originalCode(exprCtx);
@@ -728,7 +738,7 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
   }
 
   private void printUnsupported(final String methodName, final String sourceCode) {
-    System.err.println(methodName + "\n\t" + sourceCode);
+    System.err.println("Unsupported " + methodName + ":\n\t" + sourceCode);
   }
 
   public List<Str> params(final ExpressionListContext ctx) {

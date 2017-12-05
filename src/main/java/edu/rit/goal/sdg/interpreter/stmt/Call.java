@@ -13,7 +13,20 @@ public class Call extends BaseStmt implements Expr {
     super();
     this.x = x;
     this.p = p;
-    ast = JavaParser.parseExpression(toString());
+    final String methodName = Translator.removeClassName(x);
+    String toParse = toString();
+
+    try {
+      try {
+        // Can fail with constructor calls (super, this).
+        ast = JavaParser.parseExpression(toParse);
+      } catch (final Exception ex) {
+        toParse += ";";
+        ast = JavaParser.parseStatement(toParse);
+      }
+    } catch (final Exception ex2) {
+      System.out.println("[WARN] Could not build ast for call \n\t" + toParse);
+    }
   }
 
   @Override

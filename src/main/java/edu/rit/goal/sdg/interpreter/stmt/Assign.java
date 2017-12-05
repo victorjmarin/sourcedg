@@ -17,7 +17,17 @@ public class Assign extends BaseStmt {
     this.x = x;
     this.op = op;
     this.e = e;
-    ast = JavaParser.parseExpression(toString());
+    String toParse = toString();
+    try {
+      try {
+        ast = JavaParser.parseExpression(toParse);
+      } catch (final Exception ex) {
+        toParse += ";";
+        ast = JavaParser.parseStatement(toParse);
+      }
+    } catch (final Exception ex2) {
+      System.out.println("[WARN] Could not build ast for assignment \n\t" + toParse);
+    }
   }
 
   @Override

@@ -11,7 +11,7 @@ import edu.rit.goal.sdg.graph.Vertex;
 
 public class Main {
 
-  private static final File FILE = new File("programs/java8/Triangle4.java");
+  private static final File FILE = new File("programs/java8/normalization/2306307.java");
 
   public static void main(final String[] args) throws IOException {
     final Interpreter intrprtr = new Interpreter(FILE);

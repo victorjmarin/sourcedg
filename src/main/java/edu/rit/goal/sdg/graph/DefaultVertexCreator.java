@@ -3,7 +3,7 @@ package edu.rit.goal.sdg.graph;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import edu.rit.goal.sdg.interpreter.stmt.Assign;
 import edu.rit.goal.sdg.interpreter.stmt.BaseStmt;
@@ -182,7 +182,7 @@ public class DefaultVertexCreator implements VertexCreator {
     v.setSubtypes(subtypes);
   }
 
-  private Set<VertexSubtype> subtypesFromAst(final Expression ast) {
+  private Set<VertexSubtype> subtypesFromAst(final Node ast) {
     final Set<VertexSubtype> result = new HashSet<>();
     final Optional<MethodCallExpr> optMethodCall = ast.findFirst(MethodCallExpr.class);
     if (optMethodCall.isPresent()) {
