@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import edu.rit.goal.sdg.interpreter.Translator;
@@ -51,6 +52,7 @@ import edu.rit.goal.sdg.java8.antlr4.JavaParser.FormalParameterListContext;
 import edu.rit.goal.sdg.java8.antlr4.JavaParser.ImportDeclarationContext;
 import edu.rit.goal.sdg.java8.antlr4.JavaParser.LocalVariableDeclarationContext;
 import edu.rit.goal.sdg.java8.antlr4.JavaParser.MemberDeclarationContext;
+import edu.rit.goal.sdg.java8.antlr4.JavaParser.MethodDeclarationContext;
 import edu.rit.goal.sdg.java8.antlr4.JavaParser.PackageDeclarationContext;
 import edu.rit.goal.sdg.java8.antlr4.JavaParser.StatementContext;
 import edu.rit.goal.sdg.java8.antlr4.JavaParser.TypeDeclarationContext;
@@ -145,8 +147,19 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
     return new ParseResult(cls);
   }
 
+  private boolean hasMethodParent(final ParserRuleContext ctx) {
+    if (ctx == null)
+      return false;
+    if (ctx instanceof MethodDeclarationContext)
+      return true;
+    return hasMethodParent(ctx.getParent());
+  }
+
   @Override
   public ParseResult visitClassDeclaration(final JavaParser.ClassDeclarationContext ctx) {
+    // Workaround for methods containing class declarations
+    if (hasMethodParent(ctx))
+      return new ParseResult(new Skip());
     className = ctx.IDENTIFIER().getText();
     // Class body
     final ClassBodyContext clsBodyCtx = ctx.classBody();
