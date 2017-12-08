@@ -13,7 +13,6 @@ import edu.rit.goal.sdg.interpreter.params.EmptyParam;
 import edu.rit.goal.sdg.interpreter.params.Param;
 import edu.rit.goal.sdg.interpreter.stmt.Assign;
 import edu.rit.goal.sdg.interpreter.stmt.Break;
-import edu.rit.goal.sdg.interpreter.stmt.CUnit;
 import edu.rit.goal.sdg.interpreter.stmt.Call;
 import edu.rit.goal.sdg.interpreter.stmt.Cls;
 import edu.rit.goal.sdg.interpreter.stmt.Continue;
@@ -115,8 +114,7 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
       stmts.add(pr.getStmt());
     }
     final Stmt seq = Translator.seq(stmts);
-    final CUnit res = new CUnit(seq);
-    return new ParseResult(res);
+    return new ParseResult(seq);
   }
 
   @Override

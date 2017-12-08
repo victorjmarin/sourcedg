@@ -1,7 +1,5 @@
 package edu.rit.goal.sdg.java8.normalization;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -42,46 +40,41 @@ public class Normalizer {
   private final Logger logger = Logger.getLogger(SourceDGJavaVisitor.LOGGER_PARSING);
 
   private int varId = 0;
-  private final File program;
+  private final String program;
   private final List<ExpressionStmt> expressions = new ArrayList<>();
   private final List<ModifierVisitor<Void>> visitors;
   private final HashMap<NameExpr, ExpressionStmt> mAss;
 
-  public Normalizer(final File program) {
+  public Normalizer(final String program) {
     this.program = program;
     visitors = new ArrayList<>();
     mAss = new HashMap<>();
   }
 
   public String normalize() {
-    try {
-      visitors.add(new ForStmtUpdateVisitor());
-      visitors.add(new ForeachStmtVisitor());
-      visitors.add(new MethodCallVisitor());
-      visitors.add(new AssignExprVisitor());
-      visitors.add(new BinaryExprVisitor());
-      visitors.add(new ArrayCreationExprVisitor());
-      visitors.add(new WhileStmtVisitor());
-      visitors.add(new ForStmtVisitor());
-      visitors.add(new DoStmtVisitor());
-      visitors.add(new EnclosedExprVisitor());
+    visitors.add(new ForStmtUpdateVisitor());
+    visitors.add(new ForeachStmtVisitor());
+    visitors.add(new MethodCallVisitor());
+    visitors.add(new AssignExprVisitor());
+    visitors.add(new BinaryExprVisitor());
+    visitors.add(new ArrayCreationExprVisitor());
+    visitors.add(new WhileStmtVisitor());
+    visitors.add(new ForStmtVisitor());
+    visitors.add(new DoStmtVisitor());
+    visitors.add(new EnclosedExprVisitor());
 
-      CompilationUnit cu;
-      cu = JavaParser.parse(program);
-      String newCu = null;
-      for (final ModifierVisitor<Void> mv : visitors) {
-        cu.accept(mv, null);
-        newCu = cu.toString();
-        // System.out.println(mv.getClass().getSimpleName());
-        // System.out.println();
-        // System.out.println(newCu);
-        cu = JavaParser.parse(newCu);
-      }
-      return cu.toString();
-    } catch (final FileNotFoundException e) {
-      e.printStackTrace();
+    CompilationUnit cu;
+    cu = JavaParser.parse(program);
+    String newCu = null;
+    for (final ModifierVisitor<Void> mv : visitors) {
+      cu.accept(mv, null);
+      newCu = cu.toString();
+      // System.out.println(mv.getClass().getSimpleName());
+      // System.out.println();
+      // System.out.println(newCu);
+      cu = JavaParser.parse(newCu);
     }
-    return null;
+    return cu.toString();
   }
 
   private class ArrayCreationExprVisitor extends ModifierVisitor<Void> {

@@ -10,6 +10,9 @@ import static edu.rit.goal.sdg.interpreter.pattern.OtherwisePattern.otherwise;
 import static edu.rit.goal.sdg.interpreter.pattern.PatternMatching.$;
 import static edu.rit.goal.sdg.interpreter.pattern.VertexTypePattern.caseof;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -81,8 +84,12 @@ public class Interpreter {
   private final VertexCreator vertexCreator;
   private final HashMap<String, Vertex> mEntryVertices;
 
-  public Interpreter(final File file) {
-    this(new Translator(file).parse());
+  public Interpreter(final File file) throws IOException {
+    this(new String(Files.readAllBytes(Paths.get(file.getPath()))));
+  }
+
+  public Interpreter(final String program) {
+    this(new Translator(program).parse());
   }
 
   public Interpreter(final Stmt stmt) {
@@ -342,29 +349,30 @@ public class Interpreter {
 
   private Program compilationUnitRule(final Program program) {
     printRule("compilationUnitRule");
-    final CUnit s = (CUnit) program.s;
-    final Vertex v = vertexCreator.compilationUnitVertex(s);
-    program.sdg.addVertex(v);
-    program.s = new EdgeStmt(EdgeType.MEMBER_OF, v, s.s);
+    // final CUnit s = (CUnit) program.s;
+    // final Vertex v = vertexCreator.compilationUnitVertex(s);
+    // program.sdg.addVertex(v);
+    // program.s = new EdgeStmt(EdgeType.MEMBER_OF, v, s.s);
+    program.s = new Skip();
     return program;
   }
 
   private Program packageRule(final Program program) {
     printRule("pkgRule");
-    final Pkg s = (Pkg) program.s;
-    final Vertex v = vertexCreator.packageVertex(s);
-    program.sdg.addVertex(v);
-    program.Ve.add(v);
+    // final Pkg s = (Pkg) program.s;
+    // final Vertex v = vertexCreator.packageVertex(s);
+    // program.sdg.addVertex(v);
+    // program.Ve.add(v);
     program.s = new Skip();
     return program;
   }
 
   private Program importRule(final Program program) {
     printRule("importRule");
-    final Import s = (Import) program.s;
-    final Vertex v = vertexCreator.importVertex(s);
-    program.sdg.addVertex(v);
-    program.Ve.add(v);
+    // final Import s = (Import) program.s;
+    // final Vertex v = vertexCreator.importVertex(s);
+    // program.sdg.addVertex(v);
+    // program.Ve.add(v);
     program.s = new Skip();
     return program;
   }

@@ -1,6 +1,5 @@
 package edu.rit.goal.sdg.interpreter;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -21,7 +20,6 @@ import edu.rit.goal.sdg.DefUsesUtils;
 import edu.rit.goal.sdg.interpreter.params.EmptyParam;
 import edu.rit.goal.sdg.interpreter.params.Param;
 import edu.rit.goal.sdg.interpreter.params.Params;
-import edu.rit.goal.sdg.interpreter.stmt.CUnit;
 import edu.rit.goal.sdg.interpreter.stmt.Call;
 import edu.rit.goal.sdg.interpreter.stmt.Seq;
 import edu.rit.goal.sdg.interpreter.stmt.Skip;
@@ -40,7 +38,6 @@ import edu.rit.goal.sdg.java8.normalization.Normalizer;
 
 public class Translator {
 
-  private final String cUnitName;
   private final Language lang;
   private final CharStream charStream;
 
@@ -48,11 +45,9 @@ public class Translator {
     JAVA, PYTHON
   }
 
-  public Translator(final File file) {
-    cUnitName = file.getName();
-    final String path = file.getPath();
-    lang = detectLang(path);
-    final Normalizer exprNorm = new Normalizer(file);
+  public Translator(final String program) {
+    lang = Language.JAVA;
+    final Normalizer exprNorm = new Normalizer(program);
     final String normalizedProgram = exprNorm.normalize();
     charStream = CharStreams.fromString(normalizedProgram);
   }
@@ -73,7 +68,6 @@ public class Translator {
         tree = ((JavaParser) parser).compilationUnit();
         visitor = new SourceDGJavaVisitor(this);
         result = visitor.visit(tree).getStmt();
-        ((CUnit) result).x = cUnitName;
         break;
       case PYTHON:
         break;
