@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
@@ -34,8 +35,11 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.PrimitiveType;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.visitor.ModifierVisitor;
+import edu.rit.goal.sdg.java8.antlr4.SourceDGJavaVisitor;
 
 public class Normalizer {
+  
+  private final Logger logger = Logger.getLogger(SourceDGJavaVisitor.LOGGER_PARSING);
 
   private int varId = 0;
   private final File program;
@@ -51,6 +55,7 @@ public class Normalizer {
 
   public String normalize() {
     try {
+      visitors.add(new ForStmtUpdateVisitor());
       visitors.add(new ForeachStmtVisitor());
       visitors.add(new MethodCallVisitor());
       visitors.add(new AssignExprVisitor());
@@ -83,6 +88,8 @@ public class Normalizer {
     @Override
     public Node visit(final ArrayCreationExpr expr, final Void args) {
       super.visit(expr, args);
+      if (hasSuperParent(expr))
+        return expr;
       final String variableName = nextVarId();
       final SearchResult sr = findBlockStmt(expr);
       if (sr == null)
@@ -102,6 +109,20 @@ public class Normalizer {
       if (cond.isPresent()) {
         final Statement newBody = solveCondDeps(cond.get(), stmt.getBody());
         stmt.setBody(newBody);
+      }
+      return stmt;
+    }
+  }
+
+  // Remove for update and put at the end of body
+  private class ForStmtUpdateVisitor extends ModifierVisitor<Void> {
+    @Override
+    public Node visit(final ForStmt stmt, final Void args) {
+      super.visit(stmt, args);
+      final NodeList<Expression> updateNodeLst = stmt.getUpdate();
+      if (!updateNodeLst.isEmpty()) {
+        final Expression update = updateNodeLst.remove(0);
+        addToBody(stmt.getBody(), update);
       }
       return stmt;
     }
@@ -425,7 +446,7 @@ public class Normalizer {
     // TODO: Body might be an expression instead of a block
     final Optional<Node> n = expr.getParentNode();
     if (!n.isPresent()) {
-      System.out.println("[WARN] No parent block found for " + original.toString());
+      logger.warning("No parent block found for " + original.toString());
       return null;
     }
     if (n.get() instanceof BlockStmt) {

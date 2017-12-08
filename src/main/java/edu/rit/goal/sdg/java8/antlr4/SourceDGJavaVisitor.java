@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Logger;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import edu.rit.goal.sdg.interpreter.Translator;
@@ -65,10 +66,16 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
   private String className;
   private final Translator translator;
 
+  public static final String LOGGER_PARSING = "LOGGER_PARSING";
+
+  private final Logger logger = Logger.getLogger(SourceDGJavaVisitor.LOGGER_PARSING);
+
   // Current variable type
   private String type;
 
   public SourceDGJavaVisitor(final Translator translator) {
+    // Do not log warnings
+    logger.setUseParentHandlers(false);
     this.translator = translator;
   }
 
@@ -98,6 +105,13 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
     }
     for (final TypeDeclarationContext c : ctx.typeDeclaration()) {
       pr = visit(c);
+      // Unsupported Java feature
+      if (pr == null)
+        continue;
+      else if (pr.getStmt() == null) {
+        logger.warning("Missing visitor for " + pr.getValue());
+        continue;
+      }
       stmts.add(pr.getStmt());
     }
     final Stmt seq = Translator.seq(stmts);
@@ -142,6 +156,8 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
     final List<Stmt> clsBodyStmts = new ArrayList<>();
     for (final ClassBodyDeclarationContext c : clsBodyDeclCtx) {
       final ParseResult pr = visit(c);
+      if (pr == null)
+        continue;
       clsBodyStmts.add(pr.getStmt());
     }
     final Stmt clsBody = Translator.seq(clsBodyStmts);
@@ -149,8 +165,41 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
     return new ParseResult(cls);
   }
 
-  /*
-   * Non-terminal rules
+  @Override
+  public ParseResult visitInterfaceTypeDeclaration(
+      final JavaParser.InterfaceTypeDeclarationContext ctx) {
+    printUnsupported("visitInterfaceTypeDeclaration", ctx.getText());
+    return new ParseResult(new Skip());
+  }
+
+  @Override
+  public ParseResult visitInterfaceDeclaration(final JavaParser.InterfaceDeclarationContext ctx) {
+    printUnsupported("visitInterfaceDeclaration", ctx.getText());
+    return new ParseResult(new Skip());
+  }
+
+  @Override
+  public ParseResult visitEnumDeclaration(final JavaParser.EnumDeclarationContext ctx) {
+    printUnsupported("visitEnumDeclaration", ctx.getText());
+    return visitChildren(ctx);
+  }
+
+  @Override
+  public ParseResult visitEnumTypeDeclaration(final JavaParser.EnumTypeDeclarationContext ctx) {
+    printUnsupported("visitEnumTypeDeclaration", ctx.getText());
+    return visitChildren(ctx);
+  }
+
+  @Override
+  public ParseResult visitEnumBodyDeclarations(final JavaParser.EnumBodyDeclarationsContext ctx) {
+    printUnsupported("visitEnumBodyDeclarations", ctx.getText());
+    return visitChildren(ctx);
+  }
+
+  /**
+   * 
+   * 
+   * /* Non-terminal rules
    * 
    * Helper rule to produce statements.
    */
@@ -257,7 +306,9 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
     final boolean b = !returnType.equals("void");
     // if pr3 is null, then the method is abstract most likely
     final ParseResult pr3 = visit(ctx.methodBody());
-    final Stmt body = pr3.getStmt();
+    Stmt body = new Skip();
+    if (pr3 != null)
+      body = pr3.getStmt();
     final Def def = new Def(b, methodName, params, body);
     // Start and end lines of the method
     def.startLine = ctx.getStart().getLine();
@@ -359,8 +410,10 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
 
   @Override
   public ParseResult visitLastFormalParameter(final JavaParser.LastFormalParameterContext ctx) {
-    printUnsupported("visitLastFormalParameter", ctx.getText());
-    return visitChildren(ctx);
+    final Str paramStr = Translator.formalParam(ctx.variableDeclaratorId());
+    final Param param = Translator.param(paramStr, true);
+    // TODO: Model modifiers and types of parameters
+    return new ParseResult(param);
   }
 
   @Override
@@ -454,7 +507,7 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
   @Override
   public ParseResult visitAssertStmt(final JavaParser.AssertStmtContext ctx) {
     printUnsupported("visitAssertStmt", ctx.getText());
-    return visitChildren(ctx);
+    return new ParseResult(new Skip());
   }
 
   @Override
@@ -465,17 +518,13 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
     if (size > 0) {
       final StatementContext thenBranch = ctx.statement(0);
       final ParseResult pr = visit(thenBranch);
-      if (pr == null)
-        s1 = new Skip();
-      else
+      if (pr != null)
         s1 = pr.getStmt();
     }
     if (size > 1) {
       final StatementContext elseBranch = ctx.statement(1);
       final ParseResult pr = visit(elseBranch);
-      if (pr == null)
-        s2 = new Skip();
-      else
+      if (pr != null)
         s2 = pr.getStmt();
     }
     final ExpressionContext exprCtx = ctx.parExpression().expression();
@@ -490,10 +539,14 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
   @Override
   public ParseResult visitForStmt(final JavaParser.ForStmtContext ctx) {
     Stmt result = null;
-    final Stmt s = visit(ctx.statement()).getStmt();
+    final ParseResult pr1 = visit(ctx.statement());
+    Stmt s = new Skip();
+    // If pr1 is null, for had no body (common for listeners)
+    if (pr1 != null)
+      s = pr1.getStmt();
     final ForControlContext forCtrlCtx = ctx.forControl();
-    final ParseResult pr = visit(forCtrlCtx);
-    final ForControl forControl = (ForControl) pr.getStmt();
+    final ParseResult pr2 = visit(forCtrlCtx);
+    final ForControl forControl = (ForControl) pr2.getStmt();
     // TODO: Support for initialization and update of multiple variables
     final Stmt si = forControl.si;
     final Stmt sc = forControl.sc;
@@ -533,7 +586,11 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
     final String txt = translator.originalCode(exprCtx);
     final Expr e = new Str(txt, exprCtx);
     final StatementContext stmtCtx = ctx.statement();
-    final Stmt s = visit(stmtCtx).getStmt();
+    final ParseResult pr = visit(stmtCtx);
+    Stmt s = new Skip();
+    // If pr is null, while had no body (common for listeners)
+    if (pr != null)
+      s = pr.getStmt();
     final While result = new While(e, s);
     final Set<String> uses = JavaUtils.uses(exprCtx);
     result.setUses(uses);
@@ -609,7 +666,7 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
   @Override
   public ParseResult visitThrowStmt(final JavaParser.ThrowStmtContext ctx) {
     printUnsupported("visitThrowStmt", ctx.getText());
-    return visitChildren(ctx);
+    return new ParseResult(new Skip());
   }
 
   @Override
@@ -650,7 +707,7 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
     final boolean isMethodCall =
         exprCtx.expressionList() != null || Translator.isEmptyArgCall(exprCtx);
     final boolean isCreator = exprCtx.creator() != null;
-    // Distinguish between assignment, call, pre-, post- operators
+    // Distinguish between assignment, call, pre-, post-operators
     if (bop != null) {
       final boolean isShortHand = Translator.isShortHandOperator(bop.getText());
       final boolean isAssign = isShortHand || "=".equals(bop.getText());
@@ -672,7 +729,8 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
         final Set<String> uses = JavaUtils.uses(exprCtx);
         result.setUses(uses);
       }
-    } else if (exprCtx.prefix != null) {
+      // Prefix can also be !, so check for -- or ++
+    } else if (exprCtx.prefix != null && "--++".contains(exprCtx.prefix.getText())) {
       final ExpressionContext exprCtx2 = exprCtx.expression(0);
       final String x = exprCtx2.getText();
       result = new PreOp(x, exprCtx.prefix.getText());
@@ -680,7 +738,7 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
       final Set<String> uses = new HashSet<>();
       uses.add(x);
       result.setUses(uses);
-    } else if (exprCtx.postfix != null) {
+    } else if (exprCtx.postfix != null && "--++".contains(exprCtx.postfix.getText())) {
       final ExpressionContext exprCtx2 = exprCtx.expression(0);
       final String x = exprCtx2.getText();
       result = new PostOp(x, exprCtx.postfix.getText());
@@ -699,15 +757,19 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
       final Set<String> uses = JavaUtils.uses(exprCtx);
       result.setUses(uses);
     }
+    if (result == null)
+      System.out.println(1);
     return result;
   }
 
   public Stmt assign(final ExpressionContext exprCtx, final boolean isShortHand) {
     final String x = exprCtx.expression(0).getText();
     final String op = exprCtx.bop.getText();
-    final Str e = new Str(exprCtx.expression(1).getText());
+    final ExpressionContext initExpr = exprCtx.expression(1);
+    final String txt = translator.originalCode(initExpr);
+    final Str e = new Str(txt, initExpr);
     final Assign result = new Assign(x, op, e);
-    final Set<String> uses = JavaUtils.uses(exprCtx.expression(1));
+    final Set<String> uses = JavaUtils.uses(initExpr);
     result.setDef(x);
     result.setUses(uses);
     if (isShortHand)
@@ -738,7 +800,7 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
   }
 
   private void printUnsupported(final String methodName, final String sourceCode) {
-    System.err.println("Unsupported " + methodName + ":\n\t" + sourceCode);
+    logger.warning("Unsupported " + methodName + ":\n\t" + sourceCode);
   }
 
   public List<Str> params(final ExpressionListContext ctx) {

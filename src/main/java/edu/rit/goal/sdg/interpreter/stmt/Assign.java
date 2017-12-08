@@ -26,7 +26,7 @@ public class Assign extends BaseStmt {
         ast = JavaParser.parseStatement(toParse);
       }
     } catch (final Exception ex2) {
-      System.out.println("[WARN] Could not build ast for assignment \n\t" + toParse);
+      logger.warning("[WARN] Could not build ast for assignment \n\t" + toParse);
     }
   }
 

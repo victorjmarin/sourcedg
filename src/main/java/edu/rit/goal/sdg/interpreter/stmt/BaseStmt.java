@@ -1,9 +1,13 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
 import java.util.Set;
+import java.util.logging.Logger;
 import com.github.javaparser.ast.Node;
+import edu.rit.goal.sdg.java8.antlr4.SourceDGJavaVisitor;
 
 public abstract class BaseStmt implements Stmt {
+
+  protected final Logger logger = Logger.getLogger(SourceDGJavaVisitor.LOGGER_PARSING);
 
   protected int indentationLevel;
   protected String indentation;

@@ -1,5 +1,6 @@
 package edu.rit.goal.sdg.interpreter.stmt;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -11,7 +12,8 @@ public class Cls extends BaseStmt {
 
   public Cls(final String x, final Stmt body) {
     this.x = x;
-    this.s = body;
+    s = body;
+    mods = new ArrayList<>();
   }
 
   @Override

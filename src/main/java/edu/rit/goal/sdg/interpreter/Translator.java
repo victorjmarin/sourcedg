@@ -32,6 +32,7 @@ import edu.rit.goal.sdg.java8.antlr4.JavaParser;
 import edu.rit.goal.sdg.java8.antlr4.JavaParser.ExpressionContext;
 import edu.rit.goal.sdg.java8.antlr4.JavaParser.ExpressionListContext;
 import edu.rit.goal.sdg.java8.antlr4.JavaParser.FormalParameterContext;
+import edu.rit.goal.sdg.java8.antlr4.JavaParser.VariableDeclaratorIdContext;
 import edu.rit.goal.sdg.java8.antlr4.ParseResult;
 import edu.rit.goal.sdg.java8.antlr4.SourceDGJavaVisitor;
 import edu.rit.goal.sdg.java8.normalization.Normalizer;
@@ -85,6 +86,12 @@ public class Translator {
     return result;
   }
 
+  public static Param param(final Str param, final boolean isFormal) {
+    final List<Str> lst = new ArrayList<>();
+    lst.add(param);
+    return param(lst, isFormal);
+  }
+
   public static Param param(final List<Str> params, final boolean isFormal) {
     Param result = null;
     if (params == null || params.isEmpty()) {
@@ -110,6 +117,13 @@ public class Translator {
       final Str str = new Str(txt, exprCtx);
       result.add(str);
     }
+    return result;
+  }
+
+  public static Str formalParam(final VariableDeclaratorIdContext ctx) {
+    final TerminalNode identifier = ctx.IDENTIFIER();
+    final String paramName = identifier.getText();
+    final Str result = new Str(paramName, identifier);
     return result;
   }
 
