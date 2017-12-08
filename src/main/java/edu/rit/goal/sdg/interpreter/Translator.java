@@ -2,6 +2,7 @@ package edu.rit.goal.sdg.interpreter;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -138,6 +139,10 @@ public class Translator {
       }
     }
     return result;
+  }
+
+  public static Stmt seq(final Stmt... stmts) {
+    return seq(Arrays.asList(stmts));
   }
 
   public static Stmt seq(final List<Stmt> stmts) {

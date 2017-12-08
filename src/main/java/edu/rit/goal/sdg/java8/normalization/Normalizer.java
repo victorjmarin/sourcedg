@@ -38,7 +38,7 @@ import com.github.javaparser.ast.visitor.ModifierVisitor;
 import edu.rit.goal.sdg.java8.antlr4.SourceDGJavaVisitor;
 
 public class Normalizer {
-  
+
   private final Logger logger = Logger.getLogger(SourceDGJavaVisitor.LOGGER_PARSING);
 
   private int varId = 0;
@@ -395,8 +395,12 @@ public class Normalizer {
   private Expression recNorm(final AssignExpr expr) {
     final ExpressionStmt assign = new ExpressionStmt(expr);
     expressions.add(assign);
-    final NameExpr name = (NameExpr) expr.getTarget();
-    mAss.put(name, assign);
+    final Expression target = expr.getTarget();
+    if (target instanceof NameExpr) {
+      final NameExpr name = (NameExpr) expr.getTarget();
+      mAss.put(name, assign);
+    } else
+      logger.warning("Not mapped -> " + target);
     final Expression result = expr.getTarget();
     return result;
   }

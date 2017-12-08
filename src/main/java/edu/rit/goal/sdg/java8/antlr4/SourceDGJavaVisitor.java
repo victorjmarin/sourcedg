@@ -160,6 +160,8 @@ public class SourceDGJavaVisitor extends JavaParserBaseVisitor<ParseResult> {
         continue;
       clsBodyStmts.add(pr.getStmt());
     }
+    // Required because className might be overwritten by inner classes while processing class
+    className = ctx.IDENTIFIER().getText();
     final Stmt clsBody = Translator.seq(clsBodyStmts);
     final Cls cls = new Cls(className, clsBody);
     return new ParseResult(cls);
