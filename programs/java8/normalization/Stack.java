@@ -2,14 +2,11 @@
 public class Stack {
 
   public void m1(int a) {
-    z = a + b;
-    x = 2;
+    System.out.println(a);
+    for (int i = 0; i < 20; i++) {
+      x = i;
+    }
+    k = 0;
   }
-  
-  public void m2(int a) {
-    z = a + b;
-    x = 2;
-  }
-
 
 }

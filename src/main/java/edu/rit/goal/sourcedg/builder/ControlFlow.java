@@ -30,6 +30,13 @@ public class ControlFlow {
     this.out = new HashSet<>(out);
   }
 
+  public ControlFlow(final Set<Vertex> in, final Vertex out) {
+    this.in = in;
+    this.out = new HashSet<>();
+    this.out.add(out);
+
+  }
+
   public ControlFlow(final Set<Vertex> in, final Set<Vertex> out) {
     this.in = new HashSet<>(in);
     this.out = new HashSet<>(out);

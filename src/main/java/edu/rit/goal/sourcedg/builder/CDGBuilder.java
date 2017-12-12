@@ -15,6 +15,7 @@ import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.UnaryExpr;
 import com.github.javaparser.ast.expr.UnaryExpr.Operator;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
@@ -81,6 +82,8 @@ public class CDGBuilder {
       result = variableDeclarator((VariableDeclarator) n);
     else if (n instanceof AssignExpr)
       result = assignExpr((AssignExpr) n);
+    else if (n instanceof MethodCallExpr)
+      result = methodCallExpr((MethodCallExpr) n);
     else if (n instanceof UnaryExpr)
       result = unaryExpr((UnaryExpr) n);
     else if (n instanceof ReturnStmt)
@@ -150,16 +153,17 @@ public class CDGBuilder {
   }
 
   private ControlFlow variableDeclarationExpr(final VariableDeclarationExpr n) {
+    final List<ControlFlow> flow = new ArrayList<>();
     for (final VariableDeclarator v : n.getVariables())
-      _build(v);
-    return null;
+      flow.add(_build(v));
+    return cfgBuilder.seq(flow);
   }
 
   private ControlFlow variableDeclarator(final VariableDeclarator n) {
     final Vertex v = vtxCreator.variableDeclarator(n);
     cdg.addVertex(v);
     inScope.add(v);
-    return null;
+    return new ControlFlow(v, v);
   }
 
   private ControlFlow assignExpr(final AssignExpr n) {
@@ -167,6 +171,28 @@ public class CDGBuilder {
     cdg.addVertex(v);
     inScope.add(v);
     return new ControlFlow(v, v);
+  }
+
+  private ControlFlow methodCallExpr(final MethodCallExpr n) {
+    final Vertex v = vtxCreator.methodCallExpr(n);
+    cdg.addVertex(v);
+    inScope.add(v);
+    final NodeList<Expression> args = n.getArguments();
+    final List<ControlFlow> argFlow = new ArrayList<>();
+    argFlow.add(new ControlFlow(v, v));
+    for (final Expression e : args) {
+      final Vertex a = argumentExpr(e);
+      addEdge(EdgeType.CTRL_TRUE, v, a);
+      argFlow.add(new ControlFlow(a, a));
+    }
+    final ControlFlow result = cfgBuilder.seq(argFlow);
+    return result;
+  }
+
+  private Vertex argumentExpr(final Expression e) {
+    final Vertex v = vtxCreator.argumentExpr(e);
+    cdg.addVertex(v);
+    return v;
   }
 
   private ControlFlow unaryExpr(final UnaryExpr n) {
@@ -179,38 +205,41 @@ public class CDGBuilder {
         final Vertex v = vtxCreator.unaryExpr(n);
         cdg.addVertex(v);
         inScope.add(v);
-        break;
+        return new ControlFlow(v, v);
       default:
         System.out.println("Operation " + op + " not considered.");
     }
-    return null;
+    return new ControlFlow();
   }
 
   private ControlFlow returnStmt(final ReturnStmt n) {
     final Vertex v = vtxCreator.returnStmt(n);
     cdg.addVertex(v);
     inScope.add(v);
-    return null;
+    return new ControlFlow(v, CFGBuilder.EXIT);
   }
 
   private ControlFlow forStmt(final ForStmt n) {
     final NodeList<Expression> init = n.getInitialization();
+    final List<ControlFlow> initFlow = new ArrayList<>();
     for (final Expression e : init)
-      _build(e);
+      initFlow.add(_build(e));
     final Vertex v = vtxCreator.forStmt(n);
     cdg.addVertex(v);
     inScope.add(v);
     pushScope();
     final Statement body = n.getBody();
-    _build(body);
+    final ControlFlow bodyFlow = _build(body);
     final NodeList<Expression> update = n.getUpdate();
+    final List<ControlFlow> updateFlow = new ArrayList<>();
     for (final Expression e : update)
-      _build(e);
+      updateFlow.add(_build(e));
     addEdges(EdgeType.CTRL_TRUE, v, inScope);
     // Self edge
     addEdge(EdgeType.CTRL_TRUE, v, v);
     popScope();
-    return null;
+    final ControlFlow result = cfgBuilder.forStmt(v, initFlow, updateFlow, bodyFlow);
+    return result;
   }
 
   private ControlFlow whileStmt(final WhileStmt n) {
@@ -219,12 +248,13 @@ public class CDGBuilder {
     inScope.add(v);
     pushScope();
     final Statement body = n.getBody();
-    _build(body);
+    final ControlFlow bodyFlow = _build(body);
     addEdges(EdgeType.CTRL_TRUE, v, inScope);
     // Self edge
     addEdge(EdgeType.CTRL_TRUE, v, v);
     popScope();
-    return null;
+    final ControlFlow result = cfgBuilder.whileStmt(v, bodyFlow);
+    return result;
   }
 
   private ControlFlow doStmt(final DoStmt n) {
@@ -233,7 +263,7 @@ public class CDGBuilder {
     inScope.add(v);
     pushScope();
     final Statement body = n.getBody();
-    _build(body);
+    final ControlFlow bodyFlow = _build(body);
     addEdges(EdgeType.CTRL_TRUE, v, inScope);
     // Self edge
     addEdge(EdgeType.CTRL_TRUE, v, v);
@@ -241,7 +271,8 @@ public class CDGBuilder {
     popScope();
     // Restore old scope so that edges from the outer control vertex are created
     inScope.addAll(oldScope);
-    return null;
+    final ControlFlow result = cfgBuilder.doStmt(v, bodyFlow);
+    return result;
   }
 
   private ControlFlow ifStmt(final IfStmt n) {

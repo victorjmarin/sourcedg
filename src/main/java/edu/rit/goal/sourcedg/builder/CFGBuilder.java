@@ -18,21 +18,50 @@ public class CFGBuilder {
   // CFG under construction
   private CFG cfg;
 
+  // Exit vertex used to break flow (return, break)
+  public static final Vertex EXIT = new Vertex("EXIT");
+
   public CFGBuilder() {
     m = new HashMap<>();
     cfg = new CFG();
   }
 
-  public ControlFlow methodDeclaration(final Vertex v, final List<ControlFlow> params, final ControlFlow bodyFlow) {
-    cfg.addVertex(v);
+  public ControlFlow methodDeclaration(final Vertex v, final List<ControlFlow> params,
+      final ControlFlow bodyFlow) {
     final ControlFlow paramFlow = seq(params);
     connect(connect(v, paramFlow), bodyFlow);
     return new ControlFlow(v, bodyFlow.getOut());
   }
 
-  public ControlFlow ifStmt(final Vertex v, final ControlFlow thenFlow, final ControlFlow elseFlow) {
+  public ControlFlow whileStmt(final Vertex v, final ControlFlow bodyFlow) {
+    connect(v, bodyFlow);
+    connect(bodyFlow, v);
+    return new ControlFlow(v, v);
+  }
+
+  public ControlFlow doStmt(final Vertex v, final ControlFlow bodyFlow) {
+    connect(bodyFlow, v);
+    connect(v, bodyFlow);
+    return new ControlFlow(bodyFlow.getIn(), v);
+  }
+
+  public ControlFlow forStmt(final Vertex v, final List<ControlFlow> init,
+      final List<ControlFlow> update, final ControlFlow bodyFlow) {
+    final ControlFlow initFlow = seq(init);
+    final ControlFlow updateFlow = seq(update);
+    connect(initFlow, v);
+    connect(v, bodyFlow);
+    if (updateFlow != null) {
+      connect(bodyFlow, updateFlow);
+      connect(updateFlow, v);
+    } else
+      connect(bodyFlow, v);
+    return new ControlFlow(initFlow.getIn(), v);
+  }
+
+  public ControlFlow ifStmt(final Vertex v, final ControlFlow thenFlow,
+      final ControlFlow elseFlow) {
     final Set<Vertex> out = new HashSet<>();
-    cfg.addVertex(v);
     connect(v, thenFlow);
     out.addAll(thenFlow.getOut());
     if (elseFlow == null)
@@ -55,10 +84,17 @@ public class CFGBuilder {
     return result;
   }
 
+  private ControlFlow connect(final ControlFlow f, final Vertex v) {
+    final ControlFlow fv = new ControlFlow(v, v);
+    return connect(f, fv);
+  }
+
   private ControlFlow connect(final ControlFlow f1, final ControlFlow f2) {
     for (final Vertex o : f1.getOut()) {
+      if (o == EXIT)
+        continue;
+      cfg.addVertex(o);
       for (final Vertex i : f2.getIn()) {
-        cfg.addVertex(o);
         cfg.addVertex(i);
         cfg.addEdge(o, i, new Edge(o, i, EdgeType.CTRL_TRUE));
       }
@@ -67,9 +103,12 @@ public class CFGBuilder {
   }
 
   private ControlFlow connect(final Vertex v, final ControlFlow f) {
-    for (final Vertex i : f.getIn()) {
-      cfg.addVertex(i);
-      cfg.addEdge(v, i, new Edge(v, i, EdgeType.CTRL_TRUE));
+    if (v != EXIT) {
+      cfg.addVertex(v);
+      for (final Vertex i : f.getIn()) {
+        cfg.addVertex(i);
+        cfg.addEdge(v, i, new Edge(v, i, EdgeType.CTRL_TRUE));
+      }
     }
     return new ControlFlow(v, f.getOut());
   }

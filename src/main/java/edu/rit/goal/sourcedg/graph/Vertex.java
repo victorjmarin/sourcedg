@@ -20,7 +20,8 @@ public class Vertex implements Serializable {
   private Set<Vertex> out;
   private Node ast;
 
-  public Vertex() {
+  public Vertex(final String label) {
+    this.label = label;
     uses = new HashSet<>();
     subtypes = new HashSet<>();
     in = new HashSet<>();

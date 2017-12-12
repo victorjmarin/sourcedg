@@ -11,6 +11,7 @@ import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.SimpleName;
 import com.github.javaparser.ast.expr.UnaryExpr;
 import com.github.javaparser.ast.stmt.DoStmt;
@@ -95,6 +96,7 @@ public class VertexCreator {
     return result;
   }
 
+  // TODO: Assign call?
   public Vertex assignExpr(final AssignExpr n) {
     final String label = n.toString();
     final Vertex result = new Vertex(VertexType.ASSIGN, label, n);
@@ -103,6 +105,22 @@ public class VertexCreator {
     setUses(n.getValue(), result);
     return result;
   }
+
+  public Vertex methodCallExpr(final MethodCallExpr n) {
+    final String label = n.toString();
+    final Vertex result = new Vertex(VertexType.CALL, label, n);
+    setId(result);
+    return result;
+  }
+
+  public Vertex argumentExpr(final Expression n) {
+    final String label = n.toString();
+    final Vertex result = new Vertex(VertexType.FORMAL_IN, label, n);
+    setId(result);
+    setUses(n, result);
+    return result;
+  }
+
 
   public Vertex unaryExpr(final UnaryExpr n) {
     final String label = n.toString();
