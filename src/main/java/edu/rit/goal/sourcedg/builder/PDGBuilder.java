@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.jgrapht.DirectedGraph;
 import com.github.javaparser.JavaParser;
@@ -21,6 +23,13 @@ import edu.rit.goal.sourcedg.graph.Vertex;
 import edu.rit.goal.sourcedg.normalization.Normalizer;
 
 public class PDGBuilder {
+
+  private static final Level LOG_LEVEL = Level.OFF;
+  public static final Logger logger = Logger.getLogger("PDG");
+
+  {
+    logger.setLevel(LOG_LEVEL);
+  }
 
   private PDG pdg;
   private Collection<CFG> cfgs;
@@ -45,13 +54,13 @@ public class PDGBuilder {
       final Pair<Vertex, List<Vertex>> callPair = e.getValue();
       final Pair<Vertex, List<Vertex>> defPair = methodParams.get(methodName);
       if (defPair == null) {
-        System.out.println("No definition found for call (" + methodName + ")");
+        logger.warning("No definition found for call (" + methodName + ")");
         continue;
       }
       final int callSize = callPair.b.size();
       final int defSize = defPair.b.size();
       if (callSize != defSize) {
-        System.out.println(
+        logger.warning(
             "Definition found for call (" + methodName + ") but number of parameters do not match ("
                 + callSize + " args. vs " + defSize + " params.)");
         continue;

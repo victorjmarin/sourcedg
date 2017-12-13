@@ -103,7 +103,7 @@ public class CDGBuilder {
     else if (n instanceof ReturnStmt)
       result = returnStmt((ReturnStmt) n);
     else
-      System.out.println("No match for " + n.getClass().getSimpleName());
+      PDGBuilder.logger.warning("No match for " + n.getClass().getSimpleName());
     return result;
   }
 
@@ -225,7 +225,7 @@ public class CDGBuilder {
         inScope.add(v);
         return new ControlFlow(v, v);
       default:
-        System.out.println("Operation " + op + " not considered.");
+        PDGBuilder.logger.warning("Operation " + op + " not considered.");
     }
     return new ControlFlow();
   }
