@@ -5,9 +5,9 @@ public class Stack {
       k = 7;
     j = 2;
   }
-  
+
   void m2() {
-    m1(2);
+    int z = m1(2);
   }
 
 }

@@ -180,34 +180,31 @@ public class CDGBuilder {
     final Vertex v = vtxCreator.variableDeclarator(n);
     cdg.addVertex(v);
     inScope.add(v);
-    return new ControlFlow(v, v);
+    ControlFlow result = new ControlFlow(v, v);
+    // Check for call
+    final Optional<Expression> init = n.getInitializer();
+    if (init.isPresent() && init.get() instanceof MethodCallExpr)
+      result = args((MethodCallExpr) init.get(), v);
+    return result;
   }
 
   private ControlFlow assignExpr(final AssignExpr n) {
     final Vertex v = vtxCreator.assignExpr(n);
     cdg.addVertex(v);
     inScope.add(v);
-    return new ControlFlow(v, v);
+    ControlFlow result = new ControlFlow(v, v);
+    // Check for call
+    final Expression value = n.getValue();
+    if (value instanceof MethodCallExpr)
+      result = args((MethodCallExpr) value, v);
+    return result;
   }
 
   private ControlFlow methodCallExpr(final MethodCallExpr n) {
     final Vertex v = vtxCreator.methodCallExpr(n);
     cdg.addVertex(v);
     inScope.add(v);
-    final NodeList<Expression> args = n.getArguments();
-    final List<ControlFlow> argFlow = new ArrayList<>();
-    final List<Vertex> paramVtcs = new ArrayList<>();
-    argFlow.add(new ControlFlow(v, v));
-    for (final Expression e : args) {
-      final Vertex a = argumentExpr(e);
-      addEdge(EdgeType.CTRL_TRUE, v, a);
-      argFlow.add(new ControlFlow(a, a));
-      paramVtcs.add(a);
-    }
-    final String methodName = currentClass + "." + n.getNameAsString();
-    calls.put(methodName, new Pair<>(v, paramVtcs));
-    final ControlFlow result = cfgBuilder.seq(argFlow);
-    return result;
+    return args(n, v);
   }
 
   private Vertex argumentExpr(final Expression e) {
@@ -317,6 +314,22 @@ public class CDGBuilder {
       elseFlow = _build(elseStmt.get());
     final ControlFlow result = cfgBuilder.ifStmt(v, thenFlow, elseFlow);
     return result;
+  }
+
+  private ControlFlow args(final MethodCallExpr call, final Vertex v) {
+    final NodeList<Expression> args = call.getArguments();
+    final List<ControlFlow> result = new ArrayList<>();
+    final List<Vertex> paramVtcs = new ArrayList<>();
+    result.add(new ControlFlow(v, v));
+    for (final Expression e : args) {
+      final Vertex a = argumentExpr(e);
+      addEdge(EdgeType.CTRL_TRUE, v, a);
+      result.add(new ControlFlow(a, a));
+      paramVtcs.add(a);
+    }
+    final String methodName = currentClass + "." + call.getNameAsString();
+    calls.put(methodName, new Pair<>(v, paramVtcs));
+    return cfgBuilder.seq(result);
   }
 
   private void addEdge(final EdgeType type, final Vertex source, final Vertex target) {

@@ -1,6 +1,6 @@
 package edu.rit.goal.sourcedg.builder;
 
-import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,21 +25,16 @@ public class PDGBuilder {
   private PDG pdg;
   private Collection<CFG> cfgs;
 
-  public void build(final FileInputStream in) {
+  public void build(final InputStream in) {
     CompilationUnit cu = JavaParser.parse(in);
-    System.out.println("Normalizing...");
     final Normalizer normalizer = new Normalizer(cu);
     cu = normalizer.normalize();
-    System.out.println("Building control dependence graph...");
     final CDGBuilder cdgBuilder = new CDGBuilder(cu);
     cdgBuilder.build();
     pdg = cdgBuilder.getCDG();
-    System.out.println("Computing inter-procedural calls...");
     computeInterProceduralCalls(cdgBuilder.getMethodParams(), cdgBuilder.getCalls());
     cfgs = cdgBuilder.getCfgs();
-    System.out.println("Computing data dependencies...");
     computeDataDependencies();
-    System.out.println("Done.");
   }
 
   private void computeInterProceduralCalls(
@@ -50,11 +45,14 @@ public class PDGBuilder {
       final Pair<Vertex, List<Vertex>> callPair = e.getValue();
       final Pair<Vertex, List<Vertex>> defPair = methodParams.get(methodName);
       if (defPair == null) {
-        System.out.println("No definition found for call " + methodName);
+        System.out.println("No definition found for call (" + methodName + ")");
         continue;
       }
-      if (callPair.b.size() != defPair.b.size()) {
-        System.out.println("Definition found but params do not match for call " + methodName);
+      final int callSize = callPair.b.size();
+      final int defSize = defPair.b.size();
+      if (callSize != defSize) {
+        System.out.println("Definition found for call (" + methodName
+            + ") but number of parameters do not match (" + callSize + " args. vs " + defSize + " params.)");
         continue;
       }
       final Vertex caller = callPair.a;
