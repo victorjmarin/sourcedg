@@ -2,12 +2,16 @@ package edu.rit.goal.sourcedg.builder;
 
 import java.io.FileInputStream;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.jgrapht.DirectedGraph;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.utils.Pair;
 import edu.rit.goal.sourcedg.graph.CFG;
 import edu.rit.goal.sourcedg.graph.Edge;
 import edu.rit.goal.sourcedg.graph.EdgeType;
@@ -26,19 +30,42 @@ public class PDGBuilder {
     System.out.println("Normalizing...");
     final Normalizer normalizer = new Normalizer(cu);
     cu = normalizer.normalize();
-    System.out.println("Building CDG...");
+    System.out.println("Building control dependence graph...");
     final CDGBuilder cdgBuilder = new CDGBuilder(cu);
     cdgBuilder.build();
     pdg = cdgBuilder.getCDG();
     System.out.println("Computing inter-procedural calls...");
-    computeInterProceduralCalls();
+    computeInterProceduralCalls(cdgBuilder.getMethodParams(), cdgBuilder.getCalls());
     cfgs = cdgBuilder.getCfgs();
     System.out.println("Computing data dependencies...");
     computeDataDependencies();
+    System.out.println("Done.");
   }
 
-  private void computeInterProceduralCalls() {
-
+  private void computeInterProceduralCalls(
+      final HashMap<String, Pair<Vertex, List<Vertex>>> methodParams,
+      final HashMap<String, Pair<Vertex, List<Vertex>>> calls) {
+    for (final Entry<String, Pair<Vertex, List<Vertex>>> e : calls.entrySet()) {
+      final String methodName = e.getKey();
+      final Pair<Vertex, List<Vertex>> callPair = e.getValue();
+      final Pair<Vertex, List<Vertex>> defPair = methodParams.get(methodName);
+      if (defPair == null) {
+        System.out.println("No definition found for call " + methodName);
+        continue;
+      }
+      if (callPair.b.size() != defPair.b.size()) {
+        System.out.println("Definition found but params do not match for call " + methodName);
+        continue;
+      }
+      final Vertex caller = callPair.a;
+      final Vertex callee = defPair.a;
+      pdg.addEdge(caller, callee, new Edge(caller, callee, EdgeType.CALL));
+      for (int i = 0; i < callPair.b.size(); i++) {
+        final Vertex callArg = callPair.b.get(i);
+        final Vertex defParam = defPair.b.get(i);
+        pdg.addEdge(callArg, defParam, new Edge(callArg, defParam, EdgeType.PARAM_IN));
+      }
+    }
   }
 
   private void computeDataDependencies() {

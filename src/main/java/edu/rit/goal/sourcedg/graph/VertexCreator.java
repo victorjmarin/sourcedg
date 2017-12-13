@@ -19,6 +19,7 @@ import com.github.javaparser.ast.stmt.ForStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
+import edu.rit.goal.sourcedg.util.Utils;
 
 public class VertexCreator {
 
@@ -115,7 +116,7 @@ public class VertexCreator {
 
   public Vertex argumentExpr(final Expression n) {
     final String label = n.toString();
-    final Vertex result = new Vertex(VertexType.FORMAL_IN, label, n);
+    final Vertex result = new Vertex(VertexType.ACTUAL_IN, label, n);
     setId(result);
     setUses(n, result);
     return result;
@@ -146,7 +147,7 @@ public class VertexCreator {
   }
 
   private void setDef(final Node n, final Vertex v) {
-    final String def = first(names(n));
+    final String def = Utils.first(names(n));
     v.setDef(def);
   }
 
@@ -161,12 +162,6 @@ public class VertexCreator {
       return new HashSet<>();
     return ast.findAll(SimpleName.class).stream().map(n -> n.getIdentifier())
         .collect(Collectors.toSet());
-  }
-
-  private String first(final Set<String> set) {
-    if (set == null || set.isEmpty())
-      return null;
-    return set.iterator().next();
   }
 
   public int getId() {

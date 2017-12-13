@@ -4,6 +4,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import com.github.javaparser.ast.CompilationUnit;
@@ -27,12 +28,14 @@ import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.WhileStmt;
+import com.github.javaparser.utils.Pair;
 import edu.rit.goal.sourcedg.graph.CFG;
 import edu.rit.goal.sourcedg.graph.Edge;
 import edu.rit.goal.sourcedg.graph.EdgeType;
 import edu.rit.goal.sourcedg.graph.PDG;
 import edu.rit.goal.sourcedg.graph.Vertex;
 import edu.rit.goal.sourcedg.graph.VertexCreator;
+import edu.rit.goal.sourcedg.util.Utils;
 
 /*
  * Builds the Control Dependence Subgraph
@@ -40,20 +43,31 @@ import edu.rit.goal.sourcedg.graph.VertexCreator;
 public class CDGBuilder {
 
   private final CompilationUnit cu;
-  private final VertexCreator vtxCreator;
-  private final CFGBuilder cfgBuilder;
+  private VertexCreator vtxCreator;
+  private CFGBuilder cfgBuilder;
+  private String currentClass;
+  private HashMap<String, Pair<Vertex, List<Vertex>>> methodParams;
+  private HashMap<String, Pair<Vertex, List<Vertex>>> calls;
 
-  private final PDG cdg;
-  private final Deque<List<Vertex>> inScopeStack;
+  private PDG cdg;
+  private Deque<List<Vertex>> inScopeStack;
   private List<Vertex> inScope;
 
   public CDGBuilder(final CompilationUnit cu) {
     this.cu = cu;
+  }
+
+  public void build() {
     vtxCreator = new VertexCreator();
     cfgBuilder = new CFGBuilder();
     cdg = new PDG();
     inScopeStack = new ArrayDeque<>();
     inScope = new ArrayList<>();
+    methodParams = new HashMap<>();
+    calls = new HashMap<>();
+    final List<Node> children = cu.getChildNodes();
+    for (final Node n : children)
+      _build(n);
   }
 
   public ControlFlow _build(final Node n) {
@@ -88,15 +102,9 @@ public class CDGBuilder {
       result = unaryExpr((UnaryExpr) n);
     else if (n instanceof ReturnStmt)
       result = returnStmt((ReturnStmt) n);
-    else {}
-      //System.out.println("No match for " + n.getClass().getSimpleName());
+    else
+      System.out.println("No match for " + n.getClass().getSimpleName());
     return result;
-  }
-
-  public void build() {
-    final List<Node> children = cu.getChildNodes();
-    for (final Node n : children)
-      _build(n);
   }
 
   private ControlFlow blockStmt(final BlockStmt n) {
@@ -112,12 +120,14 @@ public class CDGBuilder {
   }
 
   private ControlFlow classOrInterfaceDeclaration(final ClassOrInterfaceDeclaration n) {
+    currentClass = n.getNameAsString();
     final Vertex v = vtxCreator.classOrInterfaceDeclaration(n);
     cdg.addVertex(v);
     final List<MethodDeclaration> methods = n.getMethods();
     ControlFlow mFlow = new ControlFlow();
     for (final MethodDeclaration m : methods) {
       mFlow = _build(m);
+      currentClass = n.getNameAsString();
     }
     addEdges(EdgeType.MEMBER_OF, v, inScope);
     final ControlFlow result = new ControlFlow(v, mFlow.getOut());
@@ -131,8 +141,15 @@ public class CDGBuilder {
     pushScope();
     final NodeList<Parameter> params = n.getParameters();
     final List<ControlFlow> paramFlow = new ArrayList<>();
-    for (final Parameter p : params)
-      paramFlow.add(_build(p));
+    final List<Vertex> paramVtcs = new ArrayList<>();
+    for (final Parameter p : params) {
+      final ControlFlow f = _build(p);
+      paramFlow.add(f);
+      final Vertex paramVtx = Utils.first(f.getIn());
+      paramVtcs.add(paramVtx);
+    }
+    final String methodName = currentClass + "." + n.getNameAsString();
+    methodParams.put(methodName, new Pair<>(v, paramVtcs));
     final Optional<BlockStmt> body = n.getBody();
     ControlFlow bodyFlow = null;
     if (body.isPresent())
@@ -179,12 +196,16 @@ public class CDGBuilder {
     inScope.add(v);
     final NodeList<Expression> args = n.getArguments();
     final List<ControlFlow> argFlow = new ArrayList<>();
+    final List<Vertex> paramVtcs = new ArrayList<>();
     argFlow.add(new ControlFlow(v, v));
     for (final Expression e : args) {
       final Vertex a = argumentExpr(e);
       addEdge(EdgeType.CTRL_TRUE, v, a);
       argFlow.add(new ControlFlow(a, a));
+      paramVtcs.add(a);
     }
+    final String methodName = currentClass + "." + n.getNameAsString();
+    calls.put(methodName, new Pair<>(v, paramVtcs));
     final ControlFlow result = cfgBuilder.seq(argFlow);
     return result;
   }
@@ -330,6 +351,14 @@ public class CDGBuilder {
 
   public PDG getCDG() {
     return cdg;
+  }
+
+  public HashMap<String, Pair<Vertex, List<Vertex>>> getMethodParams() {
+    return methodParams;
+  }
+
+  public HashMap<String, Pair<Vertex, List<Vertex>>> getCalls() {
+    return calls;
   }
 
 }

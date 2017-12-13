@@ -8,7 +8,7 @@ import edu.rit.goal.sourcedg.graph.CFG;
 import edu.rit.goal.sourcedg.graph.Edge;
 import edu.rit.goal.sourcedg.graph.PDG;
 import edu.rit.goal.sourcedg.graph.Vertex;
-import edu.rit.goal.sourcedg.util.Utils;
+import edu.rit.goal.sourcedg.util.GraphExporter;
 
 public class Test {
 
@@ -20,7 +20,7 @@ public class Test {
     System.out.println(pdg);
     final Iterator<CFG> it = builder.getCfgs().iterator();
     final DefaultDirectedGraph<Vertex, Edge> cfg = it.next();
-    Utils.exportAsDot(pdg, "/Users/goal/Desktop", "und");
+    GraphExporter.exportAsDot(pdg, "/Users/goal/Desktop", "und");
   }
 
 }
