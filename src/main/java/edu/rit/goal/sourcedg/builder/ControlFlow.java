@@ -1,8 +1,10 @@
 package edu.rit.goal.sourcedg.builder;
 
+import static com.github.javaparser.utils.CodeGenerationUtils.f;
 import java.util.HashSet;
 import java.util.Set;
 import edu.rit.goal.sourcedg.graph.Vertex;
+
 
 /*
  * Model control flow between statements
@@ -11,15 +13,18 @@ public class ControlFlow {
 
   private final Set<Vertex> in;
   private final Set<Vertex> out;
+  private final Set<Vertex> breaks;
 
   public ControlFlow() {
     in = new HashSet<>();
     out = new HashSet<>();
+    breaks = new HashSet<>();
   }
 
   public ControlFlow(final Vertex in, final Vertex out) {
     this.in = new HashSet<>();
     this.out = new HashSet<>();
+    breaks = new HashSet<>();
     this.in.add(in);
     this.out.add(out);
   }
@@ -28,18 +33,20 @@ public class ControlFlow {
     this.in = new HashSet<>();
     this.in.add(in);
     this.out = new HashSet<>(out);
+    breaks = new HashSet<>();
   }
 
   public ControlFlow(final Set<Vertex> in, final Vertex out) {
     this.in = in;
     this.out = new HashSet<>();
     this.out.add(out);
-
+    breaks = new HashSet<>();
   }
 
   public ControlFlow(final Set<Vertex> in, final Set<Vertex> out) {
     this.in = new HashSet<>(in);
     this.out = new HashSet<>(out);
+    breaks = new HashSet<>();
   }
 
   public Set<Vertex> getIn() {
@@ -48,6 +55,15 @@ public class ControlFlow {
 
   public Set<Vertex> getOut() {
     return out;
+  }
+
+  public Set<Vertex> getBreaks() {
+    return breaks;
+  }
+
+  @Override
+  public String toString() {
+    return f("<%s, %s>", in, out);
   }
 
 }

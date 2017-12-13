@@ -24,7 +24,7 @@ import edu.rit.goal.sourcedg.normalization.Normalizer;
 
 public class PDGBuilder {
 
-  private static final Level LOG_LEVEL = Level.OFF;
+  private static final Level LOG_LEVEL = Level.WARNING;
   public static final Logger logger = Logger.getLogger("PDG");
 
   {

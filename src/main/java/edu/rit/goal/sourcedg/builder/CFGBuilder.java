@@ -1,16 +1,22 @@
 package edu.rit.goal.sourcedg.builder;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.jgrapht.Graphs;
 import edu.rit.goal.sourcedg.graph.CFG;
 import edu.rit.goal.sourcedg.graph.Edge;
 import edu.rit.goal.sourcedg.graph.EdgeType;
 import edu.rit.goal.sourcedg.graph.Vertex;
+import edu.rit.goal.sourcedg.graph.VertexType;
 
 public class CFGBuilder {
+
+  // Adds unreachable components to the CFG
+  private static final boolean WITH_UNREACHABLE_COMPONENTS = true;
 
   // Mapping from methods to CFGs
   private final HashMap<Vertex, CFG> m;
@@ -35,14 +41,29 @@ public class CFGBuilder {
 
   public ControlFlow whileStmt(final Vertex v, final ControlFlow bodyFlow) {
     final ControlFlow conn1 = connect(v, bodyFlow);
-    connect(conn1, v);
-    return new ControlFlow(v, v);
+    final ControlFlow conn2 = connect(conn1, v);
+    final ControlFlow result = new ControlFlow(v, v);
+    for (final Vertex bv : conn2.getBreaks())
+      result.getOut().add(bv);
+    return result;
   }
 
   public ControlFlow doStmt(final Vertex v, final ControlFlow bodyFlow) {
-    final ControlFlow conn1 = connect(bodyFlow, v);
-    connect(v, conn1);
-    return new ControlFlow(conn1.getIn(), v);
+    if (bodyFlow != null && bodyFlow.getOut().size() == 1 && bodyFlow.getOut().contains(EXIT)) {
+      final ControlFlow result = new ControlFlow(bodyFlow.getIn(), new HashSet<>());
+      for (final Vertex bv : bodyFlow.getBreaks())
+        result.getOut().add(bv);
+      if (WITH_UNREACHABLE_COMPONENTS)
+        cfg.addVertex(v);
+      return result;
+    } else {
+      final ControlFlow conn1 = connect(bodyFlow, v);
+      final ControlFlow conn2 = connect(v, conn1);
+      final ControlFlow result = new ControlFlow(conn1.getIn(), conn2.getOut());
+      for (final Vertex bv : conn2.getBreaks())
+        result.getOut().add(bv);
+      return result;
+    }
   }
 
   public ControlFlow forStmt(final Vertex v, final List<ControlFlow> init,
@@ -53,6 +74,8 @@ public class CFGBuilder {
     final ControlFlow conn2 = connect(conn1, bodyFlow);
     final ControlFlow conn3 = connect(conn2, updateFlow);
     final ControlFlow result = connect(conn3, v);
+    for (final Vertex bv : result.getBreaks())
+      result.getOut().add(bv);
     return result;
   }
 
@@ -63,7 +86,14 @@ public class CFGBuilder {
     final ControlFlow conn2 = connect(v, elseFlow);
     out.addAll(conn1.getOut());
     out.addAll(conn2.getOut());
-    return new ControlFlow(v, out);
+    final ControlFlow result = new ControlFlow(v, out);
+    result.getBreaks().addAll(conn1.getBreaks());
+    result.getBreaks().addAll(conn2.getBreaks());
+    return result;
+  }
+
+  public ControlFlow seq(final ControlFlow... seq) {
+    return seq(Arrays.asList(seq));
   }
 
   public ControlFlow seq(final List<ControlFlow> seq) {
@@ -71,10 +101,30 @@ public class CFGBuilder {
     for (int i = 0; i < seq.size(); i++) {
       if (i == 0)
         result = seq.get(0);
-      else
-        result = connect(result, seq.get(i));
+      else {
+        final ControlFlow next = seq.get(i);
+        // If we are leaving the sequence (return, break), the subsequent nodes will be unreachable.
+        if (result.getOut().size() == 1 && result.getOut().contains(EXIT)) {
+          handleFlowBreak(seq, next, i);
+          break;
+        } else
+          result = connect(result, next);
+      }
     }
     return result;
+  }
+
+  private void handleFlowBreak(final List<ControlFlow> seq, final ControlFlow next, final int i) {
+    if (WITH_UNREACHABLE_COMPONENTS) {
+      PDGBuilder.logger.warning("Unreachable code detected.");
+      // Add unreachable components to the graph.
+      ControlFlow current = next;
+      if (i + 1 < seq.size()) {
+        for (int j = i + 1; j < seq.size(); j++)
+          current = connect(current, seq.get(j), true);
+      } else
+        Graphs.addAllVertices(cfg, current.getOut());
+    }
   }
 
   private ControlFlow connect(final ControlFlow f, final Vertex v) {
@@ -83,20 +133,38 @@ public class CFGBuilder {
   }
 
   private ControlFlow connect(final ControlFlow f1, final ControlFlow f2) {
+    return connect(f1, f2, false);
+  }
+
+  private ControlFlow connect(final ControlFlow f1, final ControlFlow f2,
+      final boolean withUnreachableComponents) {
     if (f1 == null)
       return f2;
     if (f2 == null)
       return f1;
     for (final Vertex o : f1.getOut()) {
-      if (o == EXIT)
+      if (o == EXIT) {
+        // Add unreachable components
+        if (withUnreachableComponents) {
+          for (final Vertex i : f2.getIn())
+            cfg.addVertex(i);
+        }
         continue;
+      }
       cfg.addVertex(o);
+      // Remove out breaks whose edge is created. In breaks have to be propagated, so they are not
+      // removed.
+      if (VertexType.BREAK.equals(o.getType()))
+        f1.getBreaks().remove(o);
       for (final Vertex i : f2.getIn()) {
         cfg.addVertex(i);
         cfg.addEdge(o, i, new Edge(o, i, EdgeType.CTRL_TRUE));
       }
     }
-    return new ControlFlow(f1.getIn(), f2.getOut());
+    final ControlFlow result = new ControlFlow(f1.getIn(), f2.getOut());
+    result.getBreaks().addAll(f1.getBreaks());
+    result.getBreaks().addAll(f2.getBreaks());
+    return result;
   }
 
   private ControlFlow connect(final Vertex v, final ControlFlow f) {

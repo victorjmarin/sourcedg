@@ -21,6 +21,7 @@ import com.github.javaparser.ast.expr.UnaryExpr;
 import com.github.javaparser.ast.expr.UnaryExpr.Operator;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.BreakStmt;
 import com.github.javaparser.ast.stmt.DoStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ForStmt;
@@ -102,6 +103,8 @@ public class CDGBuilder {
       result = unaryExpr((UnaryExpr) n);
     else if (n instanceof ReturnStmt)
       result = returnStmt((ReturnStmt) n);
+    else if (n instanceof BreakStmt)
+      result = breakStmt((BreakStmt) n);
     else
       PDGBuilder.logger.warning("No match for " + n.getClass().getSimpleName());
     return result;
@@ -235,6 +238,15 @@ public class CDGBuilder {
     cdg.addVertex(v);
     inScope.add(v);
     return new ControlFlow(v, CFGBuilder.EXIT);
+  }
+
+  private ControlFlow breakStmt(final BreakStmt n) {
+    final Vertex v = vtxCreator.breakStmt(n);
+    cdg.addVertex(v);
+    inScope.add(v);
+    final ControlFlow result = new ControlFlow(v, CFGBuilder.EXIT);
+    result.getBreaks().add(v);
+    return result;
   }
 
   private ControlFlow forStmt(final ForStmt n) {
