@@ -53,7 +53,7 @@ public class Normalizer {
 
   public CompilationUnit normalize() {
     visitors.add(new LocalClassDeclarationStmtVisitor());
-    // visitors.add(new ForStmtUpdateVisitor());
+    visitors.add(new ForStmtUpdateVisitor());
     visitors.add(new ForeachStmtVisitor());
     visitors.add(new MethodCallVisitor());
     visitors.add(new AssignExprVisitor());
