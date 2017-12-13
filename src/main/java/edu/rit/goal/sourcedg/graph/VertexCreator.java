@@ -132,8 +132,8 @@ public class VertexCreator {
   }
 
   public Vertex returnStmt(final ReturnStmt n) {
-    final String label = n.toString();
     final Optional<Expression> expr = n.getExpression();
+    final String label = expr.isPresent() ? expr.get().toString() : "";
     final Vertex result = new Vertex(VertexType.RETURN, label, n);
     setId(result);
     if (expr.isPresent())

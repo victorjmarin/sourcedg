@@ -29,47 +29,40 @@ public class CFGBuilder {
   public ControlFlow methodDeclaration(final Vertex v, final List<ControlFlow> params,
       final ControlFlow bodyFlow) {
     final ControlFlow paramFlow = seq(params);
-    connect(connect(v, paramFlow), bodyFlow);
-    return new ControlFlow(v, bodyFlow.getOut());
+    final ControlFlow result = connect(connect(v, paramFlow), bodyFlow);
+    return new ControlFlow(v, result.getOut());
   }
 
   public ControlFlow whileStmt(final Vertex v, final ControlFlow bodyFlow) {
-    connect(v, bodyFlow);
-    connect(bodyFlow, v);
+    final ControlFlow conn1 = connect(v, bodyFlow);
+    connect(conn1, v);
     return new ControlFlow(v, v);
   }
 
   public ControlFlow doStmt(final Vertex v, final ControlFlow bodyFlow) {
-    connect(bodyFlow, v);
-    connect(v, bodyFlow);
-    return new ControlFlow(bodyFlow.getIn(), v);
+    final ControlFlow conn1 = connect(bodyFlow, v);
+    connect(v, conn1);
+    return new ControlFlow(conn1.getIn(), v);
   }
 
   public ControlFlow forStmt(final Vertex v, final List<ControlFlow> init,
       final List<ControlFlow> update, final ControlFlow bodyFlow) {
     final ControlFlow initFlow = seq(init);
     final ControlFlow updateFlow = seq(update);
-    connect(initFlow, v);
-    connect(v, bodyFlow);
-    if (updateFlow != null) {
-      connect(bodyFlow, updateFlow);
-      connect(updateFlow, v);
-    } else
-      connect(bodyFlow, v);
-    return new ControlFlow(initFlow.getIn(), v);
+    final ControlFlow conn1 = connect(initFlow, v);
+    final ControlFlow conn2 = connect(conn1, bodyFlow);
+    final ControlFlow conn3 = connect(conn2, updateFlow);
+    final ControlFlow result = connect(conn3, v);
+    return result;
   }
 
   public ControlFlow ifStmt(final Vertex v, final ControlFlow thenFlow,
       final ControlFlow elseFlow) {
     final Set<Vertex> out = new HashSet<>();
-    connect(v, thenFlow);
-    out.addAll(thenFlow.getOut());
-    if (elseFlow == null)
-      out.add(v);
-    else {
-      connect(v, elseFlow);
-      out.addAll(elseFlow.getOut());
-    }
+    final ControlFlow conn1 = connect(v, thenFlow);
+    final ControlFlow conn2 = connect(v, elseFlow);
+    out.addAll(conn1.getOut());
+    out.addAll(conn2.getOut());
     return new ControlFlow(v, out);
   }
 
@@ -90,6 +83,10 @@ public class CFGBuilder {
   }
 
   private ControlFlow connect(final ControlFlow f1, final ControlFlow f2) {
+    if (f1 == null)
+      return f2;
+    if (f2 == null)
+      return f1;
     for (final Vertex o : f1.getOut()) {
       if (o == EXIT)
         continue;
@@ -103,14 +100,7 @@ public class CFGBuilder {
   }
 
   private ControlFlow connect(final Vertex v, final ControlFlow f) {
-    if (v != EXIT) {
-      cfg.addVertex(v);
-      for (final Vertex i : f.getIn()) {
-        cfg.addVertex(i);
-        cfg.addEdge(v, i, new Edge(v, i, EdgeType.CTRL_TRUE));
-      }
-    }
-    return new ControlFlow(v, f.getOut());
+    return connect(new ControlFlow(v, v), f);
   }
 
   public void put(final Vertex k) {
