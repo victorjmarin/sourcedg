@@ -15,6 +15,7 @@ import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.SimpleName;
 import com.github.javaparser.ast.expr.UnaryExpr;
 import com.github.javaparser.ast.stmt.BreakStmt;
+import com.github.javaparser.ast.stmt.ContinueStmt;
 import com.github.javaparser.ast.stmt.DoStmt;
 import com.github.javaparser.ast.stmt.ForStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
@@ -147,6 +148,14 @@ public class VertexCreator {
     final Optional<SimpleName> expr = n.getLabel();
     final String label = expr.isPresent() ? expr.get().toString() : "";
     final Vertex result = new Vertex(VertexType.BREAK, label, n);
+    setId(result);
+    return result;
+  }
+
+  public Vertex continueStmt(final ContinueStmt n) {
+    final Optional<SimpleName> expr = n.getLabel();
+    final String label = expr.isPresent() ? expr.get().toString() : "";
+    final Vertex result = new Vertex(VertexType.CONTINUE, label, n);
     setId(result);
     return result;
   }

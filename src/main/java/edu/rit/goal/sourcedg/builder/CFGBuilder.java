@@ -1,5 +1,6 @@
 package edu.rit.goal.sourcedg.builder;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -24,12 +25,16 @@ public class CFGBuilder {
   // CFG under construction
   private CFG cfg;
 
-  // Exit vertex used to break flow (return, break)
+  // Exit vertex used to break flow (return, break, continue)
   public static final Vertex EXIT = new Vertex("EXIT");
+
+  // Used to add continue edges.
+  private final List<Runnable> deferred;
 
   public CFGBuilder() {
     m = new HashMap<>();
     cfg = new CFG();
+    deferred = new ArrayList<>();
   }
 
   public ControlFlow methodDeclaration(final Vertex v, final List<ControlFlow> params,
@@ -54,7 +59,7 @@ public class CFGBuilder {
       for (final Vertex bv : bodyFlow.getBreaks())
         result.getOut().add(bv);
       if (WITH_UNREACHABLE_COMPONENTS)
-        cfg.addVertex(v);
+        addVertex(v);
       return result;
     } else {
       final ControlFlow conn1 = connect(bodyFlow, v);
@@ -92,6 +97,14 @@ public class CFGBuilder {
     return result;
   }
 
+  public ControlFlow continueStmt(final Vertex v, final Vertex loop) {
+    deferred.add(() -> {
+      addEdge(v, loop);
+    });
+    addVertex(v);
+    return new ControlFlow(v, CFGBuilder.EXIT);
+  }
+
   public ControlFlow seq(final ControlFlow... seq) {
     return seq(Arrays.asList(seq));
   }
@@ -103,7 +116,8 @@ public class CFGBuilder {
         result = seq.get(0);
       else {
         final ControlFlow next = seq.get(i);
-        // If we are leaving the sequence (return, break), the subsequent nodes will be unreachable.
+        // If we are leaving the sequence (return, break, continue), the subsequent nodes will be
+        // unreachable.
         if (result.getOut().size() == 1 && result.getOut().contains(EXIT)) {
           handleFlowBreak(seq, next, i);
           break;
@@ -136,6 +150,10 @@ public class CFGBuilder {
     return connect(f1, f2, false);
   }
 
+  private ControlFlow connect(final Vertex v, final ControlFlow f) {
+    return connect(new ControlFlow(v, v), f);
+  }
+
   private ControlFlow connect(final ControlFlow f1, final ControlFlow f2,
       final boolean withUnreachableComponents) {
     if (f1 == null)
@@ -147,18 +165,18 @@ public class CFGBuilder {
         // Add unreachable components
         if (withUnreachableComponents) {
           for (final Vertex i : f2.getIn())
-            cfg.addVertex(i);
+            addVertex(i);
         }
         continue;
       }
-      cfg.addVertex(o);
+      addVertex(o);
       // Remove out breaks whose edge is created. In breaks have to be propagated, so they are not
       // removed.
       if (VertexType.BREAK.equals(o.getType()))
         f1.getBreaks().remove(o);
       for (final Vertex i : f2.getIn()) {
-        cfg.addVertex(i);
-        cfg.addEdge(o, i, new Edge(o, i, EdgeType.CTRL_TRUE));
+        addVertex(i);
+        addEdge(o, i);
       }
     }
     final ControlFlow result = new ControlFlow(f1.getIn(), f2.getOut());
@@ -167,11 +185,22 @@ public class CFGBuilder {
     return result;
   }
 
-  private ControlFlow connect(final Vertex v, final ControlFlow f) {
-    return connect(new ControlFlow(v, v), f);
+  private void deferred() {
+    for (final Runnable r : deferred)
+      r.run();
+    deferred.clear();
+  }
+
+  public void addVertex(final Vertex v) {
+    cfg.addVertex(v);
+  }
+
+  public void addEdge(final Vertex source, final Vertex target) {
+    cfg.addEdge(source, target, new Edge(source, target, EdgeType.CTRL_TRUE));
   }
 
   public void put(final Vertex k) {
+    deferred();
     m.put(k, cfg);
     cfg = new CFG();
   }
