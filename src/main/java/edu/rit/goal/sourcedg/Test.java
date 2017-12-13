@@ -13,7 +13,7 @@ import edu.rit.goal.sourcedg.util.GraphExporter;
 public class Test {
 
   public static void main(final String[] args) throws Exception {
-    final FileInputStream in = new FileInputStream("programs/java8/normalization/Stack.java");
+    final FileInputStream in = new FileInputStream("programs/java8/RunningExample.java");
     final PDGBuilder builder = new PDGBuilder();
     builder.build(in);
     final PDG pdg = builder.getPDG();

@@ -17,7 +17,6 @@ import edu.rit.goal.sourcedg.graph.Edge;
 import edu.rit.goal.sourcedg.graph.EdgeType;
 import edu.rit.goal.sourcedg.graph.PDG;
 import edu.rit.goal.sourcedg.graph.Vertex;
-import edu.rit.goal.sourcedg.graph.VertexType;
 import edu.rit.goal.sourcedg.normalization.Normalizer;
 
 public class PDGBuilder {
@@ -51,8 +50,9 @@ public class PDGBuilder {
       final int callSize = callPair.b.size();
       final int defSize = defPair.b.size();
       if (callSize != defSize) {
-        System.out.println("Definition found for call (" + methodName
-            + ") but number of parameters do not match (" + callSize + " args. vs " + defSize + " params.)");
+        System.out.println(
+            "Definition found for call (" + methodName + ") but number of parameters do not match ("
+                + callSize + " args. vs " + defSize + " params.)");
         continue;
       }
       final Vertex caller = callPair.a;
@@ -72,6 +72,7 @@ public class PDGBuilder {
     for (final Vertex useVtx : pdg.vertexSet()) {
       for (final String use : useVtx.getUses()) {
         boolean noEdgeForUse = true;
+        // TODO: Remove inner loop and use contains or similar
         for (final Vertex inVtx : useVtx.getIn()) {
           if (use.equals(inVtx.getDef())) {
             pdg.addEdge(inVtx, useVtx, new Edge(inVtx, useVtx, EdgeType.DATA));
@@ -95,25 +96,19 @@ public class PDGBuilder {
         final Set<Edge> incomingEdges = cfg.incomingEdgesOf(n);
         final Set<Vertex> pred =
             incomingEdges.stream().map(e -> e.getSource()).collect(Collectors.toSet());
-        if (VertexType.CTRL.equals(n.getType())) {
-          for (final Vertex p : pred)
-            n.getOut().addAll(p.getOut());
-        } else {
-          for (final Vertex p : pred)
-            n.getIn().addAll(p.getOut());
-          final Set<Vertex> out = new HashSet<>();
-          final Set<Vertex> diff = new HashSet<>(n.getIn());
-          Set<Vertex> kill = new HashSet<>();
-          if (n.getDef() != null) {
-            out.add(n);
-            kill = n.getIn().stream().filter(v -> v.getDef().equals(n.getDef()))
-                .collect(Collectors.toSet());
-          }
-          diff.removeAll(kill);
-          out.addAll(diff);
-          n.setOut(out);
-
+        for (final Vertex p : pred)
+          n.getIn().addAll(p.getOut());
+        final Set<Vertex> out = new HashSet<>();
+        final Set<Vertex> diff = new HashSet<>(n.getIn());
+        Set<Vertex> kill = new HashSet<>();
+        if (n.getDef() != null) {
+          out.add(n);
+          kill = n.getIn().stream().filter(v -> v.getDef().equals(n.getDef()))
+              .collect(Collectors.toSet());
         }
+        diff.removeAll(kill);
+        out.addAll(diff);
+        n.setOut(out);
         // Check if changes
         changes = changes || !oldIn.equals(n.getIn()) || !oldOut.equals(n.getOut());
       }
