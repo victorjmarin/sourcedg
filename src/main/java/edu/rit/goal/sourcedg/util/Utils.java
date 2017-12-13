@@ -84,7 +84,7 @@ public class Utils {
       };
 
   private static final DOTExporter<Vertex, Edge> exporter =
-      new DOTExporter<>(new IntegerComponentNameProvider<>(), vertexLabelProvider, edgeLabelProvider,
+      new DOTExporter<>(new IntegerComponentNameProvider<>(), vertexLabelProvider, null,
           vertexAttrProvider, edgeAttrProvider);
 
   public static void exportAsDot(final Graph<Vertex, Edge> graph, final String path,
