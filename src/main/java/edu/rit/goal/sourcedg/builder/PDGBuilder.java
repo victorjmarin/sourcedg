@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -69,15 +70,15 @@ public class PDGBuilder {
   private void computeDataDependencies() {
     for (final DirectedGraph<Vertex, Edge> cfg : cfgs)
       reachingDefinitions(cfg);
-    for (final Vertex useVtx : pdg.vertexSet()) {
-      for (final String use : useVtx.getUses()) {
+    for (final Vertex v : pdg.vertexSet()) {
+      final Map<String, Set<Vertex>> inDefs = inDefs(v);
+      for (final String use : v.getUses()) {
         boolean noEdgeForUse = true;
-        // TODO: Remove inner loop and use contains or similar
-        for (final Vertex inVtx : useVtx.getIn()) {
-          if (use.equals(inVtx.getDef())) {
-            pdg.addEdge(inVtx, useVtx, new Edge(inVtx, useVtx, EdgeType.DATA));
-            noEdgeForUse = false;
-          }
+        final Set<Vertex> inVtcs = inDefs.get(use);
+        if (inVtcs != null) {
+          for (final Vertex inVtx : inVtcs)
+            pdg.addEdge(inVtx, v, new Edge(inVtx, v, EdgeType.DATA));
+          noEdgeForUse = false;
         }
         if (noEdgeForUse) {
           // TODO: Create initial state vertex
@@ -113,6 +114,11 @@ public class PDGBuilder {
         changes = changes || !oldIn.equals(n.getIn()) || !oldOut.equals(n.getOut());
       }
     }
+  }
+
+  private Map<String, Set<Vertex>> inDefs(final Vertex v) {
+    final Set<Vertex> in = v.getIn();
+    return in.stream().collect(Collectors.groupingBy(Vertex::getDef, Collectors.toSet()));
   }
 
   public PDG getPDG() {
