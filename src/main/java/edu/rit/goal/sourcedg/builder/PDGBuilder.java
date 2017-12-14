@@ -35,7 +35,16 @@ public class PDGBuilder {
   private Collection<CFG> cfgs;
 
   public void build(final InputStream in) {
-    CompilationUnit cu = JavaParser.parse(in);
+    final CompilationUnit cu = JavaParser.parse(in);
+    build(cu);
+  }
+
+  public void build(final String in) {
+    final CompilationUnit cu = JavaParser.parse(in);
+    build(cu);
+  }
+
+  private void build(CompilationUnit cu) {
     final Normalizer normalizer = new Normalizer(cu);
     cu = normalizer.normalize();
     final CDGBuilder cdgBuilder = new CDGBuilder(cu);
