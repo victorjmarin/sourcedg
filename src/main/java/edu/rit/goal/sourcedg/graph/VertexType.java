@@ -4,6 +4,10 @@ public enum VertexType {
 
   CUNIT, PKG, IMPORT, CLASS, ENTRY, FORMAL_IN, FORMAL_OUT, ACTUAL_IN, ACTUAL_OUT, CALL, DECL, ASSIGN, RETURN, INITIAL_STATE, BREAK, CONTINUE, CTRL;
 
+  public boolean isAssign() {
+    return ASSIGN.equals(this);
+  }
+
   @Override
   public String toString() {
     String result = super.toString().toLowerCase();

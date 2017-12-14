@@ -167,7 +167,7 @@ public class CDGBuilder {
       final Vertex paramVtx = Utils.first(f.getIn());
       paramVtcs.add(paramVtx);
     }
-    final String methodName = currentClass + "." + n.getNameAsString();
+    final String methodName = callName(n);
     methodParams.put(methodName, new Pair<>(v, paramVtcs));
     final Optional<BlockStmt> body = n.getBody();
     ControlFlow bodyFlow = null;
@@ -392,9 +392,22 @@ public class CDGBuilder {
       result.add(new ControlFlow(a, a));
       paramVtcs.add(a);
     }
-    final String methodName = currentClass + "." + call.getNameAsString();
+    final String methodName = callName(call);
     putCall(methodName, new Pair<>(v, paramVtcs));
     return cfgBuilder.seq(result);
+  }
+
+  private String callName(final MethodDeclaration n) {
+    return currentClass + "." + n.getNameAsString();
+  }
+
+  private String callName(final MethodCallExpr n) {
+    String result = currentClass + ".";
+    final Optional<Expression> scope = n.getScope();
+    if (scope.isPresent())
+      result = scope.get().toString() + ".";
+    result += n.getNameAsString();
+    return result;
   }
 
   private void addEdge(final EdgeType type, final Vertex source, final Vertex target) {

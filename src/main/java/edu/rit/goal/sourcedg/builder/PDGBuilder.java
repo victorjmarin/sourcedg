@@ -88,7 +88,8 @@ public class PDGBuilder {
         }
         final Vertex actualOut = pdg.actualOut(caller);
         if (actualOut == null) {
-          LOGGER.warning("Could not find ACTUAL_OUT vertex for " + caller);
+          if (caller.getType().isAssign())
+            LOGGER.warning("Could not find ACTUAL_OUT vertex for " + caller);
           continue;
         }
         pdg.addEdge(formalOut, actualOut, new Edge(formalOut, actualOut, EdgeType.PARAM_OUT));
