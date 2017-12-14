@@ -5,8 +5,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
@@ -49,12 +51,14 @@ public class CDGBuilder {
   private CFGBuilder cfgBuilder;
   private String currentClass;
   private HashMap<String, Pair<Vertex, List<Vertex>>> methodParams;
-  private HashMap<String, Pair<Vertex, List<Vertex>>> calls;
+  private HashMap<String, Set<Pair<Vertex, List<Vertex>>>> calls;
+  private HashMap<Vertex, Vertex> methodFormalOut;
 
   private PDG cdg;
   private Deque<List<Vertex>> inScopeStack;
   private List<Vertex> inScope;
   private Deque<Vertex> loopStack;
+  private Deque<Vertex> formalOutStack;
 
   public CDGBuilder(final CompilationUnit cu) {
     this.cu = cu;
@@ -67,8 +71,10 @@ public class CDGBuilder {
     inScopeStack = new ArrayDeque<>();
     inScope = new ArrayList<>();
     loopStack = new ArrayDeque<>();
+    formalOutStack = new ArrayDeque<>();
     methodParams = new HashMap<>();
     calls = new HashMap<>();
+    methodFormalOut = new HashMap<>();
     final List<Node> children = cu.getChildNodes();
     for (final Node n : children)
       _build(n);
@@ -147,6 +153,11 @@ public class CDGBuilder {
     cdg.addVertex(v);
     inScope.add(v);
     pushScope();
+    final Vertex out = formalOut(n);
+    if (out != null) {
+      formalOutStack.push(out);
+      methodFormalOut.put(v, out);
+    }
     final NodeList<Parameter> params = n.getParameters();
     final List<ControlFlow> paramFlow = new ArrayList<>();
     final List<Vertex> paramVtcs = new ArrayList<>();
@@ -167,6 +178,8 @@ public class CDGBuilder {
     // CFG
     final ControlFlow result = cfgBuilder.methodDeclaration(v, paramFlow, bodyFlow);
     cfgBuilder.put(v);
+    if (out != null)
+      formalOutStack.pop();
     return result;
   }
 
@@ -175,6 +188,22 @@ public class CDGBuilder {
     cdg.addVertex(v);
     inScope.add(v);
     return new ControlFlow(v, v);
+  }
+
+  private Vertex formalOut(final MethodDeclaration n) {
+    if ("void".equals(n.getType().asString()))
+      return null;
+    final Vertex v = vtxCreator.formalOut();
+    cdg.addVertex(v);
+    inScope.add(v);
+    return v;
+  }
+
+  private Vertex actualOut(final Vertex v) {
+    final Vertex a = vtxCreator.actualOut();
+    cdg.addVertex(a);
+    addEdge(EdgeType.CTRL_TRUE, v, a);
+    return a;
   }
 
   private ControlFlow variableDeclarationExpr(final VariableDeclarationExpr n) {
@@ -191,8 +220,10 @@ public class CDGBuilder {
     ControlFlow result = new ControlFlow(v, v);
     // Check for call
     final Optional<Expression> init = n.getInitializer();
-    if (init.isPresent() && init.get() instanceof MethodCallExpr)
+    if (init.isPresent() && init.get() instanceof MethodCallExpr) {
+      actualOut(v);
       result = args((MethodCallExpr) init.get(), v);
+    }
     return result;
   }
 
@@ -203,8 +234,10 @@ public class CDGBuilder {
     ControlFlow result = new ControlFlow(v, v);
     // Check for call
     final Expression value = n.getValue();
-    if (value instanceof MethodCallExpr)
+    if (value instanceof MethodCallExpr) {
+      actualOut(v);
       result = args((MethodCallExpr) value, v);
+    }
     return result;
   }
 
@@ -242,6 +275,7 @@ public class CDGBuilder {
     final Vertex v = vtxCreator.returnStmt(n);
     cdg.addVertex(v);
     inScope.add(v);
+    addEdge(EdgeType.DATA, v, formalOutStack.peek());
     return new ControlFlow(v, CFGBuilder.EXIT);
   }
 
@@ -359,7 +393,7 @@ public class CDGBuilder {
       paramVtcs.add(a);
     }
     final String methodName = currentClass + "." + call.getNameAsString();
-    calls.put(methodName, new Pair<>(v, paramVtcs));
+    putCall(methodName, new Pair<>(v, paramVtcs));
     return cfgBuilder.seq(result);
   }
 
@@ -385,6 +419,15 @@ public class CDGBuilder {
     inScope = inScopeStack.pop();
   }
 
+  private void putCall(final String method, final Pair<Vertex, List<Vertex>> pair) {
+    Set<Pair<Vertex, List<Vertex>>> callPairs = calls.get(method);
+    if (callPairs == null) {
+      callPairs = new HashSet<>();
+      calls.put(method, callPairs);
+    }
+    callPairs.add(pair);
+  }
+
   public Collection<CFG> getCfgs() {
     return cfgBuilder.getCfgs();
   }
@@ -401,8 +444,12 @@ public class CDGBuilder {
     return methodParams;
   }
 
-  public HashMap<String, Pair<Vertex, List<Vertex>>> getCalls() {
+  public HashMap<String, Set<Pair<Vertex, List<Vertex>>>> getCalls() {
     return calls;
+  }
+
+  public HashMap<Vertex, Vertex> getMethodFormalOut() {
+    return methodFormalOut;
   }
 
 }

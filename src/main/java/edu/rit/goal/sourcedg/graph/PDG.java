@@ -47,4 +47,16 @@ public class PDG extends DefaultDirectedGraph<Vertex, Edge> {
     return result;
   }
 
+  public Vertex actualOut(final Vertex v) {
+    final Set<Edge> edges = outgoingEdgesOf(v);
+    Vertex successor = null;
+    for (final Edge e : edges) {
+      successor = e.getTarget();
+      if (VertexType.ACTUAL_OUT.equals(successor.getType())) {
+        return successor;
+      }
+    }
+    return null;
+  }
+
 }

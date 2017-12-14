@@ -50,37 +50,48 @@ public class PDGBuilder {
     final CDGBuilder cdgBuilder = new CDGBuilder(cu);
     cdgBuilder.build();
     pdg = cdgBuilder.getCDG();
-    computeInterProceduralCalls(cdgBuilder.getMethodParams(), cdgBuilder.getCalls());
+    computeInterProceduralCalls(cdgBuilder.getMethodParams(), cdgBuilder.getCalls(),
+        cdgBuilder.getMethodFormalOut());
     cfgs = cdgBuilder.getCfgs();
     computeDataDependencies();
   }
 
   private void computeInterProceduralCalls(
       final HashMap<String, Pair<Vertex, List<Vertex>>> methodParams,
-      final HashMap<String, Pair<Vertex, List<Vertex>>> calls) {
-    for (final Entry<String, Pair<Vertex, List<Vertex>>> e : calls.entrySet()) {
+      final HashMap<String, Set<Pair<Vertex, List<Vertex>>>> calls,
+      final HashMap<Vertex, Vertex> methodFormalOut) {
+    for (final Entry<String, Set<Pair<Vertex, List<Vertex>>>> e : calls.entrySet()) {
       final String methodName = e.getKey();
-      final Pair<Vertex, List<Vertex>> callPair = e.getValue();
       final Pair<Vertex, List<Vertex>> defPair = methodParams.get(methodName);
       if (defPair == null) {
         LOGGER.warning("No definition found for call (" + methodName + ")");
         continue;
       }
-      final int callSize = callPair.b.size();
-      final int defSize = defPair.b.size();
-      if (callSize != defSize) {
-        LOGGER.warning(
-            "Definition found for call (" + methodName + ") but number of parameters do not match ("
-                + callSize + " args. vs " + defSize + " params.)");
-        continue;
-      }
-      final Vertex caller = callPair.a;
       final Vertex callee = defPair.a;
-      pdg.addEdge(caller, callee, new Edge(caller, callee, EdgeType.CALL));
-      for (int i = 0; i < callPair.b.size(); i++) {
-        final Vertex callArg = callPair.b.get(i);
-        final Vertex defParam = defPair.b.get(i);
-        pdg.addEdge(callArg, defParam, new Edge(callArg, defParam, EdgeType.PARAM_IN));
+      final Vertex formalOut = methodFormalOut.get(callee);
+      final Set<Pair<Vertex, List<Vertex>>> callPairs = e.getValue();
+      for (final Pair<Vertex, List<Vertex>> callPair : callPairs) {
+        final int callSize = callPair.b.size();
+        final int defSize = defPair.b.size();
+        if (callSize != defSize) {
+          LOGGER.warning("Definition found for call (" + methodName
+              + ") but number of parameters do not match (" + callSize + " args. vs " + defSize
+              + " params.)");
+          continue;
+        }
+        final Vertex caller = callPair.a;
+        pdg.addEdge(caller, callee, new Edge(caller, callee, EdgeType.CALL));
+        for (int i = 0; i < callPair.b.size(); i++) {
+          final Vertex callArg = callPair.b.get(i);
+          final Vertex defParam = defPair.b.get(i);
+          pdg.addEdge(callArg, defParam, new Edge(callArg, defParam, EdgeType.PARAM_IN));
+        }
+        final Vertex actualOut = pdg.actualOut(caller);
+        if (actualOut == null) {
+          LOGGER.warning("Could not find ACTUAL_OUT vertex for " + caller);
+          continue;
+        }
+        pdg.addEdge(formalOut, actualOut, new Edge(formalOut, actualOut, EdgeType.PARAM_OUT));
       }
     }
   }

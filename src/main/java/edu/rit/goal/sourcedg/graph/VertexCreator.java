@@ -41,6 +41,18 @@ public class VertexCreator {
     return result;
   }
 
+  public Vertex formalOut() {
+    final Vertex result = new Vertex(VertexType.FORMAL_OUT, "");
+    setId(result);
+    return result;
+  }
+
+  public Vertex actualOut() {
+    final Vertex result = new Vertex(VertexType.ACTUAL_OUT, "");
+    setId(result);
+    return result;
+  }
+
   public Vertex parameter(final Parameter n) {
     final String label = n.getNameAsString();
     final Vertex result = new Vertex(VertexType.FORMAL_IN, label, n);
