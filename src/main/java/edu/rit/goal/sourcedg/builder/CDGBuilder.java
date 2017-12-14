@@ -111,7 +111,7 @@ public class CDGBuilder {
     else if (n instanceof ContinueStmt)
       result = continueStmt((ContinueStmt) n);
     else
-      PDGBuilder.logger.warning("No match for " + n.getClass().getSimpleName());
+      PDGBuilder.LOGGER.warning("No match for " + n.getClass().getSimpleName());
     return result;
   }
 
@@ -233,7 +233,7 @@ public class CDGBuilder {
         inScope.add(v);
         return new ControlFlow(v, v);
       default:
-        PDGBuilder.logger.warning("Operation " + op + " not considered.");
+        PDGBuilder.LOGGER.warning("Operation " + op + " not considered.");
     }
     return new ControlFlow();
   }

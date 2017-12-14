@@ -130,7 +130,7 @@ public class CFGBuilder {
 
   private void handleFlowBreak(final List<ControlFlow> seq, final ControlFlow next, final int i) {
     if (WITH_UNREACHABLE_COMPONENTS) {
-      PDGBuilder.logger.warning("Unreachable code detected.");
+      PDGBuilder.LOGGER.warning("Unreachable code detected.");
       // Add unreachable components to the graph.
       ControlFlow current = next;
       if (i + 1 < seq.size()) {

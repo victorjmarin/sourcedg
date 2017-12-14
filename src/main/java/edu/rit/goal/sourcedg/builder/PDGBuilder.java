@@ -25,10 +25,10 @@ import edu.rit.goal.sourcedg.normalization.Normalizer;
 public class PDGBuilder {
 
   private static final Level LOG_LEVEL = Level.WARNING;
-  public static final Logger logger = Logger.getLogger("PDG");
+  public static final Logger LOGGER = Logger.getLogger("PDG");
 
   {
-    logger.setLevel(LOG_LEVEL);
+    LOGGER.setLevel(LOG_LEVEL);
   }
 
   private PDG pdg;
@@ -54,13 +54,13 @@ public class PDGBuilder {
       final Pair<Vertex, List<Vertex>> callPair = e.getValue();
       final Pair<Vertex, List<Vertex>> defPair = methodParams.get(methodName);
       if (defPair == null) {
-        logger.warning("No definition found for call (" + methodName + ")");
+        LOGGER.warning("No definition found for call (" + methodName + ")");
         continue;
       }
       final int callSize = callPair.b.size();
       final int defSize = defPair.b.size();
       if (callSize != defSize) {
-        logger.warning(
+        LOGGER.warning(
             "Definition found for call (" + methodName + ") but number of parameters do not match ("
                 + callSize + " args. vs " + defSize + " params.)");
         continue;
