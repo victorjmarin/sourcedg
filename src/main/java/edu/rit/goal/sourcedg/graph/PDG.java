@@ -1,11 +1,8 @@
 package edu.rit.goal.sourcedg.graph;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Iterator;
 import java.util.Set;
 import org.jgrapht.graph.DefaultDirectedGraph;
 
@@ -20,17 +17,15 @@ public class PDG extends DefaultDirectedGraph<Vertex, Edge> {
     super(Edge.class);
   }
 
-  public List<Vertex> slice(final Set<Vertex> S) {
-    final Set<Vertex> marked = new HashSet<>();
-    final List<Vertex> worklist = new ArrayList<>(S);
+  public Set<Vertex> slice(final Set<Vertex> S) {
+    final Set<Vertex> result = new HashSet<>();
+    final Set<Vertex> worklist = new HashSet<>(S);
     while (!worklist.isEmpty()) {
-      final Vertex v = worklist.remove(0);
-      marked.add(v);
-      final Set<Vertex> w = incidents(marked, v);
+      final Vertex v = next(worklist);
+      result.add(v);
+      final Set<Vertex> w = incidents(result, v);
       worklist.addAll(w);
     }
-    final List<Vertex> result = new ArrayList<>(marked);
-    Collections.sort(result, Comparator.comparing(Vertex::getId));
     return result;
   }
 
@@ -42,6 +37,13 @@ public class PDG extends DefaultDirectedGraph<Vertex, Edge> {
           && !marked.contains(e.getSource()))
         result.add(e.getSource());
     }
+    return result;
+  }
+
+  private Vertex next(final Set<Vertex> S) {
+    final Iterator<Vertex> it = S.iterator();
+    final Vertex result = it.next();
+    it.remove();
     return result;
   }
 
