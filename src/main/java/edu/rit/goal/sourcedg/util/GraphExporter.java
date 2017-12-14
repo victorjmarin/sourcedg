@@ -43,6 +43,11 @@ public class GraphExporter {
         @Override
         public Map<String, String> getComponentAttributes(final Vertex component) {
           final Map<String, String> result = new HashMap<>();
+          final String fillColor = component.getFillColor();
+          if (fillColor != null) {
+            result.put("style", "filled");
+            result.put("fillcolor", fillColor);
+          }
           if (component.getType() != null) {
             switch (component.getType()) {
               default:

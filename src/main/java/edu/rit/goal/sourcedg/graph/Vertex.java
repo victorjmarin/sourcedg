@@ -20,6 +20,9 @@ public class Vertex implements Serializable {
   private Set<Vertex> out;
   private Node ast;
 
+  // Graphviz attributes
+  private String fillColor;
+
   public Vertex(final String label) {
     this.label = label;
     uses = new HashSet<>();
@@ -141,6 +144,14 @@ public class Vertex implements Serializable {
 
   public Node getAst() {
     return ast;
+  }
+
+  public String getFillColor() {
+    return fillColor;
+  }
+
+  public void setFillColor(final String fillColor) {
+    this.fillColor = fillColor;
   }
 
   @Override

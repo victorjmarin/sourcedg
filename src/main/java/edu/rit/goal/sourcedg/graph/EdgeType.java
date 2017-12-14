@@ -4,6 +4,10 @@ public enum EdgeType {
 
   DATA, CTRL_TRUE, CTRL_FALSE, DEF_ORDER, CALL, PARAM_IN, PARAM_OUT, MEMBER_OF;
 
+  public boolean isControl() {
+    return equals(CTRL_TRUE) || equals(CTRL_FALSE);
+  }
+
   @Override
   public String toString() {
     String result = super.toString().toLowerCase();
