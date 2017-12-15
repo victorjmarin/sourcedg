@@ -4,8 +4,8 @@ public enum VertexSubtype {
   PLUS, MINUS, MULT, DIV, LT, GT, LEQ, GEQ, EQ, NOT_EQ, MOD, AND, OR, INCR, DECR, SH_PLUS, SH_MINUS, SH_MULT, SH_DIV, PRINT, CALL,
   // Call of method within the same class
   SELF_CALL,
-  // Call of method on another object
-  OBJECT_CALL,
+  // Call of method on another object or class
+  SCOPED_CALL,
   // Number of parameters in call
   NO_PARAMS, SINGLE_PARAM, TWO_PARAMS, THREE_PARAMS, FOUR_PARAMS, FIVE_PARAMS, PLUS_FIVE_PARAMS;
 

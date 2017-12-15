@@ -20,6 +20,7 @@ import edu.rit.goal.sourcedg.graph.Edge;
 import edu.rit.goal.sourcedg.graph.EdgeType;
 import edu.rit.goal.sourcedg.graph.PDG;
 import edu.rit.goal.sourcedg.graph.Vertex;
+import edu.rit.goal.sourcedg.graph.VertexCreator;
 import edu.rit.goal.sourcedg.normalization.Normalizer;
 
 public class PDGBuilder {
@@ -80,6 +81,7 @@ public class PDGBuilder {
           continue;
         }
         final Vertex caller = callPair.a;
+        VertexCreator.selfCall(caller);
         pdg.addEdge(caller, callee, new Edge(caller, callee, EdgeType.CALL));
         for (int i = 0; i < callPair.b.size(); i++) {
           final Vertex callArg = callPair.b.get(i);

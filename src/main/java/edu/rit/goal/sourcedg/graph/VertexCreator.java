@@ -68,6 +68,7 @@ public class VertexCreator {
     final Vertex result = new Vertex(VertexType.CTRL, label, n);
     setId(result);
     setUses(cond, result);
+    setSubtypes(result, n);
     return result;
   }
 
@@ -78,6 +79,7 @@ public class VertexCreator {
       label = cond.get().toString();
     final Vertex result = new Vertex(VertexType.CTRL, label, n);
     setId(result);
+    setSubtypes(result, n);
     if (cond.isPresent())
       setUses(cond.get(), result);
     return result;
@@ -89,6 +91,7 @@ public class VertexCreator {
     final Vertex result = new Vertex(VertexType.CTRL, label, n);
     setId(result);
     setUses(cond, result);
+    setSubtypes(result, n);
     return result;
   }
 
@@ -98,6 +101,7 @@ public class VertexCreator {
     final Vertex result = new Vertex(VertexType.CTRL, label, n);
     setId(result);
     setUses(cond, result);
+    setSubtypes(result, n);
     return result;
   }
 
@@ -107,6 +111,7 @@ public class VertexCreator {
     final Vertex result = new Vertex(VertexType.ASSIGN, label, n);
     setId(result);
     setDef(n.getName(), result);
+    setSubtypes(result, n);
     if (init.isPresent())
       setUses(init.get(), result);
     return result;
@@ -118,6 +123,7 @@ public class VertexCreator {
     setId(result);
     setDef(n.getTarget(), result);
     setUses(n.getValue(), result);
+    setSubtypes(result, n);
     return result;
   }
 
@@ -125,6 +131,8 @@ public class VertexCreator {
     final String label = n.toString();
     final Vertex result = new Vertex(VertexType.CALL, label, n);
     setId(result);
+    setSubtypes(result, n);
+    setCallSubtype(result, n);
     return result;
   }
 
@@ -143,6 +151,7 @@ public class VertexCreator {
     setId(result);
     setDef(n, result);
     setUses(n, result);
+    setSubtypes(result, n);
     return result;
   }
 
@@ -151,6 +160,7 @@ public class VertexCreator {
     final String label = expr.isPresent() ? expr.get().toString() : "";
     final Vertex result = new Vertex(VertexType.RETURN, label, n);
     setId(result);
+    setSubtypes(result, n);
     if (expr.isPresent())
       setUses(expr.get(), result);
     return result;
@@ -192,6 +202,92 @@ public class VertexCreator {
       return new HashSet<>();
     return ast.findAll(SimpleName.class).stream().map(n -> n.getIdentifier())
         .collect(Collectors.toSet());
+  }
+
+  private void setSubtypes(final Vertex v, final Node n) {
+    final Set<VertexSubtype> subtypes = subtypesFromText(v.getLabel());
+    subtypes.addAll(subtypesFromAst(n));
+    v.setSubtypes(subtypes);
+  }
+
+
+  private Set<VertexSubtype> subtypesFromAst(final Node ast) {
+    final Set<VertexSubtype> result = new HashSet<>();
+    final Optional<MethodCallExpr> optMethodCall = ast.findFirst(MethodCallExpr.class);
+    if (optMethodCall.isPresent()) {
+      final MethodCallExpr methodCall = optMethodCall.get();
+      if (methodCall.getScope().isPresent())
+        result.add(VertexSubtype.SCOPED_CALL);
+    }
+    return result;
+  }
+
+  private Set<VertexSubtype> subtypesFromText(final String text) {
+    final Set<VertexSubtype> result = new HashSet<>();
+    if (text.contains("+"))
+      result.add(VertexSubtype.PLUS);
+    if (text.contains("-"))
+      result.add(VertexSubtype.MINUS);
+    if (text.contains("*"))
+      result.add(VertexSubtype.MULT);
+    if (text.contains("/"))
+      result.add(VertexSubtype.DIV);
+    if (text.contains("<"))
+      result.add(VertexSubtype.LT);
+    if (text.contains(">"))
+      result.add(VertexSubtype.GT);
+    if (text.contains("<="))
+      result.add(VertexSubtype.LEQ);
+    if (text.contains(">="))
+      result.add(VertexSubtype.GEQ);
+    if (text.contains("=="))
+      result.add(VertexSubtype.EQ);
+    if (text.contains("!="))
+      result.add(VertexSubtype.NOT_EQ);
+    if (text.contains("%"))
+      result.add(VertexSubtype.MOD);
+    if (text.contains("&&"))
+      result.add(VertexSubtype.AND);
+    if (text.contains("||"))
+      result.add(VertexSubtype.OR);
+    if (text.contains("++"))
+      result.add(VertexSubtype.INCR);
+    if (text.contains("--"))
+      result.add(VertexSubtype.DECR);
+    if (text.contains("+="))
+      result.add(VertexSubtype.SH_PLUS);
+    if (text.contains("-="))
+      result.add(VertexSubtype.SH_MINUS);
+    if (text.contains("*="))
+      result.add(VertexSubtype.SH_MULT);
+    if (text.contains("/="))
+      result.add(VertexSubtype.SH_DIV);
+    if (text.contains(".print"))
+      result.add(VertexSubtype.PRINT);
+    return result;
+  }
+
+  private void setCallSubtype(final Vertex v, final MethodCallExpr n) {
+    final Set<VertexSubtype> subtypes = v.getSubtypes();
+    final int numberParam = n.getArguments().size();
+    if (numberParam == 0)
+      subtypes.add(VertexSubtype.NO_PARAMS);
+    else if (numberParam == 1)
+      subtypes.add(VertexSubtype.SINGLE_PARAM);
+    else if (numberParam == 2)
+      subtypes.add(VertexSubtype.TWO_PARAMS);
+    else if (numberParam == 3)
+      subtypes.add(VertexSubtype.THREE_PARAMS);
+    else if (numberParam == 4)
+      subtypes.add(VertexSubtype.FOUR_PARAMS);
+    else if (numberParam == 5)
+      subtypes.add(VertexSubtype.FIVE_PARAMS);
+    else
+      subtypes.add(VertexSubtype.PLUS_FIVE_PARAMS);
+  }
+
+  public static void selfCall(final Vertex v) {
+    v.getSubtypes().add(VertexSubtype.SELF_CALL);
   }
 
   public int getId() {
