@@ -47,9 +47,10 @@ public class VertexCreator {
     return result;
   }
 
-  public Vertex actualOut() {
-    final Vertex result = new Vertex(VertexType.ACTUAL_OUT, "");
+  public Vertex actualOut(final Node n) {
+    final Vertex result = new Vertex(VertexType.ACTUAL_OUT, n.toString());
     setId(result);
+    setDef(n, result);
     return result;
   }
 
@@ -111,7 +112,6 @@ public class VertexCreator {
     return result;
   }
 
-  // TODO: Assign call?
   public Vertex assignExpr(final AssignExpr n) {
     final String label = n.toString();
     final Vertex result = new Vertex(VertexType.ASSIGN, label, n);

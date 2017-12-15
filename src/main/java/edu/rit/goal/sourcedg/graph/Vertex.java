@@ -154,6 +154,11 @@ public class Vertex implements Serializable {
     this.fillColor = fillColor;
   }
 
+  public void resetDefUses() {
+    def = null;
+    uses = new HashSet<>();
+  }
+
   @Override
   public String toString() {
     String result = id + "-" + type;

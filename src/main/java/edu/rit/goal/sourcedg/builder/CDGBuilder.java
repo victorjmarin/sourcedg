@@ -199,11 +199,11 @@ public class CDGBuilder {
     return v;
   }
 
-  private Vertex actualOut(final Vertex v) {
-    final Vertex a = vtxCreator.actualOut();
+  private ControlFlow actualOut(final Vertex v, final Node n) {
+    final Vertex a = vtxCreator.actualOut(n);
     cdg.addVertex(a);
     addEdge(EdgeType.CTRL_TRUE, v, a);
-    return a;
+    return new ControlFlow(a, a);
   }
 
   private ControlFlow variableDeclarationExpr(final VariableDeclarationExpr n) {
@@ -221,8 +221,11 @@ public class CDGBuilder {
     // Check for call
     final Optional<Expression> init = n.getInitializer();
     if (init.isPresent() && init.get() instanceof MethodCallExpr) {
-      actualOut(v);
-      result = args((MethodCallExpr) init.get(), v);
+      // Def and uses are set in the corresponding ACTUAL_OUT and ACTUAL_IN vertices
+      v.resetDefUses();
+      final ControlFlow inFlow = args((MethodCallExpr) init.get(), v);
+      final ControlFlow outFlow = actualOut(v, n.getName());
+      result = cfgBuilder.seq(inFlow, outFlow);
     }
     return result;
   }
@@ -235,8 +238,11 @@ public class CDGBuilder {
     // Check for call
     final Expression value = n.getValue();
     if (value instanceof MethodCallExpr) {
-      actualOut(v);
-      result = args((MethodCallExpr) value, v);
+      // Def and uses are set in the corresponding ACTUAL_OUT and ACTUAL_IN vertices
+      v.resetDefUses();
+      final ControlFlow inFlow = args((MethodCallExpr) value, v);
+      final ControlFlow outFlow = actualOut(v, n.getTarget());
+      result = cfgBuilder.seq(inFlow, outFlow);
     }
     return result;
   }
@@ -275,7 +281,11 @@ public class CDGBuilder {
     final Vertex v = vtxCreator.returnStmt(n);
     cdg.addVertex(v);
     inScope.add(v);
-    addEdge(EdgeType.DATA, v, formalOutStack.peek());
+    final Vertex formalOut = formalOutStack.peek();
+    if (formalOut == null)
+      throw new IllegalStateException("Is " + n + " (line " + n.getRange().get().begin.line
+          + ") inside a method that returns void?");
+    addEdge(EdgeType.DATA, v, formalOut);
     return new ControlFlow(v, CFGBuilder.EXIT);
   }
 
