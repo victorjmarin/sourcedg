@@ -12,6 +12,7 @@ import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.expr.SimpleName;
 import com.github.javaparser.ast.expr.UnaryExpr;
 import com.github.javaparser.ast.stmt.BreakStmt;
@@ -20,6 +21,7 @@ import com.github.javaparser.ast.stmt.DoStmt;
 import com.github.javaparser.ast.stmt.ForStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
+import com.github.javaparser.ast.stmt.ThrowStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
 import edu.rit.goal.sourcedg.util.Utils;
 
@@ -68,7 +70,7 @@ public class VertexCreator {
     final Vertex result = new Vertex(VertexType.CTRL, label, n);
     setId(result);
     setUses(cond, result);
-    setSubtypes(result, n);
+    setSubtypes(result, cond);
     return result;
   }
 
@@ -79,9 +81,10 @@ public class VertexCreator {
       label = cond.get().toString();
     final Vertex result = new Vertex(VertexType.CTRL, label, n);
     setId(result);
-    setSubtypes(result, n);
-    if (cond.isPresent())
+    if (cond.isPresent()) {
       setUses(cond.get(), result);
+      setSubtypes(result, cond.get());
+    }
     return result;
   }
 
@@ -91,7 +94,7 @@ public class VertexCreator {
     final Vertex result = new Vertex(VertexType.CTRL, label, n);
     setId(result);
     setUses(cond, result);
-    setSubtypes(result, n);
+    setSubtypes(result, cond);
     return result;
   }
 
@@ -101,7 +104,7 @@ public class VertexCreator {
     final Vertex result = new Vertex(VertexType.CTRL, label, n);
     setId(result);
     setUses(cond, result);
-    setSubtypes(result, n);
+    setSubtypes(result, cond);
     return result;
   }
 
@@ -132,7 +135,6 @@ public class VertexCreator {
     final Vertex result = new Vertex(VertexType.CALL, label, n);
     setId(result);
     setSubtypes(result, n);
-    setCallSubtype(result, n);
     return result;
   }
 
@@ -143,7 +145,6 @@ public class VertexCreator {
     setUses(n, result);
     return result;
   }
-
 
   public Vertex unaryExpr(final UnaryExpr n) {
     final String label = n.toString();
@@ -160,9 +161,10 @@ public class VertexCreator {
     final String label = expr.isPresent() ? expr.get().toString() : "";
     final Vertex result = new Vertex(VertexType.RETURN, label, n);
     setId(result);
-    setSubtypes(result, n);
-    if (expr.isPresent())
+    if (expr.isPresent()) {
       setUses(expr.get(), result);
+      setSubtypes(result, expr.get());
+    }
     return result;
   }
 
@@ -179,6 +181,16 @@ public class VertexCreator {
     final String label = expr.isPresent() ? expr.get().toString() : "";
     final Vertex result = new Vertex(VertexType.CONTINUE, label, n);
     setId(result);
+    return result;
+  }
+
+  public Vertex throwStmt(final ThrowStmt n) {
+    final Expression expr = n.getExpression();
+    final String label = expr.toString();
+    final Vertex result = new Vertex(VertexType.THROW, label, n);
+    setId(result);
+    setUses(expr, result);
+    setSubtypes(result, expr);
     return result;
   }
 
@@ -213,12 +225,14 @@ public class VertexCreator {
 
   private Set<VertexSubtype> subtypesFromAst(final Node ast) {
     final Set<VertexSubtype> result = new HashSet<>();
-    final Optional<MethodCallExpr> optMethodCall = ast.findFirst(MethodCallExpr.class);
-    if (optMethodCall.isPresent()) {
-      final MethodCallExpr methodCall = optMethodCall.get();
-      if (methodCall.getScope().isPresent())
+    final Optional<MethodCallExpr> methodCall = ast.findFirst(MethodCallExpr.class);
+    if (methodCall.isPresent()) {
+      if (methodCall.get().getScope().isPresent())
         result.add(VertexSubtype.SCOPED_CALL);
     }
+    final Optional<ObjectCreationExpr> objectCreation = ast.findFirst(ObjectCreationExpr.class);
+    if (objectCreation.isPresent())
+      result.add(VertexSubtype.NEW_OBJ);
     return result;
   }
 
@@ -265,25 +279,6 @@ public class VertexCreator {
     if (text.contains(".print"))
       result.add(VertexSubtype.PRINT);
     return result;
-  }
-
-  private void setCallSubtype(final Vertex v, final MethodCallExpr n) {
-    final Set<VertexSubtype> subtypes = v.getSubtypes();
-    final int numberParam = n.getArguments().size();
-    if (numberParam == 0)
-      subtypes.add(VertexSubtype.NO_PARAMS);
-    else if (numberParam == 1)
-      subtypes.add(VertexSubtype.SINGLE_PARAM);
-    else if (numberParam == 2)
-      subtypes.add(VertexSubtype.TWO_PARAMS);
-    else if (numberParam == 3)
-      subtypes.add(VertexSubtype.THREE_PARAMS);
-    else if (numberParam == 4)
-      subtypes.add(VertexSubtype.FOUR_PARAMS);
-    else if (numberParam == 5)
-      subtypes.add(VertexSubtype.FIVE_PARAMS);
-    else
-      subtypes.add(VertexSubtype.PLUS_FIVE_PARAMS);
   }
 
   public static void selfCall(final Vertex v) {

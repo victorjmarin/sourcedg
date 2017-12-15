@@ -31,6 +31,7 @@ import com.github.javaparser.ast.stmt.ForStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.stmt.ThrowStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
 import com.github.javaparser.utils.Pair;
 import edu.rit.goal.sourcedg.graph.CFG;
@@ -116,6 +117,8 @@ public class CDGBuilder {
       result = breakStmt((BreakStmt) n);
     else if (n instanceof ContinueStmt)
       result = continueStmt((ContinueStmt) n);
+    else if (n instanceof ThrowStmt)
+      result = throwStmt((ThrowStmt) n);
     else
       PDGBuilder.LOGGER.warning("No match for " + n.getClass().getSimpleName());
     return result;
@@ -303,6 +306,14 @@ public class CDGBuilder {
     cdg.addVertex(v);
     inScope.add(v);
     final ControlFlow result = cfgBuilder.continueStmt(v, loopStack.peek());
+    return result;
+  }
+
+  private ControlFlow throwStmt(final ThrowStmt n) {
+    final Vertex v = vtxCreator.throwStmt(n);
+    cdg.addVertex(v);
+    inScope.add(v);
+    final ControlFlow result = new ControlFlow(v, CFGBuilder.EXIT);
     return result;
   }
 

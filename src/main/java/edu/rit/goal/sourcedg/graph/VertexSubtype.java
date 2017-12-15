@@ -6,8 +6,8 @@ public enum VertexSubtype {
   SELF_CALL,
   // Call of method on another object or class
   SCOPED_CALL,
-  // Number of parameters in call
-  NO_PARAMS, SINGLE_PARAM, TWO_PARAMS, THREE_PARAMS, FOUR_PARAMS, FIVE_PARAMS, PLUS_FIVE_PARAMS;
+  // Creates an object
+  NEW_OBJ;
 
   @Override
   public String toString() {
