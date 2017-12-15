@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import org.jgrapht.graph.DefaultDirectedGraph;
+import com.google.common.collect.Sets;
 
 public class PDG extends DefaultDirectedGraph<Vertex, Edge> {
 
@@ -17,25 +18,62 @@ public class PDG extends DefaultDirectedGraph<Vertex, Edge> {
     super(Edge.class);
   }
 
-  public Set<Vertex> slice(final Set<Vertex> S) {
+  public Set<Vertex> backwardSlice(final Set<Vertex> S) {
+    final Set<Vertex> S2 = backwardSlice(S, Sets.newHashSet(EdgeType.PARAM_OUT));
+    final Set<Vertex> result = backwardSlice(S2, Sets.newHashSet(EdgeType.PARAM_IN, EdgeType.CALL));
+    result.addAll(S2);
+    return result;
+  }
+
+  public Set<Vertex> backwardSlice(final Set<Vertex> S, final Set<EdgeType> kinds) {
     final Set<Vertex> result = new HashSet<>();
     final Set<Vertex> worklist = new HashSet<>(S);
     while (!worklist.isEmpty()) {
       final Vertex v = next(worklist);
       result.add(v);
-      final Set<Vertex> w = incidents(result, v);
+      final Set<Vertex> w = backward(result, v, kinds);
       worklist.addAll(w);
     }
     return result;
   }
 
-  private Set<Vertex> incidents(final Collection<Vertex> marked, final Vertex v) {
+  private Set<Vertex> backward(final Collection<Vertex> marked, final Vertex v,
+      final Set<EdgeType> kinds) {
     final Set<Vertex> result = new HashSet<>();
     final Set<Edge> edges = incomingEdgesOf(v);
     for (final Edge e : edges) {
-      if ((e.getType().equals(EdgeType.DATA) || e.getType().isControl())
-          && !marked.contains(e.getSource()))
+      if (!kinds.contains(e.getType()) && !marked.contains(e.getSource()))
         result.add(e.getSource());
+    }
+    return result;
+  }
+
+  public Set<Vertex> forwardSlice(final Set<Vertex> S) {
+    final Set<Vertex> S2 = forwardSlice(S, Sets.newHashSet(EdgeType.PARAM_IN, EdgeType.CALL));
+    final Set<Vertex> result = forwardSlice(S2, Sets.newHashSet(EdgeType.PARAM_OUT));
+    result.addAll(S2);
+    return result;
+  }
+
+  public Set<Vertex> forwardSlice(final Set<Vertex> S, final Set<EdgeType> kinds) {
+    final Set<Vertex> result = new HashSet<>();
+    final Set<Vertex> worklist = new HashSet<>(S);
+    while (!worklist.isEmpty()) {
+      final Vertex v = next(worklist);
+      result.add(v);
+      final Set<Vertex> w = forward(result, v, kinds);
+      worklist.addAll(w);
+    }
+    return result;
+  }
+
+  private Set<Vertex> forward(final Collection<Vertex> marked, final Vertex v,
+      final Set<EdgeType> kinds) {
+    final Set<Vertex> result = new HashSet<>();
+    final Set<Edge> edges = outgoingEdgesOf(v);
+    for (final Edge e : edges) {
+      if (!kinds.contains(e.getType()) && !marked.contains(e.getTarget()))
+        result.add(e.getTarget());
     }
     return result;
   }
