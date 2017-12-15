@@ -290,11 +290,14 @@ public class CDGBuilder {
     final Vertex v = vtxCreator.returnStmt(n);
     cdg.addVertex(v);
     inScope.add(v);
-    final Vertex formalOut = formalOutStack.peek();
-    if (formalOut == null)
-      throw new IllegalStateException("Is " + n + " (line " + n.getRange().get().begin.line
-          + ") inside a method that returns void?");
-    addEdge(EdgeType.DATA, v, formalOut);
+    if (n.getExpression().isPresent()) {
+      final Vertex formalOut = formalOutStack.peek();
+      if (formalOut == null)
+        throw new IllegalStateException("Is " + n + " (line " + n.getRange().get().begin.line
+            + ") inside a method that returns void?");
+      else
+        addEdge(EdgeType.DATA, v, formalOut);
+    }
     return new ControlFlow(v, CFGBuilder.EXIT);
   }
 
