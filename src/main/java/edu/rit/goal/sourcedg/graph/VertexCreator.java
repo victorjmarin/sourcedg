@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.ConstructorDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.VariableDeclarator;
@@ -20,6 +21,7 @@ import com.github.javaparser.ast.stmt.BreakStmt;
 import com.github.javaparser.ast.stmt.CatchClause;
 import com.github.javaparser.ast.stmt.ContinueStmt;
 import com.github.javaparser.ast.stmt.DoStmt;
+import com.github.javaparser.ast.stmt.ExplicitConstructorInvocationStmt;
 import com.github.javaparser.ast.stmt.ForStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
@@ -36,6 +38,21 @@ public class VertexCreator {
     final String label = n.getNameAsString();
     final Vertex result = new Vertex(VertexType.CLASS, label, n);
     setId(result);
+    return result;
+  }
+
+  public Vertex constructorDeclaration(final ConstructorDeclaration n) {
+    final String label = n.getNameAsString();
+    final Vertex result = new Vertex(VertexType.INIT, label, n);
+    setId(result);
+    return result;
+  }
+
+  public Vertex explicitConstructorInvocationStmt(final ExplicitConstructorInvocationStmt n) {
+    final String label = n.toString();
+    final Vertex result = new Vertex(VertexType.CALL, label, n);
+    setId(result);
+    setSubtypes(result, n);
     return result;
   }
 
@@ -200,7 +217,7 @@ public class VertexCreator {
     setId(result);
     return result;
   }
-  
+
   public Vertex finallyBlock(final BlockStmt n) {
     final String label = "";
     final Vertex result = new Vertex(VertexType.FINALLY, label, n);

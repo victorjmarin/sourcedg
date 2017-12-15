@@ -13,6 +13,7 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.ConstructorDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.VariableDeclarator;
@@ -27,6 +28,7 @@ import com.github.javaparser.ast.stmt.BreakStmt;
 import com.github.javaparser.ast.stmt.CatchClause;
 import com.github.javaparser.ast.stmt.ContinueStmt;
 import com.github.javaparser.ast.stmt.DoStmt;
+import com.github.javaparser.ast.stmt.ExplicitConstructorInvocationStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ForStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
@@ -52,7 +54,7 @@ public class CDGBuilder {
   private final CompilationUnit cu;
   private VertexCreator vtxCreator;
   private CFGBuilder cfgBuilder;
-  private String currentClass;
+  private Deque<String> clsStack;
   private HashMap<String, Pair<Vertex, List<Vertex>>> methodParams;
   private HashMap<String, Set<Pair<Vertex, List<Vertex>>>> calls;
   private HashMap<Vertex, Vertex> methodFormalOut;
@@ -71,6 +73,7 @@ public class CDGBuilder {
     vtxCreator = new VertexCreator();
     cfgBuilder = new CFGBuilder();
     cdg = new PDG();
+    clsStack = new ArrayDeque<>();
     inScopeStack = new ArrayDeque<>();
     inScope = new ArrayList<>();
     loopStack = new ArrayDeque<>();
@@ -84,9 +87,13 @@ public class CDGBuilder {
   }
 
   public ControlFlow _build(final Node n) {
-    ControlFlow result = new ControlFlow();
+    ControlFlow result = null;
     if (n instanceof ClassOrInterfaceDeclaration)
       result = classOrInterfaceDeclaration((ClassOrInterfaceDeclaration) n);
+    else if (n instanceof ConstructorDeclaration)
+      result = constructorDeclaration((ConstructorDeclaration) n);
+    else if (n instanceof ExplicitConstructorInvocationStmt)
+      result = explicitConstructorInvocationStmt((ExplicitConstructorInvocationStmt) n);
     else if (n instanceof BlockStmt)
       result = blockStmt((BlockStmt) n);
     else if (n instanceof ExpressionStmt)
@@ -143,17 +150,57 @@ public class CDGBuilder {
   }
 
   private ControlFlow classOrInterfaceDeclaration(final ClassOrInterfaceDeclaration n) {
-    currentClass = n.getNameAsString();
+    clsStack.push(n.getNameAsString());
     final Vertex v = vtxCreator.classOrInterfaceDeclaration(n);
     cdg.addVertex(v);
+    // Constructors
+    final List<ConstructorDeclaration> constructors = n.getConstructors();
+    for (final ConstructorDeclaration c : constructors)
+      _build(c);
+    // Methods
     final List<MethodDeclaration> methods = n.getMethods();
-    ControlFlow mFlow = new ControlFlow();
-    for (final MethodDeclaration m : methods) {
-      mFlow = _build(m);
-      currentClass = n.getNameAsString();
-    }
+    for (final MethodDeclaration m : methods)
+      _build(m);
     addEdges(EdgeType.MEMBER_OF, v, inScope);
-    final ControlFlow result = new ControlFlow(v, mFlow.getOut());
+    clsStack.pop();
+    return null;
+  }
+
+  private ControlFlow constructorDeclaration(final ConstructorDeclaration n) {
+    final Vertex v = vtxCreator.constructorDeclaration(n);
+    cdg.addVertex(v);
+    inScope.add(v);
+    pushScope();
+    final NodeList<Parameter> params = n.getParameters();
+    final List<ControlFlow> paramFlow = params(params, v, n.getNameAsString());
+    final ControlFlow bodyFlow = _build(n.getBody());
+    addEdges(EdgeType.CTRL_TRUE, v, inScope);
+    popScope();
+    // CFG
+    final ControlFlow result = cfgBuilder.methodDeclaration(v, paramFlow, bodyFlow);
+    cfgBuilder.put(v);
+    return result;
+  }
+
+  private ControlFlow explicitConstructorInvocationStmt(final ExplicitConstructorInvocationStmt n) {
+    final Vertex v = vtxCreator.explicitConstructorInvocationStmt(n);
+    cdg.addVertex(v);
+    inScope.add(v);
+    return args(v, n);
+  }
+
+  private List<ControlFlow> params(final NodeList<Parameter> params, final Vertex v,
+      final String name) {
+    final List<ControlFlow> result = new ArrayList<>();
+    final List<Vertex> paramVtcs = new ArrayList<>();
+    for (final Parameter p : params) {
+      final ControlFlow f = _build(p);
+      result.add(f);
+      final Vertex paramVtx = Utils.first(f.getIn());
+      paramVtcs.add(paramVtx);
+    }
+    final String methodName = callName(name);
+    methodParams.put(methodName, new Pair<>(v, paramVtcs));
     return result;
   }
 
@@ -168,16 +215,7 @@ public class CDGBuilder {
       methodFormalOut.put(v, out);
     }
     final NodeList<Parameter> params = n.getParameters();
-    final List<ControlFlow> paramFlow = new ArrayList<>();
-    final List<Vertex> paramVtcs = new ArrayList<>();
-    for (final Parameter p : params) {
-      final ControlFlow f = _build(p);
-      paramFlow.add(f);
-      final Vertex paramVtx = Utils.first(f.getIn());
-      paramVtcs.add(paramVtx);
-    }
-    final String methodName = callName(n);
-    methodParams.put(methodName, new Pair<>(v, paramVtcs));
+    final List<ControlFlow> paramFlow = params(params, v, n.getNameAsString());
     final Optional<BlockStmt> body = n.getBody();
     ControlFlow bodyFlow = null;
     if (body.isPresent())
@@ -232,7 +270,8 @@ public class CDGBuilder {
     if (init.isPresent() && init.get() instanceof MethodCallExpr) {
       // Def and uses are set in the corresponding ACTUAL_OUT and ACTUAL_IN vertices
       v.resetDefUses();
-      final ControlFlow inFlow = args((MethodCallExpr) init.get(), v);
+      final MethodCallExpr call = (MethodCallExpr) init.get();
+      final ControlFlow inFlow = args(v, call);
       final ControlFlow outFlow = actualOut(v, n.getName());
       result = cfgBuilder.seq(inFlow, outFlow);
     }
@@ -249,7 +288,8 @@ public class CDGBuilder {
     if (value instanceof MethodCallExpr) {
       // Def and uses are set in the corresponding ACTUAL_OUT and ACTUAL_IN vertices
       v.resetDefUses();
-      final ControlFlow inFlow = args((MethodCallExpr) value, v);
+      final MethodCallExpr call = (MethodCallExpr) value;
+      final ControlFlow inFlow = args(v, call);
       final ControlFlow outFlow = actualOut(v, n.getTarget());
       result = cfgBuilder.seq(inFlow, outFlow);
     }
@@ -260,7 +300,7 @@ public class CDGBuilder {
     final Vertex v = vtxCreator.methodCallExpr(n);
     cdg.addVertex(v);
     inScope.add(v);
-    return args(n, v);
+    return args(v, n);
   }
 
   private Vertex argumentExpr(final Expression e) {
@@ -283,7 +323,7 @@ public class CDGBuilder {
       default:
         PDGBuilder.LOGGER.warning("Operation " + op + " not considered.");
     }
-    return new ControlFlow();
+    return null;
   }
 
   private ControlFlow returnStmt(final ReturnStmt n) {
@@ -461,8 +501,16 @@ public class CDGBuilder {
     return result;
   }
 
-  private ControlFlow args(final MethodCallExpr call, final Vertex v) {
-    final NodeList<Expression> args = call.getArguments();
+  private ControlFlow args(final Vertex v, final MethodCallExpr n) {
+    return args(v, n.getArguments(), n.getNameAsString(), n.getScope().orElse(null));
+  }
+
+  private ControlFlow args(final Vertex v, final ExplicitConstructorInvocationStmt n) {
+    return args(v, n.getArguments(), "super", null);
+  }
+
+  private ControlFlow args(final Vertex v, final NodeList<Expression> args, final String name,
+      final Expression scope) {
     final List<ControlFlow> result = new ArrayList<>();
     final List<Vertex> paramVtcs = new ArrayList<>();
     result.add(new ControlFlow(v, v));
@@ -472,21 +520,20 @@ public class CDGBuilder {
       result.add(new ControlFlow(a, a));
       paramVtcs.add(a);
     }
-    final String methodName = callName(call);
+    final String methodName = callName(name, scope);
     putCall(methodName, new Pair<>(v, paramVtcs));
     return cfgBuilder.seq(result);
   }
 
-  private String callName(final MethodDeclaration n) {
-    return currentClass + "." + n.getNameAsString();
+  private String callName(final String name) {
+    return clsStack.peek() + "." + name;
   }
 
-  private String callName(final MethodCallExpr n) {
-    String result = currentClass + ".";
-    final Optional<Expression> scope = n.getScope();
-    if (scope.isPresent())
-      result = scope.get().toString() + ".";
-    result += n.getNameAsString();
+  private String callName(final String name, final Expression scope) {
+    String result = clsStack.peek() + ".";
+    if (scope != null)
+      result = scope.toString() + ".";
+    result += name;
     return result;
   }
 

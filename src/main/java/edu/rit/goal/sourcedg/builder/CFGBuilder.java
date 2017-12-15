@@ -104,7 +104,7 @@ public class CFGBuilder {
     addVertex(v);
     return new ControlFlow(v, CFGBuilder.EXIT);
   }
-  
+
   public ControlFlow tryStmt(final Vertex v, final ControlFlow tryBlkFlow,
       final ControlFlow catchFlow, final ControlFlow outFlow) {
     final ControlFlow conn1 = connect(v, tryBlkFlow);
@@ -134,7 +134,7 @@ public class CFGBuilder {
         final ControlFlow next = seq.get(i);
         // If we are leaving the sequence (return, break, continue), the subsequent nodes will be
         // unreachable.
-        if (result.getOut().size() == 1 && result.getOut().contains(EXIT)) {
+        if (result != null && result.getOut().size() == 1 && result.getOut().contains(EXIT)) {
           handleFlowBreak(seq, next, i);
           break;
         } else
