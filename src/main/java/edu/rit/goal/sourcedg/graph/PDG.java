@@ -1,5 +1,6 @@
 package edu.rit.goal.sourcedg.graph;
 
+import java.util.Optional;
 import java.util.Set;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import edu.rit.goal.sourcedg.analysis.PDGSlicer;
@@ -24,6 +25,13 @@ public class PDG extends DefaultDirectedGraph<Vertex, Edge> {
         return successor;
       }
     }
+    return null;
+  }
+
+  public Vertex getVertexWithId(final int id) {
+    final Optional<Vertex> v = vertexSet().stream().filter(u -> u.getId() == id).findFirst();
+    if (v.isPresent())
+      return v.get();
     return null;
   }
 
