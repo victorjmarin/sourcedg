@@ -104,6 +104,22 @@ public class CFGBuilder {
     addVertex(v);
     return new ControlFlow(v, CFGBuilder.EXIT);
   }
+  
+  public ControlFlow tryStmt(final Vertex v, final ControlFlow tryBlkFlow,
+      final ControlFlow catchFlow, final ControlFlow outFlow) {
+    final ControlFlow conn1 = connect(v, tryBlkFlow);
+    final ControlFlow conn2 = connect(conn1, catchFlow);
+    final ControlFlow conn3 = connect(conn2, outFlow);
+    return new ControlFlow(conn1.getIn(), conn3.getOut());
+  }
+
+  public ControlFlow catchClause(final Vertex v, final ControlFlow bodyFlow) {
+    return connect(v, bodyFlow);
+  }
+
+  public ControlFlow finallyBlock(final Vertex v, final ControlFlow finallyFlow) {
+    return connect(v, finallyFlow);
+  }
 
   public ControlFlow seq(final ControlFlow... seq) {
     return seq(Arrays.asList(seq));

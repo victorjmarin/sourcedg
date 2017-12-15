@@ -24,6 +24,7 @@ import com.github.javaparser.ast.expr.UnaryExpr.Operator;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.BreakStmt;
+import com.github.javaparser.ast.stmt.CatchClause;
 import com.github.javaparser.ast.stmt.ContinueStmt;
 import com.github.javaparser.ast.stmt.DoStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
@@ -32,6 +33,7 @@ import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.ThrowStmt;
+import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
 import com.github.javaparser.utils.Pair;
 import edu.rit.goal.sourcedg.graph.CFG;
@@ -117,6 +119,10 @@ public class CDGBuilder {
       result = breakStmt((BreakStmt) n);
     else if (n instanceof ContinueStmt)
       result = continueStmt((ContinueStmt) n);
+    else if (n instanceof TryStmt)
+      result = tryStmt((TryStmt) n);
+    else if (n instanceof CatchClause)
+      result = catchClause((CatchClause) n);
     else if (n instanceof ThrowStmt)
       result = throwStmt((ThrowStmt) n);
     else
@@ -306,6 +312,56 @@ public class CDGBuilder {
     cdg.addVertex(v);
     inScope.add(v);
     final ControlFlow result = cfgBuilder.continueStmt(v, loopStack.peek());
+    return result;
+  }
+
+  private ControlFlow tryStmt(final TryStmt n) {
+    final Vertex v = vtxCreator.tryStmt(n);
+    cdg.addVertex(v);
+    inScope.add(v);
+    pushScope();
+    // Try-block
+    final BlockStmt tryBlk = n.getTryBlock();
+    final ControlFlow tryBlkFlow = _build(tryBlk);
+    // Catch clauses
+    final NodeList<CatchClause> catches = n.getCatchClauses();
+    final List<ControlFlow> catchFlowLst = new ArrayList<>();
+    for (final CatchClause c : catches)
+      catchFlowLst.add(_build(c));
+    final ControlFlow catchFlow = cfgBuilder.seq(catchFlowLst);
+    ControlFlow outFlow = tryBlkFlow;
+    // Finally
+    final Optional<BlockStmt> finallyBlk = n.getFinallyBlock();
+    if (finallyBlk.isPresent())
+      outFlow = finallyBlock(finallyBlk.get());
+    addEdges(EdgeType.CTRL_TRUE, v, inScope);
+    popScope();
+    final ControlFlow result = cfgBuilder.tryStmt(v, tryBlkFlow, catchFlow, outFlow);
+    return result;
+  }
+
+  private ControlFlow finallyBlock(final BlockStmt n) {
+    final Vertex v = vtxCreator.finallyBlock(n);
+    cdg.addVertex(v);
+    inScope.add(v);
+    pushScope();
+    final ControlFlow finallyFlow = _build(n);
+    addEdges(EdgeType.CTRL_TRUE, v, inScope);
+    popScope();
+    final ControlFlow result = cfgBuilder.finallyBlock(v, finallyFlow);
+    return result;
+  }
+
+  private ControlFlow catchClause(final CatchClause n) {
+    final Vertex v = vtxCreator.catchClause(n);
+    cdg.addVertex(v);
+    inScope.add(v);
+    pushScope();
+    final BlockStmt body = n.getBody();
+    final ControlFlow bodyFlow = _build(body);
+    addEdges(EdgeType.CTRL_TRUE, v, inScope);
+    popScope();
+    final ControlFlow result = cfgBuilder.catchClause(v, bodyFlow);
     return result;
   }
 

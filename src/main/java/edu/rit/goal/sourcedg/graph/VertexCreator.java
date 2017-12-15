@@ -15,13 +15,16 @@ import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.expr.SimpleName;
 import com.github.javaparser.ast.expr.UnaryExpr;
+import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.BreakStmt;
+import com.github.javaparser.ast.stmt.CatchClause;
 import com.github.javaparser.ast.stmt.ContinueStmt;
 import com.github.javaparser.ast.stmt.DoStmt;
 import com.github.javaparser.ast.stmt.ForStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.ThrowStmt;
+import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
 import edu.rit.goal.sourcedg.util.Utils;
 
@@ -180,6 +183,27 @@ public class VertexCreator {
     final Optional<SimpleName> expr = n.getLabel();
     final String label = expr.isPresent() ? expr.get().toString() : "";
     final Vertex result = new Vertex(VertexType.CONTINUE, label, n);
+    setId(result);
+    return result;
+  }
+
+  public Vertex tryStmt(final TryStmt n) {
+    final String label = "";
+    final Vertex result = new Vertex(VertexType.TRY, label, n);
+    setId(result);
+    return result;
+  }
+
+  public Vertex catchClause(final CatchClause n) {
+    final String label = n.getParameter().toString();
+    final Vertex result = new Vertex(VertexType.CATCH, label, n);
+    setId(result);
+    return result;
+  }
+  
+  public Vertex finallyBlock(final BlockStmt n) {
+    final String label = "";
+    final Vertex result = new Vertex(VertexType.FINALLY, label, n);
     setId(result);
     return result;
   }
