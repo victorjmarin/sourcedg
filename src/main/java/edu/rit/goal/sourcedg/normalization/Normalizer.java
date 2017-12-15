@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
@@ -34,10 +33,9 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.PrimitiveType;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.visitor.ModifierVisitor;
+import edu.rit.goal.sourcedg.builder.PDGBuilder;
 
 public class Normalizer {
-
-  private final Logger logger = Logger.getAnonymousLogger();
 
   private int varId = 0;
   private CompilationUnit cu;
@@ -390,7 +388,7 @@ public class Normalizer {
       final NameExpr name = (NameExpr) expr.getTarget();
       mAss.put(name, assign);
     } else
-      logger.warning("Not mapped -> " + target);
+      PDGBuilder.LOGGER.warning("Not mapped -> " + target);
     final Expression result = expr.getTarget();
     return result;
   }
@@ -440,7 +438,7 @@ public class Normalizer {
     // TODO: Body might be an expression instead of a block
     final Optional<Node> n = expr.getParentNode();
     if (!n.isPresent()) {
-      logger.warning("No parent block found for " + original.toString());
+      PDGBuilder.LOGGER.warning("No parent block found for " + original.toString());
       return null;
     }
     if (n.get() instanceof BlockStmt) {
