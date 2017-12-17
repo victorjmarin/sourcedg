@@ -491,12 +491,13 @@ public class CDGBuilder {
     clearScope();
     // Else branch
     final Optional<Statement> elseStmt = n.getElseStmt();
-    addEdges(EdgeType.CTRL_FALSE, v, inScope);
-    popScope();
     // Control flow
     ControlFlow elseFlow = null;
-    if (elseStmt.isPresent())
+    if (elseStmt.isPresent()) {
       elseFlow = _build(elseStmt.get());
+      addEdges(EdgeType.CTRL_FALSE, v, inScope);
+    }
+    popScope();
     final ControlFlow result = cfgBuilder.ifStmt(v, thenFlow, elseFlow);
     return result;
   }
