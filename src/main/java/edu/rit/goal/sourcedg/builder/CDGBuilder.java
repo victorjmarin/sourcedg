@@ -38,6 +38,7 @@ import com.github.javaparser.ast.stmt.ThrowStmt;
 import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
 import com.github.javaparser.utils.Pair;
+import com.google.common.collect.Sets;
 import edu.rit.goal.sourcedg.graph.CFG;
 import edu.rit.goal.sourcedg.graph.Edge;
 import edu.rit.goal.sourcedg.graph.EdgeType;
@@ -271,6 +272,12 @@ public class CDGBuilder {
       // Def and uses are set in the corresponding ACTUAL_OUT and ACTUAL_IN vertices
       v.resetDefUses();
       final MethodCallExpr call = (MethodCallExpr) init.get();
+      // Set uses w.r.t. invoked objects
+      final Optional<Expression> scope = call.getScope();
+      if (scope.isPresent()) {
+        final Set<String> uses = Sets.newHashSet(scope.get().toString());
+        v.setUses(uses);
+      }
       final ControlFlow inFlow = args(v, call);
       final ControlFlow outFlow = actualOut(v, n.getName());
       result = cfgBuilder.seq(inFlow, outFlow);
@@ -289,6 +296,12 @@ public class CDGBuilder {
       // Def and uses are set in the corresponding ACTUAL_OUT and ACTUAL_IN vertices
       v.resetDefUses();
       final MethodCallExpr call = (MethodCallExpr) value;
+      // Set uses w.r.t. invoked objects
+      final Optional<Expression> scope = call.getScope();
+      if (scope.isPresent()) {
+        final Set<String> uses = Sets.newHashSet(scope.get().toString());
+        v.setUses(uses);
+      }
       final ControlFlow inFlow = args(v, call);
       final ControlFlow outFlow = actualOut(v, n.getTarget());
       result = cfgBuilder.seq(inFlow, outFlow);

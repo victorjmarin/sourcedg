@@ -18,7 +18,6 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.LiteralExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.NullLiteralExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.DoStmt;
@@ -66,9 +65,9 @@ public class Normalizer {
     for (final ModifierVisitor<Void> mv : visitors) {
       cu.accept(mv, null);
       newCu = cu.toString();
-      // System.out.println(mv.getClass().getSimpleName());
-      // System.out.println();
-      // System.out.println(newCu);
+      System.out.println(mv.getClass().getSimpleName());
+      System.out.println();
+      System.out.println(newCu);
       cu = JavaParser.parse(newCu);
     }
     return cu;
@@ -188,19 +187,24 @@ public class Normalizer {
       final VariableDeclarationExpr varDeclExpr = stmt.getVariable();
       final VariableDeclarator varDecl = varDeclExpr.getVariable(0);
       final Type type = varDeclExpr.getElementType();
-      final ExpressionStmt iterator = getForIteratorStmt(type, stmt.getIterable());
-      final VariableDeclarationExpr initExpr = getForInitExpr(varDecl, type);
+      final Expression iterator = getForIteratorStmt(type, stmt.getIterable());
       final NameExpr currentVar = new NameExpr(currentVarId());
       final MethodCallExpr hasNext = new MethodCallExpr(currentVar, "hasNext");
       final NodeList<Expression> initialization = new NodeList<>();
-      initialization.add(initExpr);
-      final ForStmt result = new ForStmt(initialization, hasNext, new NodeList<>(), stmt.getBody());
-      final SearchResult sr = findBlockStmt(stmt);
-      sr.blk.addStatement(sr.idx, iterator);
-      final ExpressionStmt nextExpr = getNextExpr(new NameExpr(varDecl.getName()), currentVar);
-      addToBody(stmt.getBody(), nextExpr, 0);
+      initialization.add(iterator);
+      final Expression nextExpr = getNextExpr(varDecl, type, currentVar);
+      final Statement body = addToBody(stmt.getBody(), new ExpressionStmt(nextExpr), 0);
+      final ForStmt result = new ForStmt(initialization, hasNext, new NodeList<>(), body);
       return result;
     }
+  }
+
+  private VariableDeclarationExpr getNextExpr(final VariableDeclarator varDecl, final Type type,
+      final NameExpr currentVar) {
+    final MethodCallExpr value = new MethodCallExpr(currentVar, "next");
+    final VariableDeclarator initVarDecl =
+        new VariableDeclarator(type, varDecl.getNameAsString(), value);
+    return new VariableDeclarationExpr(initVarDecl);
   }
 
   private Statement addToBody(final Statement body, final Expression n) {
@@ -218,6 +222,16 @@ public class Normalizer {
       result = addToBody((BlockStmt) body, n, pos);
     else if (body instanceof ExpressionStmt)
       result = addToBody((ExpressionStmt) body, n, pos);
+    else if (body instanceof Statement) {
+      result = _addToBody(body, n, pos);
+    }
+    return result;
+  }
+
+  private Statement _addToBody(final Statement body, final Statement n, final int pos) {
+    final BlockStmt result = new BlockStmt();
+    result.addStatement(body);
+    result.addStatement(pos, n);
     return result;
   }
 
@@ -245,28 +259,14 @@ public class Normalizer {
     return body;
   }
 
-  private ExpressionStmt getNextExpr(final Expression target, final Expression scope) {
-    final MethodCallExpr value = new MethodCallExpr(scope, "next");
-    final AssignExpr assign = new AssignExpr(target, value, Operator.ASSIGN);
-    return new ExpressionStmt(assign);
-  }
-
-  private VariableDeclarationExpr getForInitExpr(final VariableDeclarator varDecl,
-      final Type type) {
-    final VariableDeclarator initVarDecl =
-        new VariableDeclarator(type, varDecl.getNameAsString(), new NullLiteralExpr());
-    return new VariableDeclarationExpr(initVarDecl);
-  }
-
-  private ExpressionStmt getForIteratorStmt(final Type type, final Expression list) {
+  private Expression getForIteratorStmt(final Type type, final Expression list) {
     final Type wrapperType = toWrapperType(type);
     final ClassOrInterfaceType itType =
         JavaParser.parseClassOrInterfaceType("Iterator<" + wrapperType + ">");
     final String name = nextVarId();
     final MethodCallExpr init = new MethodCallExpr(list, "iterator");
     final VariableDeclarator varDecl = new VariableDeclarator(itType, name, init);
-    final VariableDeclarationExpr varDeclExpr = new VariableDeclarationExpr(varDecl);
-    return new ExpressionStmt(varDeclExpr);
+    return new VariableDeclarationExpr(varDecl);
   }
 
   private class AssignExprVisitor extends ModifierVisitor<Void> {
@@ -432,7 +432,6 @@ public class Normalizer {
   private SearchResult findBlockStmt(final Node expr) {
     return findBlockStmt(expr, expr);
   }
-
 
   private SearchResult findBlockStmt(final Node expr, final Node original) {
     // TODO: Body might be an expression instead of a block
