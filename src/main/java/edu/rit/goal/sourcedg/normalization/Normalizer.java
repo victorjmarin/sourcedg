@@ -8,7 +8,11 @@ import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
+import com.github.javaparser.ast.comments.Comment;
+import com.github.javaparser.ast.comments.LineComment;
 import com.github.javaparser.ast.expr.ArrayCreationExpr;
 import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.AssignExpr.Operator;
@@ -49,6 +53,7 @@ public class Normalizer {
   }
 
   public CompilationUnit normalize() {
+    lineComment(cu);
     visitors.add(new LocalClassDeclarationStmtVisitor());
     visitors.add(new ForStmtUpdateVisitor());
     visitors.add(new ForeachStmtVisitor());
@@ -65,12 +70,21 @@ public class Normalizer {
     for (final ModifierVisitor<Void> mv : visitors) {
       cu.accept(mv, null);
       newCu = cu.toString();
-      System.out.println(mv.getClass().getSimpleName());
-      System.out.println();
-      System.out.println(newCu);
+      // System.out.println(mv.getClass().getSimpleName());
+      // System.out.println();
+      // System.out.println(newCu);
       cu = JavaParser.parse(newCu);
     }
     return cu;
+  }
+
+  // Comments each statement with its line number
+  private void lineComment(final Node node) {
+    if (!(node instanceof BlockStmt) && node instanceof Statement
+        || node instanceof ClassOrInterfaceDeclaration || node instanceof MethodDeclaration)
+      withComment(node, getBeginLine(node));
+    for (final Node n : node.getChildNodes())
+      lineComment(n);
   }
 
   // Removes inner classes
@@ -84,16 +98,19 @@ public class Normalizer {
   private class ArrayCreationExprVisitor extends ModifierVisitor<Void> {
     @Override
     public Node visit(final ArrayCreationExpr expr, final Void args) {
+      final int line = getBeginLine(expr);
+      final Comment comment = getParentStmtComment(expr, line);
       super.visit(expr, args);
       if (hasSuperParent(expr))
         return expr;
       final String variableName = nextVarId();
-      final SearchResult sr = findBlockStmt(expr);
+      final NodeSearchResult sr = findBlockStmt(expr);
       if (sr == null)
         return expr;
       final VariableDeclarationExpr varDeclExpr = variableDeclaratorExpr(variableName, expr);
       final ExpressionStmt exprStmt = new ExpressionStmt(varDeclExpr);
       addToBody(sr.blk, exprStmt, sr.idx);
+      withComment(exprStmt, comment);
       return new NameExpr(variableName);
     }
   }
@@ -119,6 +136,7 @@ public class Normalizer {
       final NodeList<Expression> updateNodeLst = stmt.getUpdate();
       if (!updateNodeLst.isEmpty()) {
         final Expression update = updateNodeLst.remove(0);
+        update.setComment(stmt.getComment().get());
         addToBody(stmt.getBody(), update);
       }
       return stmt;
@@ -277,7 +295,7 @@ public class Normalizer {
       final Node parent = expr.getParentNode().get();
       if (parent == null || !(parent instanceof EnclosedExpr))
         return expr;
-      final SearchResult sr = findBlockStmt(expr);
+      final NodeSearchResult sr = findBlockStmt(expr);
       final Expression result = recNorm(expr);
       for (final ExpressionStmt e : expressions)
         sr.blk.addStatement(sr.idx, e);
@@ -301,18 +319,22 @@ public class Normalizer {
   private class MethodCallVisitor extends ModifierVisitor<Void> {
     @Override
     public Node visit(final MethodCallExpr expr, final Void args) {
+      final int line = getBeginLine(expr);
+      final Comment comment = getParentStmtComment(expr, line);
       super.visit(expr, args);
       // Do not extract to variable if parent is assign or super
       final Node parent = expr.getParentNode().get();
       if (parent instanceof AssignExpr || parent instanceof ExpressionStmt
           || parent instanceof VariableDeclarator || hasSuperParent(parent))
         return expr;
-      final SearchResult sr = findBlockStmt(expr);
+      final NodeSearchResult sr = findBlockStmt(expr);
       if (sr == null)
         return expr;
       final Expression result = recNorm(expr);
-      for (final ExpressionStmt e : expressions)
+      for (final ExpressionStmt e : expressions) {
         sr.blk.addStatement(sr.idx, e);
+        withComment(e, comment);
+      }
       expressions.clear();
       return result;
     }
@@ -321,6 +343,8 @@ public class Normalizer {
   private class BinaryExprVisitor extends ModifierVisitor<Void> {
     @Override
     public Node visit(final BinaryExpr expr, final Void args) {
+      final int line = getBeginLine(expr);
+      final Comment comment = getParentStmtComment(expr, line);
       super.visit(expr, args);
       final Expression left = expr.getLeft();
       final Expression right = expr.getRight();
@@ -332,15 +356,35 @@ public class Normalizer {
           && !(parent instanceof BinaryExpr || parent instanceof EnclosedExpr)
           || hasSuperParent(parent))
         return expr;
-      final SearchResult sr = findBlockStmt(expr);
+      final NodeSearchResult sr = findBlockStmt(expr);
       if (sr == null)
         return expr;
       final Expression result = recNorm(expr);
-      for (final ExpressionStmt e : expressions)
+      for (final ExpressionStmt e : expressions) {
         sr.blk.addStatement(sr.idx, e);
+        withComment(e, comment);
+      }
       expressions.clear();
       return result;
     }
+  }
+
+  private Comment getParentStmtComment(final Node n, final int line) {
+    final Optional<Statement> o = n.findParent(Statement.class);
+    if (o.isPresent() && o.get().getComment().isPresent()) {
+      return o.get().getComment().get();
+    }
+    return new LineComment(String.valueOf(line));
+  }
+
+  private Node withComment(final Node n, final int comment) {
+    n.setLineComment(String.valueOf(comment));
+    return n;
+  }
+
+  private Node withComment(final Node n, final Comment comment) {
+    n.setLineComment(comment.getContent());
+    return n;
   }
 
   private AssignExpr varDecl2Assign(final ExpressionStmt expr) {
@@ -352,7 +396,9 @@ public class Normalizer {
       final VariableDeclarator varDecl = (VariableDeclarator) firstChild;
       final NameExpr name = new NameExpr(varDecl.getName().asString());
       final Expression init = varDecl.getInitializer().get();
-      return new AssignExpr(name, init, Operator.ASSIGN);
+      final AssignExpr result = new AssignExpr(name, init, Operator.ASSIGN);
+      result.setComment(expr.getComment().get());
+      return result;
     }
     return null;
   }
@@ -429,12 +475,13 @@ public class Normalizer {
     return new VariableDeclarationExpr(varDeclarator);
   }
 
-  private SearchResult findBlockStmt(final Node expr) {
+  private NodeSearchResult findBlockStmt(final Node expr) {
     return findBlockStmt(expr, expr);
   }
 
-  private SearchResult findBlockStmt(final Node expr, final Node original) {
+  private NodeSearchResult findBlockStmt(final Node expr, final Node original) {
     // TODO: Body might be an expression instead of a block
+    // Use method findParent?
     final Optional<Node> n = expr.getParentNode();
     if (!n.isPresent()) {
       PDGBuilder.LOGGER.warning("No parent block found for " + original.toString());
@@ -443,7 +490,7 @@ public class Normalizer {
     if (n.get() instanceof BlockStmt) {
       final BlockStmt blk = (BlockStmt) n.get();
       final int indexOf = blk.getStatements().indexOf(expr);
-      return new SearchResult(blk, indexOf, expr);
+      return new NodeSearchResult(blk, indexOf, expr);
     }
     return findBlockStmt(expr.getParentNode().get(), original);
   }
@@ -516,6 +563,10 @@ public class Normalizer {
 
   private Type defaultType() {
     return JavaParser.parseClassOrInterfaceType("Void");
+  }
+
+  private int getBeginLine(final Node n) {
+    return n.getBegin().get().line;
   }
 
 }

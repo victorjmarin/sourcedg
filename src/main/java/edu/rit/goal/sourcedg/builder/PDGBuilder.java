@@ -25,7 +25,7 @@ import edu.rit.goal.sourcedg.normalization.Normalizer;
 
 public class PDGBuilder {
 
-  private static final Level LOG_LEVEL = Level.WARNING;
+  private static final Level LOG_LEVEL = Level.OFF;
   public static final Logger LOGGER = Logger.getLogger("PDG");
 
   {
@@ -34,6 +34,8 @@ public class PDGBuilder {
 
   private PDG pdg;
   private Collection<CFG> cfgs;
+  private CompilationUnit originalCu;
+  private CompilationUnit normalizedCu;
 
   public void build(final InputStream in) {
     final CompilationUnit cu = JavaParser.parse(in);
@@ -46,8 +48,10 @@ public class PDGBuilder {
   }
 
   private void build(CompilationUnit cu) {
+    originalCu = cu;
     final Normalizer normalizer = new Normalizer(cu);
     cu = normalizer.normalize();
+    normalizedCu = cu;
     final CDGBuilder cdgBuilder = new CDGBuilder(cu);
     cdgBuilder.build();
     pdg = cdgBuilder.getCDG();
@@ -159,6 +163,14 @@ public class PDGBuilder {
 
   public Collection<CFG> getCfgs() {
     return cfgs;
+  }
+
+  public CompilationUnit getOriginalCU() {
+    return originalCu;
+  }
+
+  public CompilationUnit getNormalizedCU() {
+    return normalizedCu;
   }
 
 }

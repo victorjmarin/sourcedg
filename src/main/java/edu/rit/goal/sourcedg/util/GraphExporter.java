@@ -24,7 +24,7 @@ public class GraphExporter {
           final Set<VertexSubtype> subtypes = component.getSubtypes();
           if (!subtypes.isEmpty())
             result += subtypes + "\n";
-          result += component.getLabel().replaceAll("\"", "'");
+          result += component.getLabel().replaceAll("\"", "'") + ":" + component.getOriginalLine();
           return result;
         }
       };

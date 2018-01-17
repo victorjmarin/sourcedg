@@ -10,17 +10,17 @@ import edu.rit.goal.sourcedg.graph.PDG;
 import edu.rit.goal.sourcedg.graph.Vertex;
 import edu.rit.goal.sourcedg.util.GraphExporter;
 
-public class Test {
+public class TestLines {
 
   public static void main(final String[] args) throws Exception {
-    final FileInputStream in = new FileInputStream("programs/java8/normalization/14274537_enhanced.java");
+    final FileInputStream in = new FileInputStream("programs/java8/normalization/8860296.java");
     final PDGBuilder builder = new PDGBuilder();
     builder.build(in);
     final PDG pdg = builder.getPDG();
     System.out.println(pdg);
     final Iterator<CFG> it = builder.getCfgs().iterator();
     final DefaultDirectedGraph<Vertex, Edge> cfg = it.next();
-    GraphExporter.exportAsDot(pdg, "/Users/goal/Desktop", "und");
+    GraphExporter.exportAsDot(pdg, "/Users/goal/Desktop", "und2");
   }
 
 }

@@ -1,13 +1,17 @@
+import java.util.Arrays;
+
 public class Stack {
 
-  void m1(int a) {
-    if (true)
-      k = 7;
-    j = 2;
+  public Stack(int a, int b) {
+    super(a, b);
+    this.a = a;
+    this.b = b;
+    int k = a + b;
   }
 
-  void m2() {
-    int z = m1(2);
+  public void m1() {
+    int k = 0;
+    new Stack(1, 2);
   }
 
 }

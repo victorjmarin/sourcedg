@@ -19,6 +19,7 @@ public class Vertex implements Serializable {
   private final Set<Vertex> in;
   private Set<Vertex> out;
   private Node ast;
+  private Integer originalLine;
 
   // Graphviz attributes
   private String fillColor;
@@ -157,6 +158,14 @@ public class Vertex implements Serializable {
   public void resetDefUses() {
     def = null;
     uses = new HashSet<>();
+  }
+
+  public Integer getOriginalLine() {
+    return originalLine;
+  }
+
+  public void setOriginalLine(final Integer originalLine) {
+    this.originalLine = originalLine;
   }
 
   @Override
