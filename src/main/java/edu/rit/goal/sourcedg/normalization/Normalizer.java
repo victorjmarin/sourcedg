@@ -40,6 +40,8 @@ import edu.rit.goal.sourcedg.builder.PDGBuilder;
 
 public class Normalizer {
 
+  public static final String COMMENT_TAG = "@OL:";
+
   private int varId = 0;
   private CompilationUnit cu;
   private final List<ExpressionStmt> expressions = new ArrayList<>();
@@ -81,8 +83,13 @@ public class Normalizer {
   // Comments each statement with its line number
   private void lineComment(final Node node) {
     if (!(node instanceof BlockStmt) && node instanceof Statement
-        || node instanceof ClassOrInterfaceDeclaration || node instanceof MethodDeclaration)
-      withComment(node, getBeginLine(node));
+        || node instanceof ClassOrInterfaceDeclaration || node instanceof MethodDeclaration) {
+      String comment = COMMENT_TAG + String.valueOf(getBeginLine(node));
+      final Optional<Comment> optComm = node.getComment();
+      if (optComm.isPresent())
+        comment += " -" + optComm.get().getContent();
+      withComment(node, comment);
+    }
     for (final Node n : node.getChildNodes())
       lineComment(n);
   }
@@ -136,7 +143,7 @@ public class Normalizer {
       final NodeList<Expression> updateNodeLst = stmt.getUpdate();
       if (!updateNodeLst.isEmpty()) {
         final Expression update = updateNodeLst.remove(0);
-        update.setComment(stmt.getComment().get());
+        update.setComment(findParentComment(stmt));
         addToBody(stmt.getBody(), update);
       }
       return stmt;
@@ -374,11 +381,11 @@ public class Normalizer {
     if (o.isPresent() && o.get().getComment().isPresent()) {
       return o.get().getComment().get();
     }
-    return new LineComment(String.valueOf(line));
+    return new LineComment(COMMENT_TAG + String.valueOf(line));
   }
 
-  private Node withComment(final Node n, final int comment) {
-    n.setLineComment(String.valueOf(comment));
+  private Node withComment(final Node n, final String comment) {
+    n.setLineComment(comment);
     return n;
   }
 
@@ -397,7 +404,7 @@ public class Normalizer {
       final NameExpr name = new NameExpr(varDecl.getName().asString());
       final Expression init = varDecl.getInitializer().get();
       final AssignExpr result = new AssignExpr(name, init, Operator.ASSIGN);
-      result.setComment(expr.getComment().get());
+      result.setComment(findParentComment(expr));
       return result;
     }
     return null;
@@ -567,6 +574,14 @@ public class Normalizer {
 
   private int getBeginLine(final Node n) {
     return n.getBegin().get().line;
+  }
+
+  private Comment findParentComment(final Node node) {
+    while (!node.getComment().isPresent()) {
+      final Node p = node.findParent(Node.class).get();
+      return findParentComment(p);
+    }
+    return node.getComment().get();
   }
 
 }

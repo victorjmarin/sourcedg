@@ -3,6 +3,8 @@ package edu.rit.goal.sourcedg.graph;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
@@ -26,10 +28,10 @@ import com.github.javaparser.ast.stmt.ExplicitConstructorInvocationStmt;
 import com.github.javaparser.ast.stmt.ForStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
-import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.ThrowStmt;
 import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
+import edu.rit.goal.sourcedg.normalization.Normalizer;
 import edu.rit.goal.sourcedg.util.Utils;
 
 public class VertexCreator {
@@ -262,26 +264,27 @@ public class VertexCreator {
   }
 
   public void setOriginalLine(final Vertex v, final Node n) {
-    Integer line = null;
-    if (n.getComment().isPresent())
-      line = Integer.valueOf(n.getComment().get().getContent().trim());
-    else {
-      final Optional<Statement> parentStmt = n.findParent(Statement.class);
-      // Retrieve comment from parent statement. If no parent statement present, get the closest
-      // parent comment
-      final Comment comment =
-          parentStmt.isPresent() ? parentStmt.get().getComment().get() : findParentComment(n);
-      line = Integer.valueOf(comment.getContent().trim());
-    }
+    final Integer line = findParentComment(n);
     v.setOriginalLine(line);
   }
 
-  private Comment findParentComment(final Node n) {
+  private Integer findParentComment(final Node n) {
     while (!n.getComment().isPresent()) {
       final Node p = n.findParent(Node.class).get();
       return findParentComment(p);
     }
-    return n.getComment().get();
+    return retrieveLineFromComment(n.getComment().get());
+  }
+
+  private Integer retrieveLineFromComment(final Comment comment) {
+    final String intRegex = Normalizer.COMMENT_TAG + "(\\d+)";
+    final String content = comment.getContent();
+    final Pattern p = Pattern.compile(intRegex);
+    final Matcher m = p.matcher(content);
+    if (!m.find())
+      return null;
+    final String line = m.group(1);
+    return Integer.valueOf(line);
   }
 
   private void setDef(final Node n, final Vertex v) {
