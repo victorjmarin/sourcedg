@@ -230,6 +230,7 @@ public class VertexCreator {
     final String label = "";
     final Vertex result = new Vertex(VertexType.TRY, label, n);
     setId(result);
+    setOriginalLine(result, n);
     return result;
   }
 
@@ -245,6 +246,7 @@ public class VertexCreator {
     final String label = "";
     final Vertex result = new Vertex(VertexType.FINALLY, label, n);
     setId(result);
+    setOriginalLine(result, n);
     return result;
   }
 

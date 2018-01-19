@@ -162,6 +162,9 @@ public class CDGBuilder {
     final List<MethodDeclaration> methods = n.getMethods();
     for (final MethodDeclaration m : methods)
       _build(m);
+    final List<ClassOrInterfaceDeclaration> classes = n.findAll(ClassOrInterfaceDeclaration.class, t -> !t.equals(n));
+    for (final ClassOrInterfaceDeclaration c : classes)
+      _build(c);
     addEdges(EdgeType.MEMBER_OF, v, inScope);
     clsStack.pop();
     return null;
