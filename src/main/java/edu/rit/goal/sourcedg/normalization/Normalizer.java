@@ -29,6 +29,7 @@ import com.github.javaparser.ast.stmt.ExplicitConstructorInvocationStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ForStmt;
 import com.github.javaparser.ast.stmt.ForeachStmt;
+import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.LocalClassDeclarationStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.WhileStmt;
@@ -56,6 +57,7 @@ public class Normalizer {
 
   public CompilationUnit normalize() {
     lineComment(cu);
+    ensureBlkStmts(cu);
     visitors.add(new LocalClassDeclarationStmtVisitor());
     visitors.add(new ForStmtUpdateVisitor());
     visitors.add(new ForeachStmtVisitor());
@@ -78,6 +80,37 @@ public class Normalizer {
       cu = JavaParser.parse(newCu);
     }
     return cu;
+  }
+
+  private void ensureBlkStmts(final CompilationUnit cu) {
+    cu.accept(new ModifierVisitor<Void>() {
+      @Override
+      public Node visit(final ForStmt stmt, final Void args) {
+        super.visit(stmt, args);
+        return changeNestedStmtToBlk(stmt);
+      }
+    }, null);
+    cu.accept(new ModifierVisitor<Void>() {
+      @Override
+      public Node visit(final WhileStmt stmt, final Void args) {
+        super.visit(stmt, args);
+        return changeNestedStmtToBlk(stmt);
+      }
+    }, null);
+    cu.accept(new ModifierVisitor<Void>() {
+      @Override
+      public Node visit(final DoStmt stmt, final Void args) {
+        super.visit(stmt, args);
+        return changeNestedStmtToBlk(stmt);
+      }
+    }, null);
+    cu.accept(new ModifierVisitor<Void>() {
+      @Override
+      public Node visit(final IfStmt stmt, final Void args) {
+        super.visit(stmt, args);
+        return changeNestedStmtToBlk(stmt);
+      }
+    }, null);
   }
 
   // Comments each statement with its line number
@@ -144,7 +177,7 @@ public class Normalizer {
       if (!updateNodeLst.isEmpty()) {
         final Expression update = updateNodeLst.remove(0);
         update.setComment(findParentComment(stmt));
-        addToBody(stmt.getBody(), update);
+        stmt.setBody(addToBody(stmt.getBody(), update));
       }
       return stmt;
     }
@@ -238,6 +271,12 @@ public class Normalizer {
       result = addToBody((BlockStmt) body, n);
     else if (body instanceof ExpressionStmt)
       result = addToBody((ExpressionStmt) body, n);
+    else if (body instanceof Statement) {
+      final BlockStmt blk = new BlockStmt();
+      blk.addStatement(body);
+      blk.addStatement(n);
+      result = blk;
+    }
     return result;
   }
 
@@ -253,7 +292,7 @@ public class Normalizer {
     return result;
   }
 
-  private Statement _addToBody(final Statement body, final Statement n, final int pos) {
+  private Statement _addToBody(final Statement body, final Statement n, final Integer pos) {
     final BlockStmt result = new BlockStmt();
     result.addStatement(body);
     result.addStatement(pos, n);
@@ -582,6 +621,28 @@ public class Normalizer {
       return findParentComment(p);
     }
     return node.getComment().get();
+  }
+
+  private Node changeNestedStmtToBlk(final Node n) {
+    if (parentIsCtrl(n) && isCtrl(n)) {
+      final BlockStmt blk = new BlockStmt();
+      blk.addStatement((Statement) n);
+      return blk;
+    }
+    return n;
+  }
+
+  private boolean parentIsCtrl(final Node n) {
+    final Optional<Node> oParent = n.getParentNode();
+    if (!oParent.isPresent())
+      return false;
+    final Node p = oParent.get();
+    return isCtrl(p);
+  }
+
+  private boolean isCtrl(final Node n) {
+    return n instanceof ForStmt || n instanceof IfStmt || n instanceof WhileStmt
+        || n instanceof DoStmt;
   }
 
 }
