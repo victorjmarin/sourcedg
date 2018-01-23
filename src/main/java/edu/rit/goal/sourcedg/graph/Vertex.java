@@ -14,6 +14,7 @@ public class Vertex implements Serializable {
   private String def;
   private Set<String> uses;
   private Set<VertexSubtype> subtypes;
+  private String calledMethodName;
   private Integer startLine;
   private Integer endLine;
   private final Set<Vertex> in;
@@ -141,6 +142,14 @@ public class Vertex implements Serializable {
 
   public void setSubtypes(final Set<VertexSubtype> subtypes) {
     this.subtypes = subtypes;
+  }
+
+  public String getCalledMethodName() {
+    return calledMethodName;
+  }
+
+  public void setCalledMethodName(final String calledMethodName) {
+    this.calledMethodName = calledMethodName;
   }
 
   public Node getAst() {

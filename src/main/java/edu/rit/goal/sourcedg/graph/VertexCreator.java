@@ -309,22 +309,20 @@ public class VertexCreator {
 
   private void setSubtypes(final Vertex v, final Node n) {
     final Set<VertexSubtype> subtypes = subtypesFromText(v.getLabel());
-    subtypes.addAll(subtypesFromAst(n));
     v.setSubtypes(subtypes);
+    addSubtypesFromAst(n, v);
   }
 
-
-  private Set<VertexSubtype> subtypesFromAst(final Node ast) {
-    final Set<VertexSubtype> result = new HashSet<>();
+  private void addSubtypesFromAst(final Node ast, final Vertex v) {
     final Optional<MethodCallExpr> methodCall = ast.findFirst(MethodCallExpr.class);
     if (methodCall.isPresent()) {
+      v.setCalledMethodName(methodCall.get().getNameAsString());
       if (methodCall.get().getScope().isPresent())
-        result.add(VertexSubtype.SCOPED_CALL);
+        v.getSubtypes().add(VertexSubtype.SCOPED_CALL);
     }
     final Optional<ObjectCreationExpr> objectCreation = ast.findFirst(ObjectCreationExpr.class);
     if (objectCreation.isPresent())
-      result.add(VertexSubtype.NEW_OBJ);
-    return result;
+      v.getSubtypes().add(VertexSubtype.NEW_OBJ);
   }
 
   private Set<VertexSubtype> subtypesFromText(final String text) {
