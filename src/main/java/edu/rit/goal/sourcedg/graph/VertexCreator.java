@@ -271,7 +271,8 @@ public class VertexCreator {
   }
 
   private Integer findParentComment(final Node n) {
-    while (!n.getComment().isPresent()) {
+    while (!n.getComment().isPresent()
+        || !n.getComment().get().getContent().contains(Normalizer.COMMENT_TAG)) {
       final Node p = n.findParent(Node.class).get();
       return findParentComment(p);
     }

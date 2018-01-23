@@ -87,28 +87,41 @@ public class Normalizer {
       @Override
       public Node visit(final ForStmt stmt, final Void args) {
         super.visit(stmt, args);
-        return changeNestedStmtToBlk(stmt);
+        final Statement body = changeNestedStmtToBlk(stmt.getBody());
+        stmt.setBody(body);
+        return stmt;
       }
     }, null);
     cu.accept(new ModifierVisitor<Void>() {
       @Override
       public Node visit(final WhileStmt stmt, final Void args) {
         super.visit(stmt, args);
-        return changeNestedStmtToBlk(stmt);
+        final Statement body = changeNestedStmtToBlk(stmt.getBody());
+        stmt.setBody(body);
+        return stmt;
       }
     }, null);
     cu.accept(new ModifierVisitor<Void>() {
       @Override
       public Node visit(final DoStmt stmt, final Void args) {
         super.visit(stmt, args);
-        return changeNestedStmtToBlk(stmt);
+        final Statement body = changeNestedStmtToBlk(stmt.getBody());
+        stmt.setBody(body);
+        return stmt;
       }
     }, null);
     cu.accept(new ModifierVisitor<Void>() {
       @Override
       public Node visit(final IfStmt stmt, final Void args) {
         super.visit(stmt, args);
-        return changeNestedStmtToBlk(stmt);
+        final Statement thenStmt = changeNestedStmtToBlk(stmt.getThenStmt());
+        stmt.setThenStmt(thenStmt);
+        final Optional<Statement> oElseStmt = stmt.getElseStmt();
+        if (oElseStmt.isPresent()) {
+          final Statement elseStmt = changeNestedStmtToBlk(oElseStmt.get());
+          stmt.setElseStmt(elseStmt);
+        }
+        return stmt;
       }
     }, null);
   }
@@ -619,20 +632,21 @@ public class Normalizer {
   }
 
   private Comment findParentComment(final Node node) {
-    while (!node.getComment().isPresent()) {
+    while (!node.getComment().isPresent()
+        || !node.getComment().get().getContent().contains(COMMENT_TAG)) {
       final Node p = node.findParent(Node.class).get();
       return findParentComment(p);
     }
     return node.getComment().get();
   }
 
-  private Node changeNestedStmtToBlk(final Node n) {
-    if (parentIsCtrl(n) && isCtrl(n)) {
+  private Statement changeNestedStmtToBlk(final Statement stmt) {
+    if (!(stmt instanceof BlockStmt)) {
       final BlockStmt blk = new BlockStmt();
-      blk.addStatement((Statement) n);
+      blk.addStatement(stmt);
       return blk;
     }
-    return n;
+    return stmt;
   }
 
   private boolean parentIsCtrl(final Node n) {
