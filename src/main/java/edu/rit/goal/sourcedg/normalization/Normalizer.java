@@ -74,9 +74,9 @@ public class Normalizer {
     for (final ModifierVisitor<Void> mv : visitors) {
       cu.accept(mv, null);
       newCu = cu.toString();
-      // System.out.println(mv.getClass().getSimpleName());
-      // System.out.println();
-      // System.out.println(newCu);
+      System.out.println(mv.getClass().getSimpleName());
+      System.out.println();
+      System.out.println(newCu);
       cu = JavaParser.parse(newCu);
     }
     return cu;
@@ -251,8 +251,11 @@ public class Normalizer {
       final NodeList<Expression> initialization = new NodeList<>();
       initialization.add(iterator);
       final Expression nextExpr = getNextExpr(varDecl, type, currentVar);
-      final Statement body = addToBody(stmt.getBody(), new ExpressionStmt(nextExpr), 0);
+      final ExpressionStmt exprStmt = new ExpressionStmt(nextExpr);
+      final Statement body = addToBody(stmt.getBody(), exprStmt, 0);
       final ForStmt result = new ForStmt(initialization, hasNext, new NodeList<>(), body);
+      withComment(exprStmt, stmt.getComment().get());
+      withComment(result, stmt.getComment().get());
       return result;
     }
   }
