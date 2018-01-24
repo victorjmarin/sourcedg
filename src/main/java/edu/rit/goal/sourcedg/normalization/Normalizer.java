@@ -163,7 +163,7 @@ public class Normalizer {
       final int line = getBeginLine(expr);
       final Comment comment = getParentStmtComment(expr, line);
       super.visit(expr, args);
-      if (hasSuperParent(expr))
+      if (hasSuperParent(expr) || expr.getParentNode().orElse(null) instanceof VariableDeclarator)
         return expr;
       final String variableName = nextVarId();
       final NodeSearchResult sr = findBlockStmt(expr);
@@ -380,9 +380,8 @@ public class Normalizer {
     public Node visit(final EnclosedExpr expr, final Void args) {
       super.visit(expr, args);
       // Remove parenthesis when only one child
-      final List<Node> children = expr.getChildNodes();
-      if (children.size() == 1 && children.get(0) instanceof NameExpr)
-        return children.get(0);
+      if (singleChildInParenthesis(expr))
+        return expr.getChildNodes().get(0);
       return expr;
     }
   }
@@ -422,8 +421,7 @@ public class Normalizer {
       final Node parent = expr.getParentNode().get();
       // Do not simplify binary expressions that are already variables and literals
       // Avoid final int _v3 = a + b + c; or int _v0 = (a + 1) / 2; with parent and enclosed check
-      if ((left instanceof NameExpr || left instanceof LiteralExpr)
-          && (right instanceof NameExpr || right instanceof LiteralExpr)
+      if (nodeOrEnclosedChildIsNameOrLiteral(left) && nodeOrEnclosedChildIsNameOrLiteral(right)
           && !(parent instanceof BinaryExpr || parent instanceof EnclosedExpr)
           || hasSuperParent(parent))
         return expr;
@@ -658,17 +656,20 @@ public class Normalizer {
     return stmt;
   }
 
-  private boolean parentIsCtrl(final Node n) {
-    final Optional<Node> oParent = n.getParentNode();
-    if (!oParent.isPresent())
-      return false;
-    final Node p = oParent.get();
-    return isCtrl(p);
+  private boolean nodeIsNameOrLiteral(final Node n) {
+    return n instanceof NameExpr || n instanceof LiteralExpr;
   }
 
-  private boolean isCtrl(final Node n) {
-    return n instanceof ForStmt || n instanceof IfStmt || n instanceof WhileStmt
-        || n instanceof DoStmt;
+  private boolean nodeOrEnclosedChildIsNameOrLiteral(final Node n) {
+    return nodeIsNameOrLiteral(n)
+        || (singleChildInParenthesis(n) && nodeIsNameOrLiteral(n.getChildNodes().get(0)));
+  }
+
+  private boolean singleChildInParenthesis(final Node n) {
+    final List<Node> children = n.getChildNodes();
+    if (children.size() == 1 && children.get(0) instanceof NameExpr)
+      return true;
+    return false;
   }
 
 }
