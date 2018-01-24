@@ -37,6 +37,9 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.PrimitiveType;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.visitor.ModifierVisitor;
+import com.github.javaparser.resolution.types.ResolvedType;
+import com.github.javaparser.symbolsolver.javaparsermodel.JavaParserFacade;
+import com.github.javaparser.symbolsolver.model.resolution.TypeSolver;
 import edu.rit.goal.sourcedg.builder.PDGBuilder;
 
 public class Normalizer {
@@ -48,8 +51,10 @@ public class Normalizer {
   private final List<ExpressionStmt> expressions = new ArrayList<>();
   private final List<ModifierVisitor<Void>> visitors;
   private final HashMap<NameExpr, ExpressionStmt> mAss;
+  private final TypeSolver typeSolver;
 
-  public Normalizer(final CompilationUnit cu) {
+  public Normalizer(final CompilationUnit cu, final TypeSolver typeSolver) {
+    this.typeSolver = typeSolver;
     this.cu = cu;
     visitors = new ArrayList<>();
     mAss = new HashMap<>();
@@ -511,7 +516,7 @@ public class Normalizer {
   private Expression recNorm(final MethodCallExpr expr) {
     final String variableName = nextVarId();
     final VariableDeclarator varDeclarator =
-        new VariableDeclarator(defaultType(), variableName, expr);
+        new VariableDeclarator(typeFor(expr), variableName, expr);
     final VariableDeclarationExpr varDeclExpr = new VariableDeclarationExpr(varDeclarator);
     final ExpressionStmt assign = new ExpressionStmt(varDeclExpr);
     expressions.add(assign);
@@ -574,29 +579,28 @@ public class Normalizer {
   }
 
   private Type typeFor(final Expression expr) {
-    if (expr instanceof BinaryExpr) {
-      final BinaryExpr binExpr = (BinaryExpr) expr;
-      switch (binExpr.getOperator()) {
-        case PLUS:
-        case MINUS:
-        case MULTIPLY:
-        case DIVIDE:
-        case REMAINDER:
-          return JavaParser.parseClassOrInterfaceType("Number");
-        case AND:
-        case OR:
-        case EQUALS:
-        case GREATER:
-        case GREATER_EQUALS:
-        case LESS:
-        case LESS_EQUALS:
-        case NOT_EQUALS:
-          return PrimitiveType.booleanType();
-        default:
-          return defaultType();
-      }
+    final ResolvedType typeOfTheNode = JavaParserFacade.get(typeSolver).getType(expr);
+    final String type = typeOfTheNode.describe();
+    switch (type) {
+      case "boolean":
+        return PrimitiveType.booleanType();
+      case "char":
+        return PrimitiveType.charType();
+      case "byte":
+        return PrimitiveType.byteType();
+      case "short":
+        return PrimitiveType.shortType();
+      case "int":
+        return PrimitiveType.intType();
+      case "long":
+        return PrimitiveType.longType();
+      case "float":
+        return PrimitiveType.floatType();
+      case "double":
+        return PrimitiveType.doubleType();
+      default:
+        return JavaParser.parseClassOrInterfaceType(type);
     }
-    return defaultType();
   }
 
   private Type toWrapperType(final Type type) {
@@ -630,9 +634,9 @@ public class Normalizer {
     return "_v" + (varId - 1);
   }
 
-  private Type defaultType() {
-    return JavaParser.parseClassOrInterfaceType("Void");
-  }
+  // private Type defaultType() {
+  // return JavaParser.parseClassOrInterfaceType("Void");
+  // }
 
   private int getBeginLine(final Node n) {
     return n.getBegin().get().line;
