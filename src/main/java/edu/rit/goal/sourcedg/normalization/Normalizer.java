@@ -94,6 +94,15 @@ public class Normalizer {
     }, null);
     cu.accept(new ModifierVisitor<Void>() {
       @Override
+      public Node visit(final ForeachStmt stmt, final Void args) {
+        super.visit(stmt, args);
+        final Statement body = changeNestedStmtToBlk(stmt.getBody());
+        stmt.setBody(body);
+        return stmt;
+      }
+    }, null);
+    cu.accept(new ModifierVisitor<Void>() {
+      @Override
       public Node visit(final WhileStmt stmt, final Void args) {
         super.visit(stmt, args);
         final Statement body = changeNestedStmtToBlk(stmt.getBody());
