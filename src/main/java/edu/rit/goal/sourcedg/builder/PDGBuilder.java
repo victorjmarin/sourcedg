@@ -1,6 +1,5 @@
 package edu.rit.goal.sourcedg.builder;
 
-import java.io.File;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashMap;
@@ -15,8 +14,8 @@ import java.util.stream.Collectors;
 import org.jgrapht.DirectedGraph;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.symbolsolver.model.resolution.TypeSolver;
-import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
 import com.github.javaparser.utils.Pair;
 import edu.rit.goal.sourcedg.graph.CFG;
 import edu.rit.goal.sourcedg.graph.Edge;
@@ -40,18 +39,19 @@ public class PDGBuilder {
   private CompilationUnit originalCu;
   private CompilationUnit normalizedCu;
 
-  public void build(final InputStream in, final String dirPath) {
+  public void build(final InputStream in) {
     final CompilationUnit cu = JavaParser.parse(in);
-    build(cu, dirPath);
+    build(cu);
   }
 
-  public void build(final String in, final String dirPath) {
+  public void build(final String in) {
     final CompilationUnit cu = JavaParser.parse(in);
-    build(cu, dirPath);
+    build(cu);
   }
 
-  private void build(CompilationUnit cu, final String dirPath) {
-    final TypeSolver typeSolver = new JavaParserTypeSolver(new File(dirPath));
+  private void build(CompilationUnit cu) {
+    final CombinedTypeSolver typeSolver = new CombinedTypeSolver();
+    typeSolver.add(new ReflectionTypeSolver());
     originalCu = JavaParser.parse(cu.toString());
     final Normalizer normalizer = new Normalizer(cu, typeSolver);
     cu = normalizer.normalize();

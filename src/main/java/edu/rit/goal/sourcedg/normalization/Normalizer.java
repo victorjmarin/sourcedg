@@ -579,28 +579,33 @@ public class Normalizer {
   }
 
   private Type typeFor(final Expression expr) {
-    final ResolvedType typeOfTheNode = JavaParserFacade.get(typeSolver).getType(expr);
-    final String type = typeOfTheNode.describe();
-    switch (type) {
-      case "boolean":
-        return PrimitiveType.booleanType();
-      case "char":
-        return PrimitiveType.charType();
-      case "byte":
-        return PrimitiveType.byteType();
-      case "short":
-        return PrimitiveType.shortType();
-      case "int":
-        return PrimitiveType.intType();
-      case "long":
-        return PrimitiveType.longType();
-      case "float":
-        return PrimitiveType.floatType();
-      case "double":
-        return PrimitiveType.doubleType();
-      default:
-        return JavaParser.parseClassOrInterfaceType(type);
+    try {
+      final ResolvedType typeOfTheNode = JavaParserFacade.get(typeSolver).getType(expr);
+      final String type = typeOfTheNode.describe();
+      switch (type) {
+        case "boolean":
+          return PrimitiveType.booleanType();
+        case "char":
+          return PrimitiveType.charType();
+        case "byte":
+          return PrimitiveType.byteType();
+        case "short":
+          return PrimitiveType.shortType();
+        case "int":
+          return PrimitiveType.intType();
+        case "long":
+          return PrimitiveType.longType();
+        case "float":
+          return PrimitiveType.floatType();
+        case "double":
+          return PrimitiveType.doubleType();
+        default:
+          return JavaParser.parseClassOrInterfaceType(type);
+      }
+    } catch (final Exception e) {
+      PDGBuilder.LOGGER.warning("Could not resolve type for " + expr + ". Defaulting to " + defaultType());
     }
+    return defaultType();
   }
 
   private Type toWrapperType(final Type type) {
@@ -634,9 +639,9 @@ public class Normalizer {
     return "_v" + (varId - 1);
   }
 
-  // private Type defaultType() {
-  // return JavaParser.parseClassOrInterfaceType("Void");
-  // }
+  private Type defaultType() {
+    return JavaParser.parseClassOrInterfaceType("Object");
+  }
 
   private int getBeginLine(final Node n) {
     return n.getBegin().get().line;
