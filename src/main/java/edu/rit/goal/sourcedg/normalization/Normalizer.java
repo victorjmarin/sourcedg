@@ -24,6 +24,7 @@ import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.CatchClause;
 import com.github.javaparser.ast.stmt.DoStmt;
 import com.github.javaparser.ast.stmt.ExplicitConstructorInvocationStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
@@ -79,9 +80,9 @@ public class Normalizer {
     for (final ModifierVisitor<Void> mv : visitors) {
       cu.accept(mv, null);
       newCu = cu.toString();
-      // System.out.println(mv.getClass().getSimpleName());
-      // System.out.println();
-      // System.out.println(newCu);
+      System.out.println(mv.getClass().getSimpleName());
+      System.out.println();
+      System.out.println(newCu);
       cu = JavaParser.parse(newCu);
     }
     return cu;
@@ -143,7 +144,8 @@ public class Normalizer {
   // Comments each statement with its line number
   private void lineComment(final Node node) {
     if (!(node instanceof BlockStmt) && node instanceof Statement
-        || node instanceof ClassOrInterfaceDeclaration || node instanceof MethodDeclaration) {
+        || node instanceof ClassOrInterfaceDeclaration || node instanceof MethodDeclaration
+        || node instanceof CatchClause) {
       String comment = COMMENT_TAG + String.valueOf(getBeginLine(node));
       final Optional<Comment> optComm = node.getComment();
       if (optComm.isPresent())
@@ -603,7 +605,8 @@ public class Normalizer {
           return JavaParser.parseClassOrInterfaceType(type);
       }
     } catch (final Exception e) {
-      PDGBuilder.LOGGER.warning("Could not resolve type for " + expr + ". Defaulting to " + defaultType());
+      PDGBuilder.LOGGER
+          .warning("Could not resolve type for " + expr + ". Defaulting to " + defaultType());
     }
     return defaultType();
   }
