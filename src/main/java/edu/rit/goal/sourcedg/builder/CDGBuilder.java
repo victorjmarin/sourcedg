@@ -388,7 +388,7 @@ public class CDGBuilder {
     for (final CatchClause c : catches)
       catchFlowLst.add(_build(c));
     final ControlFlow catchFlow = cfgBuilder.seq(catchFlowLst);
-    ControlFlow outFlow = tryBlkFlow;
+    ControlFlow outFlow = catchFlow;
     // Finally
     final Optional<BlockStmt> finallyBlk = n.getFinallyBlock();
     if (finallyBlk.isPresent())
