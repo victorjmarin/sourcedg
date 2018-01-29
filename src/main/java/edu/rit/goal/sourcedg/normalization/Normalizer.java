@@ -80,9 +80,9 @@ public class Normalizer {
     for (final ModifierVisitor<Void> mv : visitors) {
       cu.accept(mv, null);
       newCu = cu.toString();
-      System.out.println(mv.getClass().getSimpleName());
-      System.out.println();
-      System.out.println(newCu);
+//      System.out.println(mv.getClass().getSimpleName());
+//      System.out.println();
+//      System.out.println(newCu);
       cu = JavaParser.parse(newCu);
     }
     return cu;
