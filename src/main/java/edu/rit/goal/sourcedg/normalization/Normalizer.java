@@ -368,6 +368,8 @@ public class Normalizer {
   private class AssignExprVisitor extends ModifierVisitor<Void> {
     @Override
     public Node visit(final AssignExpr expr, final Void args) {
+      final int line = getBeginLine(expr);
+      final Comment comment = getParentStmtComment(expr, line);
       super.visit(expr, args);
       // Return if parent is not parenthesis
       final Node parent = expr.getParentNode().get();
@@ -375,8 +377,10 @@ public class Normalizer {
         return expr;
       final NodeSearchResult sr = findBlockStmt(expr);
       final Expression result = recNorm(expr);
-      for (final ExpressionStmt e : expressions)
+      for (final ExpressionStmt e : expressions) {
         sr.blk.addStatement(sr.idx, e);
+        withComment(e, comment);
+      }
       expressions.clear();
       return result;
     }
