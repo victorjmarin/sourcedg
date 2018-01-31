@@ -2,8 +2,11 @@ package edu.rit.goal.sourcedg.normalization;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
@@ -13,15 +16,18 @@ import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.comments.Comment;
 import com.github.javaparser.ast.comments.LineComment;
+import com.github.javaparser.ast.expr.ArrayAccessExpr;
 import com.github.javaparser.ast.expr.ArrayCreationExpr;
 import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.AssignExpr.Operator;
 import com.github.javaparser.ast.expr.BinaryExpr;
+import com.github.javaparser.ast.expr.CastExpr;
 import com.github.javaparser.ast.expr.EnclosedExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.LiteralExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.UnaryExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.CatchClause;
@@ -45,13 +51,14 @@ import edu.rit.goal.sourcedg.builder.PDGBuilder;
 
 public class Normalizer {
 
+  public static final String VAR_PREFIX = "_v";
   public static final String COMMENT_TAG = "@OL:";
 
   private int varId = 0;
   private CompilationUnit cu;
   private final List<ExpressionStmt> expressions = new ArrayList<>();
   private final List<ModifierVisitor<Void>> visitors;
-  private final HashMap<NameExpr, ExpressionStmt> mAss;
+  private final HashMap<DepKey, ExpressionStmt> mAss;
   private final TypeSolver typeSolver;
 
   public Normalizer(final CompilationUnit cu, final TypeSolver typeSolver) {
@@ -65,24 +72,29 @@ public class Normalizer {
     lineComment(cu);
     ensureBlkStmts(cu);
     visitors.add(new LocalClassDeclarationStmtVisitor());
-    visitors.add(new ForStmtUpdateVisitor());
-    visitors.add(new ForeachStmtVisitor());
+    // Not equivalent if for has continue
+    // visitors.add(new ForStmtUpdateVisitor());
+    // Gives problems when denormalizing
+    // visitors.add(new ForeachStmtVisitor());
     visitors.add(new MethodCallVisitor());
     visitors.add(new AssignExprVisitor());
+    // Do stmts may be added inits in their body used in the condition, which will not compile but
+    // we don't really care.
     visitors.add(new BinaryExprVisitor());
     visitors.add(new ArrayCreationExprVisitor());
     visitors.add(new WhileStmtVisitor());
     visitors.add(new ForStmtVisitor());
-    visitors.add(new DoStmtVisitor());
+    // Not necessary
+    // visitors.add(new DoStmtVisitor());
     visitors.add(new EnclosedExprVisitor());
 
     String newCu = null;
     for (final ModifierVisitor<Void> mv : visitors) {
       cu.accept(mv, null);
       newCu = cu.toString();
-//      System.out.println(mv.getClass().getSimpleName());
-//      System.out.println();
-//      System.out.println(newCu);
+      // System.out.println(mv.getClass().getSimpleName());
+      // System.out.println();
+      // System.out.println(newCu);
       cu = JavaParser.parse(newCu);
     }
     return cu;
@@ -170,7 +182,9 @@ public class Normalizer {
       final int line = getBeginLine(expr);
       final Comment comment = getParentStmtComment(expr, line);
       super.visit(expr, args);
-      if (hasSuperParent(expr) || expr.getParentNode().orElse(null) instanceof VariableDeclarator)
+      final Node parent = expr.getParentNode().orElse(null);
+      if (hasSuperParent(expr) || parent instanceof VariableDeclarator
+          || parent instanceof AssignExpr)
         return expr;
       final String variableName = nextVarId();
       final NodeSearchResult sr = findBlockStmt(expr);
@@ -190,18 +204,28 @@ public class Normalizer {
       super.visit(stmt, args);
       final Optional<Expression> cond = stmt.getCompare();
       if (cond.isPresent()) {
-        final Statement newBody = solveCondDeps(cond.get(), stmt.getBody());
+        final Statement newBody = solveCondDeps(cond.get(), stmt.getBody(), new HashSet<>());
         stmt.setBody(newBody);
       }
       return stmt;
     }
   }
 
-  // Remove for update and put at the end of body
+
   private class ForStmtUpdateVisitor extends ModifierVisitor<Void> {
     @Override
     public Node visit(final ForStmt stmt, final Void args) {
       super.visit(stmt, args);
+      // final NodeList<Expression> initNodeLst = stmt.getInitialization();
+      // if (!initNodeLst.isEmpty()) {
+      // final Expression init = initNodeLst.remove(0);
+      // init.setComment(findParentComment(stmt));
+      // if (init instanceof VariableDeclarationExpr) {
+      // final NodeSearchResult sr = findBlockStmt(stmt);
+      // addToBody(sr.blk, new ExpressionStmt(init), sr.idx);
+      // }
+      // }
+      // Remove for update and put at the end of body
       final NodeList<Expression> updateNodeLst = stmt.getUpdate();
       if (!updateNodeLst.isEmpty()) {
         final Expression update = updateNodeLst.remove(0);
@@ -217,7 +241,7 @@ public class Normalizer {
     public Node visit(final WhileStmt stmt, final Void args) {
       super.visit(stmt, args);
       final Expression cond = stmt.getCondition();
-      solveCondDeps(cond, stmt.getBody());
+      solveCondDeps(cond, stmt.getBody(), new HashSet<>());
       return stmt;
     }
   }
@@ -227,19 +251,21 @@ public class Normalizer {
     public Node visit(final DoStmt stmt, final Void args) {
       super.visit(stmt, args);
       final Expression cond = stmt.getCondition();
-      solveCondDeps(cond, stmt.getBody());
+      solveCondDeps(cond, stmt.getBody(), new HashSet<>());
       return stmt;
     }
   }
 
-  private Statement solveCondDeps(Expression condition, final Statement body) {
+  private Statement solveCondDeps(Expression condition, final Statement body,
+      final Set<String> alreadySolved) {
     Statement result = body;
+    final Node parentStmt = findParentStmt(condition);
     while (condition instanceof EnclosedExpr) {
       condition = ((EnclosedExpr) condition).getInner();
     }
     if (condition instanceof NameExpr) {
       final List<ExpressionStmt> exprs = new ArrayList<>();
-      solveDeps(condition, exprs);
+      solveDeps(condition, parentStmt, exprs, alreadySolved);
       AssignExpr assign = null;
       for (final ExpressionStmt n : exprs) {
         assign = varDecl2Assign(n);
@@ -250,9 +276,9 @@ public class Normalizer {
       final Expression left = binCond.getLeft();
       final Expression right = binCond.getRight();
       final List<ExpressionStmt> leftExpr = new ArrayList<>();
-      solveDeps(left, leftExpr);
+      solveDeps(left, parentStmt, leftExpr, alreadySolved);
       final List<ExpressionStmt> rightExpr = new ArrayList<>();
-      solveDeps(right, rightExpr);
+      solveDeps(right, parentStmt, rightExpr, alreadySolved);
 
       AssignExpr assign = null;
       for (final ExpressionStmt n : leftExpr) {
@@ -404,9 +430,12 @@ public class Normalizer {
       final Comment comment = getParentStmtComment(expr, line);
       super.visit(expr, args);
       // Do not extract to variable if parent is assign or super
-      final Node parent = expr.getParentNode().get();
-      if (parent instanceof AssignExpr || parent instanceof ExpressionStmt
-          || parent instanceof VariableDeclarator || hasSuperParent(parent))
+      final Node parent = expr.getParentNode().orElse(null);
+      if (parent instanceof Statement || parent instanceof AssignExpr
+          || parent instanceof ExpressionStmt || parent instanceof CastExpr
+          || parent instanceof VariableDeclarator
+          || parent instanceof ForStmt && expr.equals(((ForStmt) parent).getCompare().orElse(null))
+          || parent instanceof ArrayAccessExpr || hasSuperParent(parent))
         return expr;
       final NodeSearchResult sr = findBlockStmt(expr);
       if (sr == null)
@@ -483,36 +512,43 @@ public class Normalizer {
     return null;
   }
 
-  private void solveDeps(Expression expr, final List<ExpressionStmt> l) {
+  private void solveDeps(Expression expr, final Node parentStmt, final List<ExpressionStmt> l,
+      final Set<String> alreadySolved) {
     while (expr instanceof EnclosedExpr) {
       expr = ((EnclosedExpr) expr).getInner();
     }
     if (!(expr instanceof NameExpr))
       return;
     final NameExpr var = (NameExpr) expr;
-    final ExpressionStmt lastAssignmentOf = mAss.get(var);
-    // Could be null if the variable was originally in the program
+    if (alreadySolved.contains(var.getNameAsString()))
+      return;
+    final DepKey dk = new DepKey(parentStmt, var);
+    ExpressionStmt lastAssignmentOf = mAss.get(dk);
+    lastAssignmentOf = lastAssignmentOf != null ? lastAssignmentOf : mAss.get(new DepKey(var));
     if (lastAssignmentOf == null)
       return;
+    alreadySolved.add(var.getNameAsString());
     final Expression e = lastAssignmentOf.getExpression();
     if (e instanceof VariableDeclarationExpr) {
       final VariableDeclarator varDecl = (VariableDeclarator) e.getChildNodes().get(0);
       final Expression init = varDecl.getInitializer().get();
       if (init instanceof BinaryExpr) {
-        solveDeps(((BinaryExpr) init).getLeft(), l);
-        solveDeps(((BinaryExpr) init).getRight(), l);
+        solveDeps(((BinaryExpr) init).getLeft(), parentStmt, l, alreadySolved);
+        solveDeps(((BinaryExpr) init).getRight(), parentStmt, l, alreadySolved);
       }
     }
     l.add(lastAssignmentOf);
   }
 
   private Expression recNorm(final AssignExpr expr) {
+    final Node parentStmt = findParentStmt(expr);
     final ExpressionStmt assign = new ExpressionStmt(expr);
     expressions.add(assign);
     final Expression target = expr.getTarget();
     if (target instanceof NameExpr) {
-      final NameExpr name = (NameExpr) expr.getTarget();
-      mAss.put(name, assign);
+      final NameExpr name = (NameExpr) target;
+      final DepKey dk = new DepKey(parentStmt, name);
+      mAss.put(dk, assign);
     } else
       PDGBuilder.LOGGER.warning("Not mapped -> " + target);
     final Expression result = expr.getTarget();
@@ -527,7 +563,8 @@ public class Normalizer {
     final ExpressionStmt assign = new ExpressionStmt(varDeclExpr);
     expressions.add(assign);
     final Expression result = new NameExpr(variableName);
-    mAss.put((NameExpr) result, assign);
+    final DepKey dk = new DepKey((NameExpr) result);
+    mAss.put(dk, assign);
     return result;
   }
 
@@ -542,7 +579,8 @@ public class Normalizer {
       final ExpressionStmt expr = new ExpressionStmt(varDeclExpr);
       expressions.add(expr);
       result = new NameExpr(variableName);
-      mAss.put((NameExpr) result, expr);
+      final DepKey dk = new DepKey((NameExpr) result);
+      mAss.put(dk, expr);
     }
     return result;
   }
@@ -567,12 +605,26 @@ public class Normalizer {
       PDGBuilder.LOGGER.warning("No parent block found for " + original.toString());
       return null;
     }
+    if (n.get() instanceof DoStmt) {
+      final DoStmt doStmt = (DoStmt) n.get();
+      final BlockStmt blk = (BlockStmt) changeNestedStmtToBlk(doStmt.getBody());
+      return new NodeSearchResult(blk, blk.getStatements().size(), expr);
+    }
     if (n.get() instanceof BlockStmt) {
       final BlockStmt blk = (BlockStmt) n.get();
       final int indexOf = blk.getStatements().indexOf(expr);
       return new NodeSearchResult(blk, indexOf, expr);
     }
     return findBlockStmt(expr.getParentNode().get(), original);
+  }
+
+  private Node findParentStmt(final Node n) {
+    if (n instanceof Statement)
+      return n;
+    final Node parent = n.getParentNode().orElse(null);
+    if (parent == null)
+      return null;
+    return findParentStmt(parent);
   }
 
   private boolean hasSuperParent(final Node n) {
@@ -582,6 +634,15 @@ public class Normalizer {
       return true;
     final Optional<Node> parent = n.getParentNode();
     return hasSuperParent(parent.orElse(null));
+  }
+
+  private boolean hasForParent(final Node n) {
+    if (n == null)
+      return false;
+    if (n instanceof ForStmt)
+      return true;
+    final Optional<Node> parent = n.getParentNode();
+    return hasForParent(parent.orElse(null));
   }
 
   private Type typeFor(final Expression expr) {
@@ -639,11 +700,11 @@ public class Normalizer {
   }
 
   private String nextVarId() {
-    return "_v" + varId++;
+    return VAR_PREFIX + varId++;
   }
 
   private String currentVarId() {
-    return "_v" + (varId - 1);
+    return VAR_PREFIX + (varId - 1);
   }
 
   private Type defaultType() {
@@ -672,13 +733,13 @@ public class Normalizer {
     return stmt;
   }
 
-  private boolean nodeIsNameOrLiteral(final Node n) {
-    return n instanceof NameExpr || n instanceof LiteralExpr;
+  private boolean nodeIsNameOrLiteralOrUnary(final Node n) {
+    return n instanceof NameExpr || n instanceof LiteralExpr || n instanceof UnaryExpr;
   }
 
   private boolean nodeOrEnclosedChildIsNameOrLiteral(final Node n) {
-    return nodeIsNameOrLiteral(n)
-        || (singleChildInParenthesis(n) && nodeIsNameOrLiteral(n.getChildNodes().get(0)));
+    return nodeIsNameOrLiteralOrUnary(n)
+        || (singleChildInParenthesis(n) && nodeIsNameOrLiteralOrUnary(n.getChildNodes().get(0)));
   }
 
   private boolean singleChildInParenthesis(final Node n) {
@@ -686,6 +747,51 @@ public class Normalizer {
     if (children.size() == 1 && children.get(0) instanceof NameExpr)
       return true;
     return false;
+  }
+
+  class DepKey {
+    public Node parentStmt;
+    public NameExpr var;
+
+    public DepKey(final Node parentStmt, final NameExpr var) {
+      this.parentStmt = parentStmt;
+      this.var = var;
+    }
+
+    public DepKey(final NameExpr var) {
+      parentStmt = null;
+      this.var = var;
+    }
+
+    @Override
+    public int hashCode() {
+      final Comment c = parentStmt == null ? null : parentStmt.getComment().orElse(null);
+      return Objects.hash(c == null ? null : c.getContent(), var.getNameAsString());
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (o == this)
+        return true;
+      if (!(o instanceof DepKey))
+        return false;
+      final DepKey dk = (DepKey) o;
+      if (parentStmt == null && dk.parentStmt == null)
+        return var.getNameAsString().equals(dk.var.getNameAsString());
+      if (parentStmt == null && dk.parentStmt != null)
+        return false;
+      if (parentStmt != null && dk.parentStmt == null)
+        return false;
+      return parentStmt.getComment().get().getContent()
+          .equals(dk.parentStmt.getComment().get().getContent())
+          && var.getNameAsString().equals(dk.var.getNameAsString());
+    }
+
+    @Override
+    public String toString() {
+      final String comment = parentStmt == null ? null : parentStmt.getComment().get().getContent();
+      return "<" + comment + ", " + var.getNameAsString() + ">";
+    }
   }
 
 }
