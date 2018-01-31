@@ -33,7 +33,7 @@ public class Denormalizer {
 
   private static final String VAR_PREFIX = Normalizer.VAR_PREFIX;
   private static final String COMP_VAR_PREFIX = "!" + VAR_PREFIX;
-  
+
   private CompilationUnit cu;
   private final List<ModifierVisitor<Void>> visitors;
 
@@ -73,17 +73,6 @@ public class Denormalizer {
     return cu;
   }
 
-  private Expression getInitForVarAndRemoveParent(final String var) {
-    final Expression result = findVarDef(var);
-    return new EnclosedExpr(result);
-  }
-
-  private Expression getInitForComplementVarAndRemoveParent(final String var) {
-    final Expression varDef = findVarDef(var);
-    final UnaryExpr result = new UnaryExpr(varDef, Operator.LOGICAL_COMPLEMENT);
-    return new EnclosedExpr(result);
-  }
-
   private class ConditionalExprVisitor extends ModifierVisitor<Void> {
     @Override
     public Node visit(final ConditionalExpr expr, final Void args) {
@@ -108,19 +97,6 @@ public class Denormalizer {
     }
   }
 
-  private Expression denormExpr(final Expression expr) {
-    if (expr == null)
-      return null;
-    Expression result = expr;
-    final String var = expr.toString();
-    if (var.startsWith(VAR_PREFIX)) {
-      result = getInitForVarAndRemoveParent(var);
-    } else if (var.startsWith(COMP_VAR_PREFIX)) {
-      result = getInitForComplementVarAndRemoveParent(var.substring(1));
-    }
-    return result;
-  }
-
   private class CommentVisitor extends ModifierVisitor<Void> {
     @Override
     public Node visit(final LineComment comment, final Void args) {
@@ -133,36 +109,9 @@ public class Denormalizer {
     @Override
     public Node visit(final AssignExpr expr, final Void args) {
       super.visit(expr, args);
-      final String var = expr.getValue().toString();
-      if (var.startsWith(VAR_PREFIX)) {
-        final Expression init = getInitForVarAndRemoveParent(var);
-        expr.setValue(init);
-      } else if (var.startsWith(COMP_VAR_PREFIX)) {
-        final Expression init = getInitForComplementVarAndRemoveParent(var.substring(1));
-        expr.setValue(init);
-      }
-      return expr;
-    }
-  }
-
-  private class DanglingAssignExprVisitor extends ModifierVisitor<Void> {
-    @Override
-    public Node visit(final AssignExpr expr, final Void args) {
-      super.visit(expr, args);
-      final String var = expr.getTarget().toString();
-      if (var.startsWith(VAR_PREFIX) || var.startsWith(COMP_VAR_PREFIX))
-        return null;
-      return expr;
-    }
-  }
-
-  private class DanglingVariableDeclarationExprVisitor extends ModifierVisitor<Void> {
-    @Override
-    public Node visit(final VariableDeclarationExpr expr, final Void args) {
-      super.visit(expr, args);
-      final String var = expr.getVariable(0).getNameAsString();
-      if (var.startsWith(VAR_PREFIX) || var.startsWith(COMP_VAR_PREFIX))
-        return null;
+      final Expression value = expr.getValue();
+      final Expression denormExpr = denormExpr(value);
+      expr.setValue(denormExpr);
       return expr;
     }
   }
@@ -172,16 +121,8 @@ public class Denormalizer {
     public Node visit(final VariableDeclarator expr, final Void args) {
       super.visit(expr, args);
       final Expression vInit = expr.getInitializer().orElse(null);
-      if (vInit != null) {
-        if (vInit.toString().startsWith(VAR_PREFIX)) {
-          final Expression init = getInitForVarAndRemoveParent(vInit.toString());
-          expr.setInitializer(init);
-        } else if (vInit.toString().startsWith(COMP_VAR_PREFIX)) {
-          final Expression init =
-              getInitForComplementVarAndRemoveParent(vInit.toString().substring(1));
-          expr.setInitializer(init);
-        }
-      }
+      final Expression denormExpr = denormExpr(vInit);
+      expr.setInitializer(denormExpr);
       return expr;
     }
   }
@@ -191,15 +132,8 @@ public class Denormalizer {
     public Node visit(final IfStmt stmt, final Void args) {
       super.visit(stmt, args);
       final Expression cond = stmt.getCondition();
-      if (cond.toString().startsWith(VAR_PREFIX)) {
-        final String var = cond.toString();
-        final Expression init = getInitForVarAndRemoveParent(var);
-        stmt.setCondition(init);
-      } else if (cond.toString().startsWith(COMP_VAR_PREFIX)) {
-        final String var = cond.toString().substring(1);
-        final Expression init = getInitForComplementVarAndRemoveParent(var);
-        stmt.setCondition(init);
-      }
+      final Expression denormExpr = denormExpr(cond);
+      stmt.setCondition(denormExpr);
       return stmt;
     }
   }
@@ -218,17 +152,8 @@ public class Denormalizer {
     public Node visit(final ArrayCreationLevel expr, final Void args) {
       super.visit(expr, args);
       final Expression dim = expr.getDimension().orElse(null);
-      if (dim != null) {
-        if (dim.toString().startsWith(VAR_PREFIX)) {
-          final String var = dim.toString();
-          final Expression init = getInitForVarAndRemoveParent(var);
-          expr.setDimension(init);
-        } else if (dim.toString().startsWith(COMP_VAR_PREFIX)) {
-          final String var = dim.toString().substring(1);
-          final Expression init = getInitForComplementVarAndRemoveParent(var);
-          expr.setDimension(init);
-        }
-      }
+      final Expression denormExpr = denormExpr(dim);
+      expr.setDimension(denormExpr);
       return expr;
     }
   }
@@ -247,34 +172,11 @@ public class Denormalizer {
     public Node visit(final MethodCallExpr expr, final Void args) {
       super.visit(expr, args);
       final Expression scope = expr.getScope().orElse(null);
-      if (scope != null && scope.toString().startsWith(VAR_PREFIX)) {
-        final String var = scope.toString();
-        final Expression init = getInitForVarAndRemoveParent(var);
-        expr.setScope(init);
-      }
+      final Expression denormExpr = denormExpr(scope);
+      expr.setScope(denormExpr);
       denormArgs(expr.getArguments());
       return expr;
     }
-  }
-
-  private void denormArgs(final List<Expression> args) {
-    final List<Expression> finalArgs = new ArrayList<>();
-    for (final Iterator<Expression> it = args.iterator(); it.hasNext();) {
-      final Expression e = it.next();
-      if (e.toString().startsWith(VAR_PREFIX)) {
-        final String var = e.toString();
-        final Expression init = getInitForVarAndRemoveParent(var);
-        finalArgs.add(init);
-      } else if (e.toString().startsWith(COMP_VAR_PREFIX)) {
-        final String var = e.toString().substring(1);
-        final Expression init = getInitForComplementVarAndRemoveParent(var);
-        finalArgs.add(init);
-      } else {
-        finalArgs.add(e);
-      }
-      it.remove();
-    }
-    args.addAll(finalArgs);
   }
 
   private class DoStmtVisitor extends ModifierVisitor<Void> {
@@ -328,24 +230,32 @@ public class Denormalizer {
       super.visit(expr, args);
       final Expression left = expr.getLeft();
       final Expression right = expr.getRight();
-      if (left instanceof NameExpr && left.toString().startsWith(VAR_PREFIX)) {
-        final String var = left.toString();
-        final Expression init = getInitForVarAndRemoveParent(var);
-        expr.setLeft(init);
-      } else if (left instanceof UnaryExpr && left.toString().startsWith(COMP_VAR_PREFIX)) {
-        final String var = left.toString().substring(1);
-        final Expression init = getInitForComplementVarAndRemoveParent(var);
-        expr.setLeft(init);
-      }
-      if (right instanceof NameExpr && right.toString().startsWith(VAR_PREFIX)) {
-        final String var = right.toString();
-        final Expression init = getInitForVarAndRemoveParent(var);
-        expr.setRight(init);
-      } else if (right instanceof UnaryExpr && right.toString().startsWith(COMP_VAR_PREFIX)) {
-        final String var = right.toString().substring(1);
-        final Expression init = getInitForComplementVarAndRemoveParent(var);
-        expr.setRight(init);
-      }
+      final Expression denormExprL = denormExpr(left);
+      final Expression denormExprR = denormExpr(right);
+      expr.setLeft(denormExprL);
+      expr.setRight(denormExprR);
+      return expr;
+    }
+  }
+
+  private class DanglingAssignExprVisitor extends ModifierVisitor<Void> {
+    @Override
+    public Node visit(final AssignExpr expr, final Void args) {
+      super.visit(expr, args);
+      final String var = expr.getTarget().toString();
+      if (var.startsWith(VAR_PREFIX) || var.startsWith(COMP_VAR_PREFIX))
+        return null;
+      return expr;
+    }
+  }
+
+  private class DanglingVariableDeclarationExprVisitor extends ModifierVisitor<Void> {
+    @Override
+    public Node visit(final VariableDeclarationExpr expr, final Void args) {
+      super.visit(expr, args);
+      final String var = expr.getVariable(0).getNameAsString();
+      if (var.startsWith(VAR_PREFIX) || var.startsWith(COMP_VAR_PREFIX))
+        return null;
       return expr;
     }
   }
@@ -358,6 +268,50 @@ public class Denormalizer {
     if (result == null && ae == null)
       throw new IllegalStateException("Cannot find definition for " + str);
     return result != null ? result.getInitializer().orElse(null) : ae.getValue();
+  }
+
+  private Expression getInitForVarAndRemoveParent(final String var) {
+    final Expression result = findVarDef(var);
+    return new EnclosedExpr(result);
+  }
+
+  private Expression getInitForComplementVarAndRemoveParent(final String var) {
+    final Expression varDef = findVarDef(var);
+    final UnaryExpr result = new UnaryExpr(varDef, Operator.LOGICAL_COMPLEMENT);
+    return new EnclosedExpr(result);
+  }
+
+  private Expression denormExpr(final Expression expr) {
+    if (expr == null)
+      return null;
+    Expression result = expr;
+    final String var = expr.toString();
+    if (expr instanceof NameExpr && var.startsWith(VAR_PREFIX)) {
+      result = getInitForVarAndRemoveParent(var);
+    } else if (expr instanceof UnaryExpr && var.startsWith(COMP_VAR_PREFIX)) {
+      result = getInitForComplementVarAndRemoveParent(var.substring(1));
+    }
+    return result;
+  }
+
+  private void denormArgs(final List<Expression> args) {
+    final List<Expression> finalArgs = new ArrayList<>();
+    for (final Iterator<Expression> it = args.iterator(); it.hasNext();) {
+      final Expression e = it.next();
+      if (e.toString().startsWith(VAR_PREFIX)) {
+        final String var = e.toString();
+        final Expression init = getInitForVarAndRemoveParent(var);
+        finalArgs.add(init);
+      } else if (e.toString().startsWith(COMP_VAR_PREFIX)) {
+        final String var = e.toString().substring(1);
+        final Expression init = getInitForComplementVarAndRemoveParent(var);
+        finalArgs.add(init);
+      } else {
+        finalArgs.add(e);
+      }
+      it.remove();
+    }
+    args.addAll(finalArgs);
   }
 
 }
