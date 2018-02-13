@@ -37,8 +37,7 @@ public class PDGBuilder {
   private Collection<CFG> cfgs;
   private CompilationUnit originalCu;
   private CompilationUnit normalizedCu;
-  // Flag indicating if the graph built covered all the source code
-  private boolean isComplete;
+  private CDGBuilder cdgBuilder;
 
   public PDGBuilder() {
     this(Level.OFF, null);
@@ -82,9 +81,8 @@ public class PDGBuilder {
     final Normalizer normalizer = new Normalizer(cu, typeSolver);
     cu = normalizer.normalize();
     normalizedCu = cu;
-    final CDGBuilder cdgBuilder = new CDGBuilder(cu);
+    cdgBuilder = new CDGBuilder(cu);
     cdgBuilder.build();
-    isComplete = cdgBuilder.isComplete();
     pdg = cdgBuilder.getCDG();
     computeInterProceduralCalls(cdgBuilder.getMethodParams(), cdgBuilder.getCalls(),
         cdgBuilder.getMethodFormalOut());
@@ -204,8 +202,13 @@ public class PDGBuilder {
     return normalizedCu;
   }
 
+  // Flag indicating if the graph built covered all the source code
   public boolean isComplete() {
-    return isComplete;
+    return cdgBuilder.getUnmatchedAstNodes().isEmpty();
+  }
+
+  public Map<String, Integer> getUnmatchedAstNodes() {
+    return cdgBuilder.getUnmatchedAstNodes();
   }
 
 }
