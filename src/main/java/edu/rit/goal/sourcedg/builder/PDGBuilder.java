@@ -1,6 +1,8 @@
 package edu.rit.goal.sourcedg.builder;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -8,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -27,21 +31,43 @@ import edu.rit.goal.sourcedg.normalization.Normalizer;
 
 public class PDGBuilder {
 
-  private static final Level LOG_LEVEL = Level.OFF;
   public static final Logger LOGGER = Logger.getLogger("PDG");
-
-  {
-    LOGGER.setLevel(LOG_LEVEL);
-  }
 
   private PDG pdg;
   private Collection<CFG> cfgs;
   private CompilationUnit originalCu;
   private CompilationUnit normalizedCu;
+  // Flag indicating if the graph built covered all the source code
+  private boolean isComplete;
+
+  public PDGBuilder() {
+    this(Level.OFF, null);
+  }
+
+  public PDGBuilder(final Level logLevel) {
+    this(logLevel, null);
+  }
+
+  public PDGBuilder(final Level logLevel, final Handler handler) {
+    LOGGER.setLevel(logLevel);
+    LOGGER.addHandler(new ConsoleHandler());
+    if (handler != null)
+      LOGGER.addHandler(handler);
+  }
 
   public void build(final InputStream in) {
     final CompilationUnit cu = JavaParser.parse(in);
     build(cu);
+  }
+
+  public void build(final Path in) {
+    try {
+      CompilationUnit cu;
+      cu = JavaParser.parse(in);
+      build(cu);
+    } catch (final IOException e) {
+      e.printStackTrace();
+    }
   }
 
   public void build(final String in) {
@@ -58,6 +84,7 @@ public class PDGBuilder {
     normalizedCu = cu;
     final CDGBuilder cdgBuilder = new CDGBuilder(cu);
     cdgBuilder.build();
+    isComplete = cdgBuilder.isComplete();
     pdg = cdgBuilder.getCDG();
     computeInterProceduralCalls(cdgBuilder.getMethodParams(), cdgBuilder.getCalls(),
         cdgBuilder.getMethodFormalOut());
@@ -175,6 +202,10 @@ public class PDGBuilder {
 
   public CompilationUnit getNormalizedCU() {
     return normalizedCu;
+  }
+
+  public boolean isComplete() {
+    return isComplete;
   }
 
 }

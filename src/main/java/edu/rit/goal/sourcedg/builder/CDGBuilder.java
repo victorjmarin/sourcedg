@@ -52,6 +52,7 @@ import edu.rit.goal.sourcedg.util.Utils;
  */
 public class CDGBuilder {
 
+  private boolean isComplete;
   private final CompilationUnit cu;
   private VertexCreator vtxCreator;
   private CFGBuilder cfgBuilder;
@@ -71,6 +72,7 @@ public class CDGBuilder {
   }
 
   public void build() {
+    isComplete = true;
     vtxCreator = new VertexCreator();
     cfgBuilder = new CFGBuilder();
     cdg = new PDG();
@@ -87,7 +89,7 @@ public class CDGBuilder {
       _build(n);
   }
 
-  public ControlFlow _build(final Node n) {
+  private ControlFlow _build(final Node n) {
     ControlFlow result = null;
     if (n instanceof ClassOrInterfaceDeclaration)
       result = classOrInterfaceDeclaration((ClassOrInterfaceDeclaration) n);
@@ -133,8 +135,10 @@ public class CDGBuilder {
       result = catchClause((CatchClause) n);
     else if (n instanceof ThrowStmt)
       result = throwStmt((ThrowStmt) n);
-    else
+    else {
       PDGBuilder.LOGGER.warning("No match for " + n.getClass().getSimpleName());
+      isComplete = false;
+    }
     return result;
   }
 
@@ -162,7 +166,8 @@ public class CDGBuilder {
     final List<MethodDeclaration> methods = n.getMethods();
     for (final MethodDeclaration m : methods)
       _build(m);
-    final List<ClassOrInterfaceDeclaration> classes = n.findAll(ClassOrInterfaceDeclaration.class, t -> !t.equals(n));
+    final List<ClassOrInterfaceDeclaration> classes =
+        n.findAll(ClassOrInterfaceDeclaration.class, t -> !t.equals(n));
     for (final ClassOrInterfaceDeclaration c : classes)
       _build(c);
     addEdges(EdgeType.MEMBER_OF, v, inScope);
@@ -607,6 +612,10 @@ public class CDGBuilder {
 
   public HashMap<Vertex, Vertex> getMethodFormalOut() {
     return methodFormalOut;
+  }
+
+  public boolean isComplete() {
+    return isComplete;
   }
 
 }
