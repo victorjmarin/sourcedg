@@ -5,7 +5,7 @@ import java.util.Set;
 
 import org.jgrapht.graph.DefaultDirectedGraph;
 
-import com.github.javaparser.ast.stmt.IfStmt;
+import com.github.javaparser.ast.Node;
 
 import edu.rit.goal.sourcedg.graph.VertexType;
 import edu.rit.goal.sourcedg.validation.SubgraphQuery.SubgraphQueryEdge;
@@ -13,6 +13,7 @@ import edu.rit.goal.sourcedg.validation.SubgraphQuery.SubgraphQueryNode;
 
 public class SubgraphQuery extends DefaultDirectedGraph<SubgraphQueryNode, SubgraphQueryEdge> {
 	private static final long serialVersionUID = -513017247218635783L;
+	private SubgraphQueryNode mainNode;
 	
 	public SubgraphQuery(Class<? extends SubgraphQueryEdge> edgeClass) {
 		super(edgeClass);
@@ -31,26 +32,24 @@ public class SubgraphQuery extends DefaultDirectedGraph<SubgraphQueryNode, Subgr
 		
 		return set;
 	}
-
-	public static SubgraphQuery buildIfNoTerminalQuery() {
-		SubgraphQuery ret = new SubgraphQuery(SubgraphQueryEdge.class);
-		
-		SubgraphQueryNode n1 = ret.new SubgraphQueryNode();
-		n1.type = VertexType.CTRL;
-		n1.astClass = IfStmt.class;
-		ret.addVertex(n1);
-		
-		SubgraphQueryNode n2 = ret.new SubgraphQueryNode();
-		ret.addVertex(n2);
-		
-		ret.addEdge(n1, n2, ret.new SubgraphQueryEdge(n1, n2, false));
-		
-		return ret;
+	
+	public SubgraphQueryNode addVertex(VertexType type, Node ast) {
+		SubgraphQueryNode n = new SubgraphQueryNode();
+		n.type = type;
+		n.ast = ast;
+		addVertex(n);
+		return n;
+	}
+	
+	public SubgraphQueryEdge addEdge(SubgraphQueryNode src, SubgraphQueryNode tgt, boolean isPath) {
+		SubgraphQueryEdge e = new SubgraphQueryEdge(src, tgt, isPath);
+		addEdge(src, tgt, e);
+		return e;
 	}
 	
 	public class SubgraphQueryNode {
 		VertexType type;
-		Class<?> astClass;
+		Node ast;
 	}
 
 	public class SubgraphQueryEdge {
@@ -64,6 +63,10 @@ public class SubgraphQuery extends DefaultDirectedGraph<SubgraphQueryNode, Subgr
 			this.isPath = isPath;
 		}
 		
+	}
+
+	public SubgraphQueryNode getMainNode() {
+		return mainNode;
 	}
 	
 }
