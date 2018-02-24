@@ -10,10 +10,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import org.hamcrest.core.IsEqual;
-
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.DoStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.Statement;
@@ -65,11 +64,20 @@ public class Validate {
 			for (WhileStmt w : get(g, WhileStmt.class)) {
 				SubgraphQuery q = new SubgraphQuery(SubgraphQueryEdge.class);
 				SubgraphQueryNode main = q.addVertex(VertexType.CTRL, w);
-				q.addEdge(main, main, false);
 				
-				SubgraphQueryNode whileStmt = q.addVertex(null, getFirstNode(w.getBody()));
-				q.addEdge(main, whileStmt, false);
-				q.addEdge(whileStmt, main, true);
+				Node first = getFirstNode(w.getBody()), last = getLastNode(w.getBody());
+				if (first.equals(last)) {
+					SubgraphQueryNode whileStmt = q.addVertex(null, first);
+					q.addEdge(whileStmt, main, false);
+					q.addEdge(main, whileStmt, false);
+				} else {
+					SubgraphQueryNode whileFirstStmt = q.addVertex(null, first);
+					SubgraphQueryNode whileLastStmt = q.addVertex(null, last);
+					
+					q.addEdge(main, whileFirstStmt, false);
+					q.addEdge(whileLastStmt, main, false);
+					q.addEdge(whileFirstStmt, whileLastStmt, true);
+				}
 				
 				Node nextNode = getNext(w);
 				if (nextNode != null) {
@@ -77,7 +85,34 @@ public class Validate {
 					q.addEdge(main, nextStmt, false);
 				}
 				
-				// TODO 0: Why is this retrieving no solutions???
+				match(g, q);
+			}
+			
+			// Get all do-while nodes.
+			for (DoStmt d : get(g, DoStmt.class)) {
+				SubgraphQuery q = new SubgraphQuery(SubgraphQueryEdge.class);
+				SubgraphQueryNode main = q.addVertex(VertexType.CTRL, d);
+				
+				Node first = getFirstNode(d.getBody()), last = getLastNode(d.getBody());
+				if (first.equals(last)) {
+					SubgraphQueryNode doWhileStmt = q.addVertex(null, first);
+					q.addEdge(doWhileStmt, main, false);
+					q.addEdge(main, doWhileStmt, false);
+				} else {
+					SubgraphQueryNode doWhileFirstStmt = q.addVertex(null, first);
+					SubgraphQueryNode doWhileLastStmt = q.addVertex(null, last);
+					
+					q.addEdge(doWhileLastStmt, main, false);
+					q.addEdge(main, doWhileFirstStmt, false);
+					q.addEdge(doWhileFirstStmt, doWhileLastStmt, true);
+				}
+				
+				Node nextNode = getNext(d);
+				if (nextNode != null) {
+					SubgraphQueryNode nextStmt = q.addVertex(null, nextNode);
+					q.addEdge(main, nextStmt, false);
+				}
+				
 				match(g, q);
 			}
 		}
@@ -109,6 +144,17 @@ public class Validate {
 			return getFirstNode(((ExpressionStmt) n).getExpression());
 		else if (n.getClass().equals(BlockStmt.class))
 			return getFirstNode(((BlockStmt) n).getStatement(0));
+		else
+			return n;
+	}
+	
+	private static Node getLastNode(Node n) {
+		if (n.getClass().equals(ExpressionStmt.class))
+			return getLastNode(((ExpressionStmt) n).getExpression());
+		else if (n.getClass().equals(BlockStmt.class)) {
+			BlockStmt b = (BlockStmt) n;
+			return getLastNode(b.getStatements().get(b.getStatements().size() - 1));
+		}
 		else
 			return n;
 	}
