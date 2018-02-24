@@ -11,9 +11,13 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.DoStmt;
+import com.github.javaparser.ast.stmt.EmptyStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
+import com.github.javaparser.ast.stmt.ForStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.WhileStmt;
@@ -39,20 +43,28 @@ public class Validate {
 				SubgraphQuery q = new SubgraphQuery(SubgraphQueryEdge.class);
 				SubgraphQueryNode main = q.addVertex(VertexType.CTRL, i);
 				
-				SubgraphQueryNode ifStmt = q.addVertex(null, getFirstNode(i.getThenStmt()));
-				q.addEdge(main, ifStmt, false);
+				SubgraphQueryNode ifStmt = null;
+				Node thenNode = getFirstNode(i.getThenStmt());
+				if (thenNode != null) {
+					ifStmt = q.addVertex(null, thenNode);
+					q.addEdge(main, ifStmt, false);
+				}
 				
 				SubgraphQueryNode elseStmt = null;
 				Optional<Statement> els = i.getElseStmt();
 				if (els.isPresent()) {
-					elseStmt = q.addVertex(null, getFirstNode(els.get()));
-					q.addEdge(main, elseStmt, false);
+					Node elseNode = getFirstNode(els.get());
+					if (elseNode != null) {
+						elseStmt = q.addVertex(null, elseNode);
+						q.addEdge(main, elseStmt, false);
+					}
 				}
 				
 				Node nextNode = getNext(i);
 				if (nextNode != null) {
 					SubgraphQueryNode nextStmt = q.addVertex(null, nextNode);
-					q.addEdge(ifStmt, nextStmt, true);
+					if (ifStmt != null)
+						q.addEdge(ifStmt, nextStmt, true);
 					if (elseStmt != null)
 						q.addEdge(elseStmt, nextStmt, true);
 				}
@@ -66,18 +78,19 @@ public class Validate {
 				SubgraphQueryNode main = q.addVertex(VertexType.CTRL, w);
 				
 				Node first = getFirstNode(w.getBody()), last = getLastNode(w.getBody());
-				if (first.equals(last)) {
+				if (first != null && last != null && first.equals(last)) {
 					SubgraphQueryNode whileStmt = q.addVertex(null, first);
 					q.addEdge(whileStmt, main, false);
 					q.addEdge(main, whileStmt, false);
-				} else {
+				} else if (first != null && last != null) {
 					SubgraphQueryNode whileFirstStmt = q.addVertex(null, first);
 					SubgraphQueryNode whileLastStmt = q.addVertex(null, last);
 					
 					q.addEdge(main, whileFirstStmt, false);
 					q.addEdge(whileLastStmt, main, false);
 					q.addEdge(whileFirstStmt, whileLastStmt, true);
-				}
+				} else
+					q.addEdge(main, main, false);
 				
 				Node nextNode = getNext(w);
 				if (nextNode != null) {
@@ -94,18 +107,19 @@ public class Validate {
 				SubgraphQueryNode main = q.addVertex(VertexType.CTRL, d);
 				
 				Node first = getFirstNode(d.getBody()), last = getLastNode(d.getBody());
-				if (first.equals(last)) {
+				if (first != null && last != null && first.equals(last)) {
 					SubgraphQueryNode doWhileStmt = q.addVertex(null, first);
 					q.addEdge(doWhileStmt, main, false);
 					q.addEdge(main, doWhileStmt, false);
-				} else {
+				} else if (first != null && last != null) {
 					SubgraphQueryNode doWhileFirstStmt = q.addVertex(null, first);
 					SubgraphQueryNode doWhileLastStmt = q.addVertex(null, last);
 					
 					q.addEdge(doWhileLastStmt, main, false);
 					q.addEdge(main, doWhileFirstStmt, false);
 					q.addEdge(doWhileFirstStmt, doWhileLastStmt, true);
-				}
+				} else
+					q.addEdge(main, main, false);
 				
 				Node nextNode = getNext(d);
 				if (nextNode != null) {
@@ -115,6 +129,56 @@ public class Validate {
 				
 				match(g, q);
 			}
+			
+			// Get all for nodes.
+			for (ForStmt f : get(g, ForStmt.class)) {
+				SubgraphQuery q = new SubgraphQuery(SubgraphQueryEdge.class);
+				SubgraphQueryNode main = q.addVertex(VertexType.CTRL, f);
+				
+				NodeList<Expression> init = f.getInitialization();
+				NodeList<Expression> update = f.getUpdate();
+				
+				Node first = getFirstNode(f.getBody()), last = getLastNode(f.getBody());
+				Node firstInit = null, lastInit = null;
+				if (!init.isEmpty()) {
+					firstInit = getFirstNode(init.get(0));
+					lastInit = getFirstNode(init.get(init.size() - 1));
+				}
+				Node firstUpdate = null, lastUpdate = null;
+				if (!update.isEmpty()) {
+					firstUpdate = getFirstNode(update.get(0));
+					lastUpdate = getFirstNode(update.get(update.size() - 1));
+				}
+				
+				if (firstInit != null && lastInit != null && firstInit.equals(lastInit)) {
+					SubgraphQueryNode initStmt = q.addVertex(null, firstInit);
+					q.addEdge(initStmt, main, false);
+				}
+				
+				// TODO 0: Work here!
+//				if (first.equals(last)) {
+//					SubgraphQueryNode doWhileStmt = q.addVertex(null, first);
+//					q.addEdge(doWhileStmt, main, false);
+//					q.addEdge(main, doWhileStmt, false);
+//				} else {
+//					SubgraphQueryNode doWhileFirstStmt = q.addVertex(null, first);
+//					SubgraphQueryNode doWhileLastStmt = q.addVertex(null, last);
+//					
+//					q.addEdge(doWhileLastStmt, main, false);
+//					q.addEdge(main, doWhileFirstStmt, false);
+//					q.addEdge(doWhileFirstStmt, doWhileLastStmt, true);
+//				}
+				
+				Node nextNode = getNext(f);
+				if (nextNode != null) {
+					SubgraphQueryNode nextStmt = q.addVertex(null, nextNode);
+					q.addEdge(main, nextStmt, false);
+				}
+				
+				match(g, q);
+			}
+			
+			// TODO 0: Enhanced fors, switches, try-catch-finally, break, continue.
 		}
 	}
 	
@@ -140,20 +204,32 @@ public class Validate {
 	}
 	
 	private static Node getFirstNode(Node n) {
-		if (n.getClass().equals(ExpressionStmt.class))
+		if (n.getClass().equals(EmptyStmt.class))
+			return null;
+		else if (n.getClass().equals(ExpressionStmt.class))
 			return getFirstNode(((ExpressionStmt) n).getExpression());
-		else if (n.getClass().equals(BlockStmt.class))
-			return getFirstNode(((BlockStmt) n).getStatement(0));
+		else if (n.getClass().equals(BlockStmt.class)) {
+			Node ret = null;
+			BlockStmt b = (BlockStmt) n;
+			for (int i = 0; ret == null && i < b.getStatements().size(); i++)
+				ret = getFirstNode(b.getStatement(i));
+			return ret;
+		}
 		else
 			return n;
 	}
 	
 	private static Node getLastNode(Node n) {
-		if (n.getClass().equals(ExpressionStmt.class))
+		if (n.getClass().equals(EmptyStmt.class))
+			return null;
+		else if (n.getClass().equals(ExpressionStmt.class))
 			return getLastNode(((ExpressionStmt) n).getExpression());
 		else if (n.getClass().equals(BlockStmt.class)) {
+			Node ret = null;
 			BlockStmt b = (BlockStmt) n;
-			return getLastNode(b.getStatements().get(b.getStatements().size() - 1));
+			for (int i = b.getStatements().size() - 1; ret == null && i >= 0; i--)
+				ret = getLastNode(b.getStatement(i));
+			return ret;
 		}
 		else
 			return n;

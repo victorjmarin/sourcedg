@@ -54,6 +54,7 @@ public class SubgraphMatching {
 		order.add(first);
 		
 		Set<SubgraphQueryNode> toTreat = new HashSet<>(query.getUndirectedNeighbors(first)), treated = new HashSet<>();
+		toTreat.removeAll(order);
 		treated.add(first);
 		
 		while (toTreat.size() > 0) {

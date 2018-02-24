@@ -1,4 +1,34 @@
 public class Example {
+	
+	void test() {
+		int x = 0;
+		if (true) {
+			;
+			x = 7;
+		}
+	}
+	
+	void empties() {
+		if (true);
+		;
+		while (false);
+		;
+		while (false) {
+			;
+			;
+		}
+		;
+		do {
+		} while (false);
+		;
+		// TODO 0: This is not working.
+//		do {
+//			;
+//		} while (false);
+		;
+//		for (; true; );
+	}
+	
 	void x() {
 		int x = 0;
 		if (true)
@@ -43,6 +73,7 @@ public class Example {
 			x = 7;
 			while (false) {
 				x = 9;
+				while (true);
 				while (false)
 					x = 5;
 			}
@@ -89,5 +120,11 @@ public class Example {
 			x = 7;
 		} while (true);
 	}
+	
+//	void b() {
+//		int x = 0;
+//		for (; true; )
+//			x = 7;
+//	}
 	
 }
