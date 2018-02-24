@@ -10,11 +10,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.hamcrest.core.IsEqual;
+
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.stmt.WhileStmt;
 
 import edu.rit.goal.sourcedg.builder.PDGBuilder;
 import edu.rit.goal.sourcedg.graph.CFG;
@@ -33,59 +36,54 @@ public class Validate {
 		builder.build(programStr);
 		for (CFG g : builder.getCfgs()) {
 			// Get all if nodes.
-			Set<IfStmt> ifs = getIfs(g);
-			
-			for (IfStmt i : ifs) {
+			for (IfStmt i : get(g, IfStmt.class)) {
 				SubgraphQuery q = new SubgraphQuery(SubgraphQueryEdge.class);
 				SubgraphQueryNode main = q.addVertex(VertexType.CTRL, i);
 				
-				// This needs to have two or three child nodes, the first one if the condition itself.
-				if (i.getChildNodes().size() > 3)
-					throw new Exception("An if statement with more than three children!");
-				else {
-					// Is it always a block what we are going to find here?
-					SubgraphQueryNode ifStmt = q.addVertex(null, getFirstNode(i.getThenStmt()));
-					q.addEdge(main, ifStmt, false);
-					
-					SubgraphQueryNode elseStmt = null;
-					Optional<Statement> els = i.getElseStmt();
-					if (els.isPresent()) {
-						elseStmt = q.addVertex(null, getFirstNode(els.get()));
-						q.addEdge(main, elseStmt, false);
-					}
-					
-					Optional<Node> parentOptional = i.getParentNode();
-					if (parentOptional.isPresent()) {
-						Node parent = parentOptional.get();
-						int pos = parent.getChildNodes().indexOf(i);
-						
-						if (pos >= 0) {
-							if (pos + 1 < parent.getChildNodes().size()) {
-								Node nextNode = getFirstNode(parent.getChildNodes().get(pos + 1));
-								
-								SubgraphQueryNode nextStmt = q.addVertex(null, nextNode);
-								q.addEdge(ifStmt, nextStmt, true);
-								if (elseStmt != null)
-									q.addEdge(elseStmt, nextStmt, true);
-							}
-						} else
-							throw new Exception("Position not found!");
-					} else
-						throw new Exception("An if statement without a parent!");
+				SubgraphQueryNode ifStmt = q.addVertex(null, getFirstNode(i.getThenStmt()));
+				q.addEdge(main, ifStmt, false);
+				
+				SubgraphQueryNode elseStmt = null;
+				Optional<Statement> els = i.getElseStmt();
+				if (els.isPresent()) {
+					elseStmt = q.addVertex(null, getFirstNode(els.get()));
+					q.addEdge(main, elseStmt, false);
 				}
 				
-				SubgraphMatching match = new SubgraphMatching();
-				Set<Map<SubgraphQueryNode, Vertex>> solutions = match.subgraphMatching(g, q);
-
-				if (solutions.size() != 1)
-					throw new Exception("Zero or more than one solution found!");
-				else
-					System.out.println("We are good!");
+				Node nextNode = getNext(i);
+				if (nextNode != null) {
+					SubgraphQueryNode nextStmt = q.addVertex(null, nextNode);
+					q.addEdge(ifStmt, nextStmt, true);
+					if (elseStmt != null)
+						q.addEdge(elseStmt, nextStmt, true);
+				}
+				
+				match(g, q);
+			}
+			
+			// Get all while nodes.
+			for (WhileStmt w : get(g, WhileStmt.class)) {
+				SubgraphQuery q = new SubgraphQuery(SubgraphQueryEdge.class);
+				SubgraphQueryNode main = q.addVertex(VertexType.CTRL, w);
+				q.addEdge(main, main, false);
+				
+				SubgraphQueryNode whileStmt = q.addVertex(null, getFirstNode(w.getBody()));
+				q.addEdge(main, whileStmt, false);
+				q.addEdge(whileStmt, main, true);
+				
+				Node nextNode = getNext(w);
+				if (nextNode != null) {
+					SubgraphQueryNode nextStmt = q.addVertex(null, nextNode);
+					q.addEdge(main, nextStmt, false);
+				}
+				
+				// TODO 0: Why is this retrieving no solutions???
+				match(g, q);
 			}
 		}
 	}
 	
-	private static Set<IfStmt> getIfs(CFG g) {
+	private static <T> Set<T> get(CFG g, Class<T> clazz) {
 		Node entryNode = null;
 		for (Iterator<Vertex> it = g.vertexSet().iterator(); entryNode == null && it.hasNext(); ) {
 			Vertex v = it.next();
@@ -93,17 +91,17 @@ public class Validate {
 				entryNode = v.getAst();
 		}
 		
-		Set<IfStmt> ret = new HashSet<>();
-		getIfs(entryNode, ret);
+		Set<T> ret = new HashSet<>();
+		get(entryNode, ret, clazz);
 		return ret;
 	}
 	
-	private static void getIfs(Node n, Set<IfStmt> ifs) {
-		if (n.getClass().equals(IfStmt.class))
-			ifs.add((IfStmt) n);
+	private static <T> void get(Node n, Set<T> set, Class<T> clazz) {
+		if (n.getClass().equals(clazz))
+			set.add(clazz.cast(getFirstNode(n)));
 		
 		for (Node o : n.getChildNodes())
-			getIfs(o, ifs);
+			get(o, set, clazz);
 	}
 	
 	private static Node getFirstNode(Node n) {
@@ -113,6 +111,37 @@ public class Validate {
 			return getFirstNode(((BlockStmt) n).getStatement(0));
 		else
 			return n;
+	}
+	
+	private static void match(CFG g, SubgraphQuery q) throws Exception {
+		SubgraphMatching match = new SubgraphMatching();
+		Set<Map<SubgraphQueryNode, Vertex>> solutions = match.subgraphMatching(g, q);
+
+		if (solutions.isEmpty())
+			throw new Exception("Zero solutions found!");
+		else if (solutions.size() > 1)
+			throw new Exception("More than one solutions found!");
+		else
+			System.out.println("We are good!");
+	}
+	
+	private static Node getNext(Node n) throws Exception {
+		Node ret = null;
+		
+		Optional<Node> parentOptional = n.getParentNode();
+		if (parentOptional.isPresent()) {
+			Node parent = parentOptional.get();
+			int pos = parent.getChildNodes().indexOf(n);
+			
+			if (pos >= 0) {
+				if (pos + 1 < parent.getChildNodes().size())
+					ret = getFirstNode(parent.getChildNodes().get(pos + 1));
+			} else
+				throw new Exception("Position not found!");
+		} else
+			throw new Exception("A statement without a parent!");
+		
+		return ret;
 	}
 
 }
