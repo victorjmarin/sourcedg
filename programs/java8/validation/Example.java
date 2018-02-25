@@ -21,12 +21,11 @@ public class Example {
 		do {
 		} while (false);
 		;
-		// TODO 0: This is not working.
-//		do {
-//			;
-//		} while (false);
+		do {
+			;
+		} while (false);
 		;
-//		for (; true; );
+		for (; true; );
 	}
 	
 	void x() {
@@ -121,10 +120,43 @@ public class Example {
 		} while (true);
 	}
 	
-//	void b() {
-//		int x = 0;
-//		for (; true; )
+	void b() {
+		int x = 0;
+		for (; true; )
+			x = 7;
+	}
+	
+	void b(int h) {
+		int x = 0;
+		for (; true; )
+			x = 7;
+		;
+		;
+		for (int m = 0; true; ) {
+			x = 7;
+			;
+		}
+		;
+		int a = 0;
+		double d = 0.0;
+		for (a = 1, d = 1.34; a < 10; ) {
+			// something
+		}
+		;
+		// TODO 0: Not working!!!!
+		for (int m = 0, n = 0; true; ) {
+			x = 7;
+			;
+		}
+		;
+//		for (int m = 0, n = 0, o = 0; true; ) {
 //			x = 7;
-//	}
+//			;
+//		}
+//		;
+//		for (int a = 0, b[] = { 1 }, c[][] = { { 1 }, { 2 } }; a < 10; ) {
+//			// something
+//		}
+	}
 	
 }
