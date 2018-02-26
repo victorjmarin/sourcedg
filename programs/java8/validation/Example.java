@@ -143,20 +143,30 @@ public class Example {
 			// something
 		}
 		;
-		// TODO 0: Not working!!!!
 		for (int m = 0, n = 0; true; ) {
 			x = 7;
 			;
 		}
 		;
-//		for (int m = 0, n = 0, o = 0; true; ) {
-//			x = 7;
-//			;
-//		}
-//		;
-//		for (int a = 0, b[] = { 1 }, c[][] = { { 1 }, { 2 } }; a < 10; ) {
-//			// something
-//		}
+		for (int m = 0, n = 0, o = 0; true; ) {
+			x = 7;
+			x = 8;
+			x = 9;
+			if (m < 10)
+				x = 10;
+			;
+		}
+		;
+		for (int a = 0, b[] = { 1 }, c[][] = { { 1 }, { 2 } }; a < 10; ) {
+			// something
+		}
+		;
+		;
+		for (int m = 0, n = 0; true; n++, m--, m+=2, n--) {
+			x = 7;
+			;
+		}
+		;
 	}
 	
 }

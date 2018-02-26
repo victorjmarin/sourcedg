@@ -35,7 +35,7 @@ public class SubgraphMatching {
 			for (Vertex v : g.vertexSet())
 				// Ensure that the type of the query node and whatever is coming from the CFG matches at the AST level.
 				if (((g.getEdge(v, v) != null && q.getEdge(u, u) != null) || (g.getEdge(v, v) == null && q.getEdge(u, u) == null)) &&
-						(u.type == null || v.getType().equals(u.type)) && (u.ast == null || v.getAst().equals(u.ast)))
+						(u.type == null || v.getType().equals(u.type)) && (u.ast == null || v.getAst() == u.ast))
 					l.add(v);
 			hasEmptySS = l.isEmpty();
 			
