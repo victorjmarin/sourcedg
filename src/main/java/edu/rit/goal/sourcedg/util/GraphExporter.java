@@ -22,9 +22,9 @@ public class GraphExporter {
         public String getName(final Vertex component) {
           String result = component.getId() + "-" + component.getType() + "\n";
           final Set<VertexSubtype> subtypes = component.getSubtypes();
-          if (!subtypes.isEmpty())
-            result += subtypes + "\n";
-          result += component.getLabel().replaceAll("\"", "'") + ":" + component.getOriginalLine();
+          // if (!subtypes.isEmpty())
+          // result += subtypes + "\n";
+          result += component.getLabel().replaceAll("\"", "'");
           return result;
         }
       };
@@ -52,7 +52,7 @@ public class GraphExporter {
             switch (component.getType()) {
               default:
                 result.put("fontname", "helvetica");
-                result.put("shape", "box");
+                result.put("shape", "oval");
                 break;
             }
           }
@@ -78,7 +78,7 @@ public class GraphExporter {
               case PARAM_IN:
               case PARAM_OUT:
                 result.put("style", "dotted");
-                // result.put("constraint", "false");
+                result.put("constraint", "false");
                 break;
               default:
                 break;
@@ -87,6 +87,15 @@ public class GraphExporter {
           return result;
         }
       };
+
+
+  public void m1() {
+    int p1 = 5;
+    do
+      p1 = 1;
+    while (p1 > 0);
+  }
+
 
   private static final DOTExporter<Vertex, Edge> exporter =
       new DOTExporter<>(new IntegerComponentNameProvider<>(), vertexLabelProvider, null,

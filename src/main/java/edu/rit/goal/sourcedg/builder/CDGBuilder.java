@@ -7,6 +7,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import com.github.javaparser.ast.CompilationUnit;
@@ -45,14 +46,14 @@ import edu.rit.goal.sourcedg.graph.EdgeType;
 import edu.rit.goal.sourcedg.graph.PDG;
 import edu.rit.goal.sourcedg.graph.Vertex;
 import edu.rit.goal.sourcedg.graph.VertexCreator;
-import edu.rit.goal.sourcedg.util.Utils;
 
 /*
  * Builds the Control Dependence Subgraph
  */
 public class CDGBuilder {
 
-  private boolean isComplete;
+  private Map<String, Integer> unmatchedAstNodes;
+
   private final CompilationUnit cu;
   private VertexCreator vtxCreator;
   private CFGBuilder cfgBuilder;
@@ -70,9 +71,9 @@ public class CDGBuilder {
   public CDGBuilder(final CompilationUnit cu) {
     this.cu = cu;
   }
-
+  
   public void build() {
-    isComplete = true;
+    unmatchedAstNodes = new HashMap<>();
     vtxCreator = new VertexCreator();
     cfgBuilder = new CFGBuilder();
     cdg = new PDG();
@@ -136,8 +137,12 @@ public class CDGBuilder {
     else if (n instanceof ThrowStmt)
       result = throwStmt((ThrowStmt) n);
     else {
-      PDGBuilder.LOGGER.warning("No match for " + n.getClass().getSimpleName());
-      isComplete = false;
+      final String nodeName = n.getClass().getSimpleName();
+      PDGBuilder.LOGGER.warning("No match for " + nodeName);
+      Integer count = unmatchedAstNodes.get(nodeName);
+      if (count == null)
+        count = 0;
+      unmatchedAstNodes.put(nodeName, count + 1);
     }
     return result;
   }
@@ -205,7 +210,7 @@ public class CDGBuilder {
     for (final Parameter p : params) {
       final ControlFlow f = _build(p);
       result.add(f);
-      final Vertex paramVtx = Utils.first(f.getIn());
+      final Vertex paramVtx = f.getIn();
       paramVtcs.add(paramVtx);
     }
     final String methodName = callName(name);
@@ -614,8 +619,8 @@ public class CDGBuilder {
     return methodFormalOut;
   }
 
-  public boolean isComplete() {
-    return isComplete;
+  public Map<String, Integer> getUnmatchedAstNodes() {
+    return unmatchedAstNodes;
   }
 
 }

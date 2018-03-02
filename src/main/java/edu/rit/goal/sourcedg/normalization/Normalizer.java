@@ -41,11 +41,8 @@ import com.github.javaparser.ast.stmt.LocalClassDeclarationStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.WhileStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.type.PrimitiveType;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.visitor.ModifierVisitor;
-import com.github.javaparser.resolution.types.ResolvedType;
-import com.github.javaparser.symbolsolver.javaparsermodel.JavaParserFacade;
 import com.github.javaparser.symbolsolver.model.resolution.TypeSolver;
 import edu.rit.goal.sourcedg.builder.PDGBuilder;
 
@@ -72,9 +69,9 @@ public class Normalizer {
     lineComment(cu);
     ensureBlkStmts(cu);
     visitors.add(new LocalClassDeclarationStmtVisitor());
-    // Not equivalent if for has continue
+    // Not equivalent if for has continue. Would need jump to tag.
     // visitors.add(new ForStmtUpdateVisitor());
-    // Gives problems when denormalizing
+    // Gives problems when denormalizing. If collection -> iterator, if array -> index
     // visitors.add(new ForeachStmtVisitor());
     visitors.add(new MethodCallVisitor());
     visitors.add(new AssignExprVisitor());
@@ -646,34 +643,36 @@ public class Normalizer {
   }
 
   private Type typeFor(final Expression expr) {
-    try {
-      final ResolvedType typeOfTheNode = JavaParserFacade.get(typeSolver).getType(expr);
-      final String type = typeOfTheNode.describe();
-      switch (type) {
-        case "boolean":
-          return PrimitiveType.booleanType();
-        case "char":
-          return PrimitiveType.charType();
-        case "byte":
-          return PrimitiveType.byteType();
-        case "short":
-          return PrimitiveType.shortType();
-        case "int":
-          return PrimitiveType.intType();
-        case "long":
-          return PrimitiveType.longType();
-        case "float":
-          return PrimitiveType.floatType();
-        case "double":
-          return PrimitiveType.doubleType();
-        default:
-          return JavaParser.parseClassOrInterfaceType(type);
-      }
-    } catch (final Exception e) {
-      PDGBuilder.LOGGER
-          .warning("Could not resolve type for " + expr + ". Defaulting to " + defaultType());
-    }
+    // TODO 0: Remove comments
     return defaultType();
+//    try {
+//      final ResolvedType typeOfTheNode = JavaParserFacade.get(typeSolver).getType(expr);
+//      final String type = typeOfTheNode.describe();
+//      switch (type) {
+//        case "boolean":
+//          return PrimitiveType.booleanType();
+//        case "char":
+//          return PrimitiveType.charType();
+//        case "byte":
+//          return PrimitiveType.byteType();
+//        case "short":
+//          return PrimitiveType.shortType();
+//        case "int":
+//          return PrimitiveType.intType();
+//        case "long":
+//          return PrimitiveType.longType();
+//        case "float":
+//          return PrimitiveType.floatType();
+//        case "double":
+//          return PrimitiveType.doubleType();
+//        default:
+//          return JavaParser.parseClassOrInterfaceType(type);
+//      }
+//    } catch (final Exception e) {
+//      PDGBuilder.LOGGER
+//          .warning("Could not resolve type for " + expr + ". Defaulting to " + defaultType());
+//    }
+//    return defaultType();
   }
 
   private Type toWrapperType(final Type type) {

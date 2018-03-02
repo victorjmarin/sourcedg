@@ -179,10 +179,8 @@ public class CFGBuilder {
     for (final Vertex o : f1.getOut()) {
       if (o == EXIT) {
         // Add unreachable components
-        if (withUnreachableComponents) {
-          for (final Vertex i : f2.getIn())
-            addVertex(i);
-        }
+        if (withUnreachableComponents)
+          addVertex(f2.getIn());
         continue;
       }
       addVertex(o);
@@ -190,10 +188,9 @@ public class CFGBuilder {
       // removed.
       if (VertexType.BREAK.equals(o.getType()))
         f1.getBreaks().remove(o);
-      for (final Vertex i : f2.getIn()) {
-        addVertex(i);
-        addEdge(o, i);
-      }
+      final Vertex i = f2.getIn();
+      addVertex(i);
+      addEdge(o, i);
     }
     final ControlFlow result = new ControlFlow(f1.getIn(), f2.getOut());
     result.getBreaks().addAll(f1.getBreaks());

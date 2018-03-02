@@ -266,8 +266,8 @@ public class VertexCreator {
   }
 
   public void setOriginalLine(final Vertex v, final Node n) {
-    final Integer line = findParentComment(n);
-    v.setOriginalLine(line);
+    // final Integer line = findParentComment(n);
+    // v.setOriginalLine(line);
   }
 
   private Integer findParentComment(final Node n) {

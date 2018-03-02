@@ -11,45 +11,43 @@ import edu.rit.goal.sourcedg.graph.Vertex;
  */
 public class ControlFlow {
 
-  private final Set<Vertex> in;
+  private final Vertex in;
   private final Set<Vertex> out;
   private final Set<Vertex> breaks;
 
   public ControlFlow() {
-    in = new HashSet<>();
+    in = null;
     out = new HashSet<>();
     breaks = new HashSet<>();
   }
 
   public ControlFlow(final Vertex in, final Vertex out) {
-    this.in = new HashSet<>();
+    this.in = in;
     this.out = new HashSet<>();
     breaks = new HashSet<>();
-    this.in.add(in);
     this.out.add(out);
   }
 
   public ControlFlow(final Vertex in, final Set<Vertex> out) {
-    this.in = new HashSet<>();
-    this.in.add(in);
-    this.out = new HashSet<>(out);
-    breaks = new HashSet<>();
-  }
-
-  public ControlFlow(final Set<Vertex> in, final Vertex out) {
     this.in = in;
-    this.out = new HashSet<>();
-    this.out.add(out);
-    breaks = new HashSet<>();
-  }
-
-  public ControlFlow(final Set<Vertex> in, final Set<Vertex> out) {
-    this.in = new HashSet<>(in);
     this.out = new HashSet<>(out);
     breaks = new HashSet<>();
   }
 
-  public Set<Vertex> getIn() {
+//  public ControlFlow(final Set<Vertex> in, final Vertex out) {
+//    this.in = in;
+//    this.out = new HashSet<>();
+//    this.out.add(out);
+//    breaks = new HashSet<>();
+//  }
+
+//  public ControlFlow(final Set<Vertex> in, final Set<Vertex> out) {
+//    this.in = in;
+//    this.out = new HashSet<>(out);
+//    breaks = new HashSet<>();
+//  }
+
+  public Vertex getIn() {
     return in;
   }
 

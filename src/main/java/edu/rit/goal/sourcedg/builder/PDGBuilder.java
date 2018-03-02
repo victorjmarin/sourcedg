@@ -27,7 +27,6 @@ import edu.rit.goal.sourcedg.graph.EdgeType;
 import edu.rit.goal.sourcedg.graph.PDG;
 import edu.rit.goal.sourcedg.graph.Vertex;
 import edu.rit.goal.sourcedg.graph.VertexCreator;
-import edu.rit.goal.sourcedg.normalization.Normalizer;
 
 public class PDGBuilder {
 
@@ -74,12 +73,12 @@ public class PDGBuilder {
     build(cu);
   }
 
-  private void build(CompilationUnit cu) {
+  private void build(final CompilationUnit cu) {
     final CombinedTypeSolver typeSolver = new CombinedTypeSolver();
     typeSolver.add(new ReflectionTypeSolver());
     originalCu = JavaParser.parse(cu.toString());
-    final Normalizer normalizer = new Normalizer(cu, typeSolver);
-    cu = normalizer.normalize();
+    //final Normalizer normalizer = new Normalizer(cu, typeSolver);
+    //cu = normalizer.normalize();
     normalizedCu = cu;
     cdgBuilder = new CDGBuilder(cu);
     cdgBuilder.build();
@@ -132,6 +131,7 @@ public class PDGBuilder {
     }
   }
 
+  // https://dl.acm.org/citation.cfm?id=154268
   private void computeDataDependencies() {
     for (final DirectedGraph<Vertex, Edge> cfg : cfgs)
       reachingDefinitions(cfg);
