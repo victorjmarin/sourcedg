@@ -137,7 +137,7 @@ public class PDGBuilder {
       reachingDefinitions(cfg);
     for (final Vertex v : pdg.vertexSet()) {
       final Map<String, Set<Vertex>> inDefs = inDefs(v);
-      for (final String use : v.getUses()) {
+      for (final String use : v.getRefs()) {
         boolean noEdgeForUse = true;
         final Set<Vertex> inVtcs = inDefs.get(use);
         if (inVtcs != null) {

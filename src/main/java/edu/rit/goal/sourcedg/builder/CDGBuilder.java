@@ -289,7 +289,7 @@ public class CDGBuilder {
       final Optional<Expression> scope = call.getScope();
       if (scope.isPresent()) {
         final Set<String> uses = Sets.newHashSet(scope.get().toString());
-        v.setUses(uses);
+        v.setRefs(uses);
       }
       final ControlFlow inFlow = args(v, call);
       final ControlFlow outFlow = actualOut(v, n.getName());
@@ -313,7 +313,7 @@ public class CDGBuilder {
       final Optional<Expression> scope = call.getScope();
       if (scope.isPresent()) {
         final Set<String> uses = Sets.newHashSet(scope.get().toString());
-        v.setUses(uses);
+        v.setRefs(uses);
       }
       final ControlFlow inFlow = args(v, call);
       final ControlFlow outFlow = actualOut(v, n.getTarget());

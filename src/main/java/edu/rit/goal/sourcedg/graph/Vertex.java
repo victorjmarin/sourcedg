@@ -12,7 +12,7 @@ public class Vertex implements Serializable {
   private VertexType type;
   private String label;
   private String def;
-  private Set<String> uses;
+  private Set<String> refs;
   private Set<VertexSubtype> subtypes;
   private String calledMethodName;
   private Integer startLine;
@@ -27,7 +27,7 @@ public class Vertex implements Serializable {
 
   public Vertex(final String label) {
     this.label = label;
-    uses = new HashSet<>();
+    refs = new HashSet<>();
     subtypes = new HashSet<>();
     in = new HashSet<>();
     out = new HashSet<>();
@@ -35,7 +35,7 @@ public class Vertex implements Serializable {
 
   public Vertex(final int id) {
     this.id = id;
-    uses = new HashSet<>();
+    refs = new HashSet<>();
     subtypes = new HashSet<>();
     in = new HashSet<>();
     out = new HashSet<>();
@@ -45,7 +45,7 @@ public class Vertex implements Serializable {
     id = -1;
     this.type = type;
     this.label = label;
-    uses = new HashSet<>();
+    refs = new HashSet<>();
     subtypes = new HashSet<>();
     in = new HashSet<>();
     out = new HashSet<>();
@@ -60,7 +60,7 @@ public class Vertex implements Serializable {
     this.id = id;
     this.type = type;
     this.label = label;
-    uses = new HashSet<>();
+    refs = new HashSet<>();
     subtypes = new HashSet<>();
     in = new HashSet<>();
     out = new HashSet<>();
@@ -98,14 +98,14 @@ public class Vertex implements Serializable {
     def = assignedVariable;
   }
 
-  public Set<String> getUses() {
-    if (uses == null)
-      uses = new HashSet<>();
-    return uses;
+  public Set<String> getRefs() {
+    if (refs == null)
+      refs = new HashSet<>();
+    return refs;
   }
 
-  public void setUses(final Set<String> readingVariables) {
-    uses = readingVariables;
+  public void setRefs(final Set<String> readingVariables) {
+    refs = readingVariables;
   }
 
   public Integer getStartLine() {
@@ -166,7 +166,7 @@ public class Vertex implements Serializable {
 
   public void resetDefUses() {
     def = null;
-    uses = new HashSet<>();
+    refs = new HashSet<>();
   }
 
   public Integer getOriginalLine() {
