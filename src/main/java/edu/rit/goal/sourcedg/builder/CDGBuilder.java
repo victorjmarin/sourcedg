@@ -71,7 +71,7 @@ public class CDGBuilder {
   public CDGBuilder(final CompilationUnit cu) {
     this.cu = cu;
   }
-  
+
   public void build() {
     unmatchedAstNodes = new HashMap<>();
     vtxCreator = new VertexCreator();
@@ -449,15 +449,17 @@ public class CDGBuilder {
       initFlow.add(_build(e));
     final Vertex v = vtxCreator.forStmt(n);
     cdg.addVertex(v);
-    loopStack.push(v);
     inScope.add(v);
     pushScope();
-    final Statement body = n.getBody();
-    final ControlFlow bodyFlow = _build(body);
     final NodeList<Expression> update = n.getUpdate();
     final List<ControlFlow> updateFlow = new ArrayList<>();
     for (final Expression e : update)
       updateFlow.add(_build(e));
+    // Control flow after a continue should go to update node if present, and guard otherwise.
+    final Vertex loopVtx = !updateFlow.isEmpty() ? updateFlow.get(0).getIn() : v;
+    loopStack.push(loopVtx);
+    final Statement body = n.getBody();
+    final ControlFlow bodyFlow = _build(body);
     addEdges(EdgeType.CTRL_TRUE, v, inScope);
     // Self edge
     addEdge(EdgeType.CTRL_TRUE, v, v);
