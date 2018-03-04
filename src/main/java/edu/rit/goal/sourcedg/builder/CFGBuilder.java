@@ -84,6 +84,14 @@ public class CFGBuilder {
     return result;
   }
 
+  public ControlFlow foreachStmt(final Vertex v, final ControlFlow bodyFlow) {
+    final ControlFlow conn1 = connect(v, bodyFlow);
+    final ControlFlow result = connect(conn1, v);
+    for (final Vertex bv : result.getBreaks())
+      result.getOut().add(bv);
+    return result;
+  }
+
   public ControlFlow ifStmt(final Vertex v, final ControlFlow thenFlow,
       final ControlFlow elseFlow) {
     final Set<Vertex> out = new HashSet<>();

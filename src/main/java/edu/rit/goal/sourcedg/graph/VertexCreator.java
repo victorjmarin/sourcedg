@@ -26,6 +26,7 @@ import com.github.javaparser.ast.stmt.ContinueStmt;
 import com.github.javaparser.ast.stmt.DoStmt;
 import com.github.javaparser.ast.stmt.ExplicitConstructorInvocationStmt;
 import com.github.javaparser.ast.stmt.ForStmt;
+import com.github.javaparser.ast.stmt.ForeachStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.ThrowStmt;
@@ -117,6 +118,14 @@ public class VertexCreator {
       setUses(cond.get(), result);
       setSubtypes(result, cond.get());
     }
+    return result;
+  }
+
+  public Vertex foreachStmt(final ForeachStmt n) {
+    final String label = n.getIterable().toString();
+    final Vertex result = new Vertex(VertexType.CTRL, label, n);
+    setId(result);
+    setOriginalLine(result, n);
     return result;
   }
 

@@ -32,6 +32,7 @@ import com.github.javaparser.ast.stmt.DoStmt;
 import com.github.javaparser.ast.stmt.ExplicitConstructorInvocationStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ForStmt;
+import com.github.javaparser.ast.stmt.ForeachStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
@@ -110,6 +111,8 @@ public class CDGBuilder {
       result = ifStmt((IfStmt) n);
     else if (n instanceof ForStmt)
       result = forStmt((ForStmt) n);
+    else if (n instanceof ForeachStmt)
+      result = foreachStmt((ForeachStmt) n);
     else if (n instanceof WhileStmt)
       result = whileStmt((WhileStmt) n);
     else if (n instanceof DoStmt)
@@ -466,6 +469,23 @@ public class CDGBuilder {
     loopStack.pop();
     popScope();
     final ControlFlow result = cfgBuilder.forStmt(v, initFlow, updateFlow, bodyFlow);
+    return result;
+  }
+
+  private ControlFlow foreachStmt(final ForeachStmt n) {
+    final Vertex v = vtxCreator.foreachStmt(n);
+    cdg.addVertex(v);
+    loopStack.push(v);
+    inScope.add(v);
+    pushScope();
+    final Statement body = n.getBody();
+    final ControlFlow bodyFlow = _build(body);
+    addEdges(EdgeType.CTRL_TRUE, v, inScope);
+    // Self edge
+    addEdge(EdgeType.CTRL_TRUE, v, v);
+    loopStack.pop();
+    popScope();
+    final ControlFlow result = cfgBuilder.foreachStmt(v, bodyFlow);
     return result;
   }
 
