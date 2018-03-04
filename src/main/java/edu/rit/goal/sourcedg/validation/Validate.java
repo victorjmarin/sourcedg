@@ -481,6 +481,8 @@ public class Validate {
 
   private static void match(final CFG g, final SubgraphQuery q) throws Exception {
     final SubgraphMatching match = new SubgraphMatching();
+    if (q.vertexSet().isEmpty())
+    	throw new Exception("EQ");
     final Set<Map<SubgraphQueryNode, Vertex>> solutions = match.subgraphMatching(g, q);
 
     if (solutions.isEmpty())
