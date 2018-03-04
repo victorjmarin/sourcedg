@@ -297,7 +297,7 @@ public class VertexCreator {
 
   private void setUses(final Node n, final Vertex v) {
     final Set<String> uses = names(n);
-    v.setUses(uses);
+    v.setRefs(uses);
   }
 
   // TODO: This is a preliminary construction for def and uses. Be more thorough.
