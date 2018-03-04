@@ -169,4 +169,148 @@ public class Example {
 		;
 	}
 	
+	void easyWhileBrk() {
+		while (false)
+			break;
+	}
+	
+	void easyDoWhileBrk() {
+		do {
+			break;
+		} while (false);
+	}
+	
+	void easyWhileContinue() {
+		while (false)
+			continue;
+	}
+	
+	void easyDoWhileContinue() {
+		do {
+			continue;
+		} while (false);
+	}
+	void easyForBrk() {
+		for ( ; false; )
+			break;
+	}
+
+	void easyForContinue() {
+		for ( ; false; )
+			continue;
+	}
+	
+	void enhancedFor() {
+		for (int x : new int[]{})
+			break;
+		for (int x : new int[]{})
+			continue;
+		for (int x : new int[]{}) {
+			x = 8;
+			break;
+		}
+		for (int x : new int[]{}) {
+			x = 9;
+			break;
+		}
+	}
+	
+	void brk() {
+		int x = 0;
+		while (true) {
+			if (false) {
+				if (true)
+					break;
+				else
+					x = 9;
+				x = 10;
+			} else {
+				x = 11;
+				if (false)
+					break;
+				else
+					x = 12;
+			}
+			x = 15;
+		}
+		x = 16;
+		while (true) {
+			if (false) {
+				if (true)
+					break;
+				else
+					x = 9;
+				x = 10;
+			} else {
+				x = 11;
+				if (false)
+					x = 12;
+				else
+					break;
+			}
+			x = 15;
+		}
+		for (; true; ) {
+			x = 7;
+			break;
+		}
+		;
+		;
+		for (int m = 0; true; ) {
+			x = 7;
+			;
+			continue;
+		}
+		;
+		int a = 0;
+		double d = 0.0;
+		for (a = 1, d = 1.34; a < 10; ) {
+			// something
+			continue;
+		}
+		;
+		for (int m = 0, n = 0; true; ) {
+			x = 7;
+			;
+			break;
+		}
+		;
+		for (int m = 0, n = 0, o = 0; true; ) {
+			x = 7;
+			x = 8;
+			x = 9;
+			if (m < 10) {
+				x = 10;
+				break;
+			}
+			;
+		}
+		;
+		for (int a = 0, b[] = { 1 }, c[][] = { { 1 }, { 2 } }; a < 10; ) {
+			// something
+			break;
+		}
+		;
+		;
+		for (int m = 0, n = 0; true; n++, m--, m+=2, n--) {
+			x = 7;
+			;
+			break;
+		}
+		;
+		for (int m = 0, n = 0; true; n++, m--, m+=2, n--) {
+			x = 7;
+			;
+			if (true)
+				continue;
+			else
+				x = 8;
+			x = 10;
+		}
+		;
+	}
+	
+	
+	// TODO 0: Try returns with methods, static methods and constructors.
+	
 }
