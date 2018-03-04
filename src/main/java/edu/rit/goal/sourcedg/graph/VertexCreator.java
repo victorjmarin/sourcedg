@@ -100,7 +100,7 @@ public class VertexCreator {
     final String label = cond.toString();
     final Vertex result = new Vertex(VertexType.CTRL, label, n);
     setId(result);
-    setUses(cond, result);
+    setRefs(cond, result);
     setSubtypes(result, cond);
     setOriginalLine(result, n);
     return result;
@@ -115,17 +115,20 @@ public class VertexCreator {
     setId(result);
     setOriginalLine(result, n);
     if (cond.isPresent()) {
-      setUses(cond.get(), result);
+      setRefs(cond.get(), result);
       setSubtypes(result, cond.get());
     }
     return result;
   }
 
   public Vertex foreachStmt(final ForeachStmt n) {
-    final String label = n.getIterable().toString();
+    final Expression it = n.getIterable();
+    final String label = it.toString();
     final Vertex result = new Vertex(VertexType.CTRL, label, n);
     setId(result);
     setOriginalLine(result, n);
+    setRefs(it, result);
+    setSubtypes(result, it);
     return result;
   }
 
@@ -135,7 +138,7 @@ public class VertexCreator {
     final Vertex result = new Vertex(VertexType.CTRL, label, n);
     setId(result);
     setOriginalLine(result, n);
-    setUses(cond, result);
+    setRefs(cond, result);
     setSubtypes(result, cond);
     return result;
   }
@@ -146,7 +149,7 @@ public class VertexCreator {
     final Vertex result = new Vertex(VertexType.CTRL, label, n);
     setId(result);
     setOriginalLine(result, n);
-    setUses(cond, result);
+    setRefs(cond, result);
     setSubtypes(result, cond);
     return result;
   }
@@ -160,7 +163,7 @@ public class VertexCreator {
     setDef(n.getName(), result);
     setSubtypes(result, n);
     if (init.isPresent())
-      setUses(init.get(), result);
+      setRefs(init.get(), result);
     return result;
   }
 
@@ -170,7 +173,7 @@ public class VertexCreator {
     setId(result);
     setOriginalLine(result, n);
     setDef(n.getTarget(), result);
-    setUses(n.getValue(), result);
+    setRefs(n.getValue(), result);
     setSubtypes(result, n);
     return result;
   }
@@ -189,7 +192,7 @@ public class VertexCreator {
     final Vertex result = new Vertex(VertexType.ACTUAL_IN, label, n);
     setId(result);
     setOriginalLine(result, n);
-    setUses(n, result);
+    setRefs(n, result);
     return result;
   }
 
@@ -199,7 +202,7 @@ public class VertexCreator {
     setId(result);
     setOriginalLine(result, n);
     setDef(n, result);
-    setUses(n, result);
+    setRefs(n, result);
     setSubtypes(result, n);
     return result;
   }
@@ -211,7 +214,7 @@ public class VertexCreator {
     setId(result);
     setOriginalLine(result, n);
     if (expr.isPresent()) {
-      setUses(expr.get(), result);
+      setRefs(expr.get(), result);
       setSubtypes(result, expr.get());
     }
     return result;
@@ -265,7 +268,7 @@ public class VertexCreator {
     final Vertex result = new Vertex(VertexType.THROW, label, n);
     setId(result);
     setOriginalLine(result, n);
-    setUses(expr, result);
+    setRefs(expr, result);
     setSubtypes(result, expr);
     return result;
   }
@@ -304,7 +307,7 @@ public class VertexCreator {
     v.setDef(def);
   }
 
-  private void setUses(final Node n, final Vertex v) {
+  private void setRefs(final Node n, final Vertex v) {
     final Set<String> uses = names(n);
     v.setRefs(uses);
   }
