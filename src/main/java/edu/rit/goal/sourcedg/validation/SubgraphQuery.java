@@ -69,4 +69,15 @@ public class SubgraphQuery extends DefaultDirectedGraph<SubgraphQueryNode, Subgr
 		return mainNode;
 	}
 	
+	@Override
+	public String toString() {
+		StringBuffer buf = new StringBuffer();
+		for (SubgraphQueryEdge edge : edgeSet()) {
+			buf.append("Src: " + edge.src.ast + "\n");
+			buf.append("Tgt: " + edge.tgt.ast + "\n");
+			buf.append("----\n");
+		}
+		return buf.toString();
+	}
+	
 }
