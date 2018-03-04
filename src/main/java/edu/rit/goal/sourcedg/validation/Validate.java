@@ -90,7 +90,8 @@ public class Validate {
 
     zip.close();
 	  
-//	  byte[] encoded = Files.readAllBytes(Paths.get(new File("programs/java8/validation/Example.java").toURI()));
+//	  byte[] encoded = Files.readAllBytes(Paths.get(new File(/*"programs/java8/validation/Example.java"*/
+//			  "C:/Users/crr/Desktop/era_bcb_sample/2/selected/1858980.java").toURI()));
 //	  String programStr = new String(encoded, Charset.forName("UTF-8"));
 //	  check(programStr);
   }
@@ -127,6 +128,7 @@ public class Validate {
 				  info.impactElse.add(n);
 		  }
 		  
+		  // TODO 0: Throw.
 		  // TODO 0: Try, catch, finally?
 		  if ((ctrlFlowDisrupt.getClass().equals(BreakStmt.class) && n.getClass().equals(SwitchStmt.class)) ||
 				  ((ctrlFlowDisrupt.getClass().equals(BreakStmt.class) || ctrlFlowDisrupt.getClass().equals(ContinueStmt.class)) && 
@@ -195,9 +197,9 @@ public class Validate {
     	        	SubgraphQueryNode updateStmt = q.addVertex(null, firstUpdate);
       	          	q.addEdge(main, updateStmt, false);
     	        }	
-    		}
-    		
-    		// TODO 0: Return.
+    		} else if (i.disrupt.getClass().equals(ReturnStmt.class))
+    			// TODO 0: Return is just one vertex?
+    			q.addVertex(VertexType.RETURN, i.disrupt);
     		
             match(g, q);
     	}
