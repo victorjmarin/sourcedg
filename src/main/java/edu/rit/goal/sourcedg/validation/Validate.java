@@ -2,6 +2,7 @@ package edu.rit.goal.sourcedg.validation;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -25,7 +26,9 @@ import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ConstructorDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
+import com.github.javaparser.ast.stmt.AssertStmt;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.BreakStmt;
 import com.github.javaparser.ast.stmt.ContinueStmt;
@@ -35,9 +38,13 @@ import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ForStmt;
 import com.github.javaparser.ast.stmt.ForeachStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
+import com.github.javaparser.ast.stmt.LocalClassDeclarationStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.SwitchStmt;
+import com.github.javaparser.ast.stmt.SynchronizedStmt;
+import com.github.javaparser.ast.stmt.ThrowStmt;
+import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
 
 import edu.rit.goal.sourcedg.builder.PDGBuilder;
@@ -90,8 +97,10 @@ public class Validate {
 
     zip.close();
 	  
-//	  byte[] encoded = Files.readAllBytes(Paths.get(new File(/*"programs/java8/validation/Example.java"*/
-//			  "C:/Users/crr/Desktop/era_bcb_sample/2/selected/1858980.java").toURI()));
+//	  byte[] encoded = Files.readAllBytes(Paths.get(new File(
+////			  "programs/java8/validation/Example.java"
+//			  "C:/Users/crr/Desktop/era_bcb_sample/2/selected/499089.java"
+//			  ).toURI()));
 //	  String programStr = new String(encoded, Charset.forName("UTF-8"));
 //	  check(programStr);
   }
@@ -156,14 +165,38 @@ public class Validate {
     final PDGBuilder builder = new PDGBuilder();
     builder.build(programStr);
     for (final CFG g : builder.getCfgs()) {
+    	// TODO 0: Remove!!!!
+    	if (!get(g, SynchronizedStmt.class).isEmpty())
+    		continue;
+    	if (!get(g, ThrowStmt.class).isEmpty())
+    		continue;
+    	if (!get(g, SwitchStmt.class).isEmpty())
+    		continue;
+    	if (!get(g, LocalClassDeclarationStmt.class).isEmpty())
+    		continue;
+    	if (!get(g, ObjectCreationExpr.class).isEmpty())
+    		continue;
+    	if (!get(g, TryStmt.class).isEmpty())
+    		continue;
+    	if (!get(g, AssertStmt.class).isEmpty())
+    		continue;
+    	boolean withLabels = false;
+    	
     	// Get all breaks, continues and returns.
     	List<DisruptInfo> disruptions = new ArrayList<>();
-    	for (BreakStmt b : get(g, BreakStmt.class))
+    	for (BreakStmt b : get(g, BreakStmt.class)) {
+    		withLabels = b.getLabel().isPresent();
     		disruptions.add(getImpactedStatements(b));
-    	for (ContinueStmt c : get(g, ContinueStmt.class))
+    	}
+    	for (ContinueStmt c : get(g, ContinueStmt.class)) {
+    		withLabels = c.getLabel().isPresent();
     		disruptions.add(getImpactedStatements(c));
+    	}
     	for (ReturnStmt r :get(g, ReturnStmt.class))
     		disruptions.add(getImpactedStatements(r));
+    	
+    	if (withLabels)
+    		continue;
     	
     	for (DisruptInfo i : disruptions) {
     		final SubgraphQuery q = new SubgraphQuery(SubgraphQueryEdge.class);
@@ -174,14 +207,14 @@ public class Validate {
     			final Node nextNode = getNext(i.main);
     	        if (nextNode != null) {
     	          SubgraphQueryNode nextStmt = q.addVertex(null, nextNode);
-    	          q.addEdge(main, nextStmt, false);
+    	          q.addPath(main, nextStmt);
     	        }
     		} else if (i.disrupt.getClass().equals(BreakStmt.class) && i.main.getClass().equals(SwitchStmt.class)) {
     			// TODO 0: Switch.
     		} else if (i.disrupt.getClass().equals(ContinueStmt.class) && !i.main.getClass().equals(ForStmt.class)) {
     			final SubgraphQueryNode main = q.addVertex(VertexType.CONTINUE, i.disrupt);
     			SubgraphQueryNode conditionStmt = q.addVertex(null, i.main);
-  	          	q.addEdge(main, conditionStmt, false);
+  	          	q.addPath(main, conditionStmt);
     		} else if (i.disrupt.getClass().equals(ContinueStmt.class) && i.main.getClass().equals(ForStmt.class)) {
     			final SubgraphQueryNode main = q.addVertex(VertexType.CONTINUE, i.disrupt);
   	          	ForStmt f = (ForStmt) i.main;
@@ -192,16 +225,23 @@ public class Validate {
     	        
     	        if (firstUpdate == null) {
     	        	SubgraphQueryNode conditionStmt = q.addVertex(null, i.main);
-      	          	q.addEdge(main, conditionStmt, false);
+      	          	q.addPath(main, conditionStmt);
     	        } else {
     	        	SubgraphQueryNode updateStmt = q.addVertex(null, firstUpdate);
-      	          	q.addEdge(main, updateStmt, false);
+      	          	q.addPath(main, updateStmt);
     	        }	
     		} else if (i.disrupt.getClass().equals(ReturnStmt.class))
-    			// TODO 0: Return is just one vertex?
     			q.addVertex(VertexType.RETURN, i.disrupt);
     		
-            match(g, q);
+    		Set<Map<SubgraphQueryNode, Vertex>> solutions = match(g, q);
+    		
+    		// Only for returns.
+    		if (!solutions.isEmpty() && i.disrupt.getClass().equals(ReturnStmt.class))
+    			for (Map<SubgraphQueryNode, Vertex> sol : solutions)
+    				if (!g.outgoingEdgesOf(sol.values().iterator().next()).isEmpty())
+    					// Return with outgoing edges.
+    					throw new Exception("RWOE");
+    					
     	}
     	
       // Get all if nodes.
@@ -213,7 +253,7 @@ public class Validate {
         final Node thenNode = getFirstNode(i.getThenStmt());
         if (thenNode != null) {
           ifStmt = q.addVertex(null, thenNode);
-          q.addEdge(main, ifStmt, false);
+          q.addPath(main, ifStmt);
         }
 
         SubgraphQueryNode elseStmt = null;
@@ -222,7 +262,7 @@ public class Validate {
           final Node elseNode = getFirstNode(els.get());
           if (elseNode != null) {
             elseStmt = q.addVertex(null, elseNode);
-            q.addEdge(main, elseStmt, false);
+            q.addPath(main, elseStmt);
           }
         }
         
@@ -237,9 +277,9 @@ public class Validate {
         if (nextNode != null && (!thenImpactedByDisruptions || !elseImpactedByDisruptions)) {
           final SubgraphQueryNode nextStmt = q.addVertex(null, nextNode);
           if (ifStmt != null && !thenImpactedByDisruptions)
-            q.addEdge(ifStmt, nextStmt, true);
+            q.addPath(ifStmt, nextStmt);
           if (elseStmt != null && !elseImpactedByDisruptions)
-            q.addEdge(elseStmt, nextStmt, true);
+            q.addPath(elseStmt, nextStmt);
         }
 
         match(g, q);
@@ -269,25 +309,24 @@ public class Validate {
         final Node first = getFirstNode(body), last = getLastNode(body);
         if (first != null && last != null && first.equals(last)) {
           final SubgraphQueryNode whileStmt = q.addVertex(null, first);
-          q.addEdge(main, whileStmt, false);
-          if (!hasDisruptions)
-        	  q.addEdge(whileStmt, main, false);  
+          q.addPath(main, whileStmt);
+          // Note that, even without disruptions, q.addPath(whileStmt, main) may not be true when the last node is an if or switch statement.
         } else if (first != null && last != null) {
           final SubgraphQueryNode whileFirstStmt = q.addVertex(null, first);
           final SubgraphQueryNode whileLastStmt = q.addVertex(null, last);
 
-          q.addEdge(main, whileFirstStmt, false);
+          q.addPath(main, whileFirstStmt);
           if (!hasDisruptions) {
-        	  q.addEdge(whileLastStmt, main, false);
-        	  q.addEdge(whileFirstStmt, whileLastStmt, true);
+        	  // Not true in all cases: q.addPath(whileLastStmt, main);
+        	  q.addPath(whileFirstStmt, whileLastStmt);
           }
         } else
-          q.addEdge(main, main, false);
+          q.addPath(main, main);
 
         final Node nextNode = getNext(loop);
         if (nextNode != null && !hasDisruptions) {
           final SubgraphQueryNode nextStmt = q.addVertex(null, nextNode);
-          q.addEdge(main, nextStmt, false);
+          q.addPath(main, nextStmt);
         }
 
         match(g, q);
@@ -308,25 +347,25 @@ public class Validate {
         if (first != null && last != null && first.equals(last)) {
           final SubgraphQueryNode doWhileStmt = q.addVertex(null, first);
           if (!hasDisruptions) {
-	          q.addEdge(doWhileStmt, main, false);
-	          q.addEdge(main, doWhileStmt, false);
+	          // Not true in all cases: q.addPath(doWhileStmt, main);
+	          q.addPath(main, doWhileStmt);
           }
         } else if (first != null && last != null) {
           final SubgraphQueryNode doWhileFirstStmt = q.addVertex(null, first);
           final SubgraphQueryNode doWhileLastStmt = q.addVertex(null, last);
 
           if (!hasDisruptions) {
-	          q.addEdge(doWhileLastStmt, main, false);
-	          q.addEdge(main, doWhileFirstStmt, false);
-	          q.addEdge(doWhileFirstStmt, doWhileLastStmt, true);
+	          // Not true in all cases: q.addPath(doWhileLastStmt, main);
+	          q.addPath(main, doWhileFirstStmt);
+	          q.addPath(doWhileFirstStmt, doWhileLastStmt);
           }
         } else
-          q.addEdge(main, main, false);
+          q.addPath(main, main);
 
         final Node nextNode = getNext(d);
         if (nextNode != null && !hasDisruptions) {
           final SubgraphQueryNode nextStmt = q.addVertex(null, nextNode);
-          q.addEdge(main, nextStmt, false);
+          q.addPath(main, nextStmt);
         }
 
         match(g, q);
@@ -364,52 +403,56 @@ public class Validate {
 
         if (firstInit != null && lastInit != null && firstInit.equals(lastInit)) {
           final SubgraphQueryNode initStmt = q.addVertex(null, firstInit);
-          q.addEdge(initStmt, main, false);
+          q.addPath(initStmt, main);
         } else if (firstInit != null && lastInit != null) {
           final SubgraphQueryNode initStmt = q.addVertex(null, firstInit);
           final SubgraphQueryNode lastStmt = q.addVertex(null, lastInit);
-          q.addEdge(initStmt, lastStmt, true);
-          q.addEdge(lastStmt, main, false);
+          q.addPath(initStmt, lastStmt);
+          q.addPath(lastStmt, main);
         }
 
         SubgraphQueryNode updateStmt = null;
         if (firstUpdate != null && lastUpdate != null && firstUpdate.equals(lastUpdate)) {
           updateStmt = q.addVertex(null, firstUpdate);
-          q.addEdge(updateStmt, main, false);
+          q.addPath(updateStmt, main);
         } else if (firstUpdate != null && lastInit != null) {
           updateStmt = q.addVertex(null, firstUpdate);
           final SubgraphQueryNode lastStmt = q.addVertex(null, lastUpdate);
-          q.addEdge(updateStmt, lastStmt, true);
-          q.addEdge(lastStmt, main, false);
+          q.addPath(updateStmt, lastStmt);
+          q.addPath(lastStmt, main);
         }
 
         if (first != null && last != null && first.equals(last)) {
           final SubgraphQueryNode forStmt = q.addVertex(null, first);
-          q.addEdge(main, forStmt, false);
+          q.addPath(main, forStmt);
 
-          if (updateStmt != null && !hasDisruptions)
-            q.addEdge(forStmt, updateStmt, false);
-          else if (!hasDisruptions)
-            q.addEdge(forStmt, main, false);
+          // Not true in all cases.
+//          if (updateStmt != null && !hasDisruptions)
+//            q.addPath(forStmt, updateStmt);
+//          else if (!hasDisruptions)
+//            q.addPath(forStmt, main);
         } else if (first != null && last != null) {
           final SubgraphQueryNode forFirstStmt = q.addVertex(null, first);
           final SubgraphQueryNode forLastStmt = q.addVertex(null, last);
 
-          q.addEdge(main, forFirstStmt, false);
+          q.addPath(main, forFirstStmt);
           if (!hasDisruptions)
-        	  q.addEdge(forFirstStmt, forLastStmt, true);
+        	  q.addPath(forFirstStmt, forLastStmt);
 
-          if (updateStmt != null && !hasDisruptions)
-            q.addEdge(forLastStmt, updateStmt, false);
-          else if (!hasDisruptions)
-            q.addEdge(forLastStmt, main, false);
-        } else
-          q.addEdge(main, main, false);
+          // Not true in all cases.
+//          if (updateStmt != null && !hasDisruptions)
+//            q.addPath(forLastStmt, updateStmt);
+//          else if (!hasDisruptions)
+//            q.addPath(forLastStmt, main);
+        } else if (firstUpdate == null)
+          q.addPath(main, main);
+        else
+        	q.addPath(main, updateStmt);
 
         final Node nextNode = getNext(f);
         if (nextNode != null && !hasDisruptions) {
           final SubgraphQueryNode nextStmt = q.addVertex(null, nextNode);
-          q.addEdge(main, nextStmt, false);
+          q.addPath(main, nextStmt);
         }
 
         match(g, q);
@@ -440,7 +483,7 @@ public class Validate {
 
   private static <T> void get(final Node n, final List<T> list, final Class<T> clazz) {
     if (n.getClass().equals(clazz))
-    	list.add(clazz.cast(getFirstNode(n)));
+    	list.add(clazz.cast(n));
 
     for (final Node o : n.getChildNodes())
       get(o, list, clazz);
@@ -449,7 +492,18 @@ public class Validate {
   private static Node getFirstNode(final Node n) {
     if (n.getClass().equals(EmptyStmt.class))
       return null;
-    else if (n.getClass().equals(ExpressionStmt.class))
+    else if (n.getClass().equals(ForStmt.class)) {
+    	ForStmt forLoop = (ForStmt) n;
+    	
+    	Node ret = null;
+    	if (!forLoop.getInitialization().isEmpty())
+    		for (int i = 0; ret == null && i < forLoop.getInitialization().size(); i++)
+    	        ret = getFirstNode(forLoop.getInitialization().get(i));
+    	else
+    		ret = forLoop;
+    	return ret;
+    	
+    } else if (n.getClass().equals(ExpressionStmt.class))
       return getFirstNode(((ExpressionStmt) n).getExpression());
     else if (n.getClass().equals(VariableDeclarationExpr.class))
       return getFirstNode(((VariableDeclarationExpr) n).getVariable(0));
@@ -481,7 +535,7 @@ public class Validate {
       return n;
   }
 
-  private static void match(final CFG g, final SubgraphQuery q) throws Exception {
+  private static Set<Map<SubgraphQueryNode, Vertex>> match(final CFG g, final SubgraphQuery q) throws Exception {
     final SubgraphMatching match = new SubgraphMatching();
     if (q.vertexSet().isEmpty())
     	throw new Exception("EQ");
@@ -493,6 +547,7 @@ public class Validate {
     else if (solutions.size() > 1)
       // More than one solutions
       throw new Exception("MTOS");
+    return solutions;
   }
 
   private static Node getNext(final Node n) throws Exception {
@@ -501,13 +556,23 @@ public class Validate {
     final Optional<Node> parentOptional = n.getParentNode();
     if (parentOptional.isPresent()) {
       final Node parent = parentOptional.get();
-      final int pos = parent.getChildNodes().indexOf(n);
+      
+      if (parent.getClass().equals(IfStmt.class) || parent.getClass().equals(SwitchStmt.class) || 
+    		  parent.getClass().equals(TryStmt.class))
+    	  ret = getNext(parent);
+      else {
+    	  int pos = -1;
+    	  // We cannot use indexOf because the AST library uses equals, which can affect when there is copied and pasted code.
+    	  for (int i = 0; pos == -1 && i < parent.getChildNodes().size(); i++)
+    		  if (parent.getChildNodes().get(i) == n)
+    			  pos = i;
 
-      if (pos >= 0) {
-        if (pos + 1 < parent.getChildNodes().size())
-          ret = getFirstNode(parent.getChildNodes().get(pos + 1));
-      } else
-        throw new Exception("Position not found!");
+          if (pos >= 0) {
+            if (pos + 1 < parent.getChildNodes().size())
+              ret = getFirstNode(parent.getChildNodes().get(pos + 1));
+          } else
+            throw new Exception("Position not found!"); 
+      }
     } else
       throw new Exception("A statement without a parent!");
 

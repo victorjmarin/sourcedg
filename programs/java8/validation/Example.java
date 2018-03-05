@@ -310,6 +310,26 @@ public class Example {
 		;
 	}
 	
+	static void staticMethod() {
+		int x = 0;
+		while (true)
+			if (false) {
+				x += 9;
+				return;
+			}
+		x++;
+	}
+	
+	void ifWithFors() {
+		int x = 0;
+		if (true)
+			for (; false; )
+				x++;
+		else
+			for (int y = 0; true; )
+				x--;
+		return;
+	}
 	
 	// TODO 0: Try returns with methods, static methods and constructors.
 	

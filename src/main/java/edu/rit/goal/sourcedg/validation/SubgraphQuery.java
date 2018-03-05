@@ -41,8 +41,9 @@ public class SubgraphQuery extends DefaultDirectedGraph<SubgraphQueryNode, Subgr
 		return n;
 	}
 	
-	public SubgraphQueryEdge addEdge(SubgraphQueryNode src, SubgraphQueryNode tgt, boolean isPath) {
-		SubgraphQueryEdge e = new SubgraphQueryEdge(src, tgt, isPath);
+	// All are always path because, when we have calls, there will be formal-out parameters in between nodes.
+	public SubgraphQueryEdge addPath(SubgraphQueryNode src, SubgraphQueryNode tgt) {
+		SubgraphQueryEdge e = new SubgraphQueryEdge(src, tgt, true);
 		addEdge(src, tgt, e);
 		return e;
 	}
