@@ -2,7 +2,6 @@ package edu.rit.goal.sourcedg.validation;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -38,6 +37,7 @@ import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ForStmt;
 import com.github.javaparser.ast.stmt.ForeachStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
+import com.github.javaparser.ast.stmt.LabeledStmt;
 import com.github.javaparser.ast.stmt.LocalClassDeclarationStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
@@ -99,7 +99,7 @@ public class Validate {
 	  
 //	  byte[] encoded = Files.readAllBytes(Paths.get(new File(
 ////			  "programs/java8/validation/Example.java"
-//			  "C:/Users/crr/Desktop/era_bcb_sample/2/selected/499089.java"
+//			  "C:/Users/crr/Desktop/era_bcb_sample/4/selected/692406.java"
 //			  ).toURI()));
 //	  String programStr = new String(encoded, Charset.forName("UTF-8"));
 //	  check(programStr);
@@ -179,6 +179,8 @@ public class Validate {
     	if (!get(g, TryStmt.class).isEmpty())
     		continue;
     	if (!get(g, AssertStmt.class).isEmpty())
+    		continue;
+    	if (!get(g, LabeledStmt.class).isEmpty())
     		continue;
     	boolean withLabels = false;
     	
@@ -267,20 +269,33 @@ public class Validate {
         }
         
         boolean thenImpactedByDisruptions = false, elseImpactedByDisruptions = false;
-        for (Iterator<DisruptInfo> it = disruptions.iterator(); !thenImpactedByDisruptions && !elseImpactedByDisruptions && it.hasNext(); ) {
+        for (Iterator<DisruptInfo> it = disruptions.iterator(); (!thenImpactedByDisruptions || !elseImpactedByDisruptions) && it.hasNext(); ) {
         	DisruptInfo info = it.next();
         	thenImpactedByDisruptions = thenImpactedByDisruptions || info.impactThen.contains(i);
         	elseImpactedByDisruptions = elseImpactedByDisruptions || info.impactElse.contains(i);
         }
 
         final Node nextNode = getNext(i);
-        if (nextNode != null && (!thenImpactedByDisruptions || !elseImpactedByDisruptions)) {
-          final SubgraphQueryNode nextStmt = q.addVertex(null, nextNode);
-          if (ifStmt != null && !thenImpactedByDisruptions)
-            q.addPath(ifStmt, nextStmt);
-          if (elseStmt != null && !elseImpactedByDisruptions)
-            q.addPath(elseStmt, nextStmt);
+        SubgraphQueryNode nextStmt = null;
+        if (nextNode != null)
+        	nextStmt = q.addVertex(null, nextNode);
+        
+        boolean removeNode = true;
+        if (nextStmt != null && ifStmt != null && !thenImpactedByDisruptions) {
+          q.addPath(ifStmt, nextStmt);
+          removeNode = false;
         }
+        
+        if (nextStmt != null && elseStmt != null && !elseImpactedByDisruptions) {
+            q.addPath(elseStmt, nextStmt);
+            removeNode = false;
+        } else if (nextStmt != null && elseStmt == null && !thenImpactedByDisruptions) {
+        	q.addPath(main, nextStmt);
+        	removeNode = false;
+        }
+        
+        if (nextStmt != null && removeNode)
+        	q.removeVertex(nextStmt);
 
         match(g, q);
       }
@@ -563,13 +578,16 @@ public class Validate {
       else {
     	  int pos = -1;
     	  // We cannot use indexOf because the AST library uses equals, which can affect when there is copied and pasted code.
-    	  for (int i = 0; pos == -1 && i < parent.getChildNodes().size(); i++)
-    		  if (parent.getChildNodes().get(i) == n)
+    	  // For some reason, orphan comments may be added as child nodes, let's not take them into account.
+    	  List<Node> children = new ArrayList<>(parent.getChildNodes());
+    	  children.removeAll(parent.getOrphanComments());
+    	  for (int i = 0; pos == -1 && i < children.size(); i++)
+    		  if (children.get(i) == n)
     			  pos = i;
 
           if (pos >= 0) {
-            if (pos + 1 < parent.getChildNodes().size())
-              ret = getFirstNode(parent.getChildNodes().get(pos + 1));
+            if (pos + 1 < children.size())
+              ret = getFirstNode(children.get(pos + 1));
           } else
             throw new Exception("Position not found!"); 
       }
