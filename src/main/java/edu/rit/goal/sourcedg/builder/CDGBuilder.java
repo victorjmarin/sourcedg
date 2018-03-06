@@ -386,6 +386,7 @@ public class CDGBuilder {
     final ControlFlow result = cfgBuilder.continueStmt(v, loopStack.peek());
     return result;
   }
+  
 
   private ControlFlow tryStmt(final TryStmt n) {
     final Vertex v = vtxCreator.tryStmt(n);

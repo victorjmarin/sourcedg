@@ -27,6 +27,7 @@ import edu.rit.goal.sourcedg.graph.EdgeType;
 import edu.rit.goal.sourcedg.graph.PDG;
 import edu.rit.goal.sourcedg.graph.Vertex;
 import edu.rit.goal.sourcedg.graph.VertexCreator;
+import edu.rit.goal.sourcedg.normalization.Normalizer;
 
 public class PDGBuilder {
 
@@ -53,32 +54,34 @@ public class PDGBuilder {
       LOGGER.addHandler(handler);
   }
 
-  public void build(final InputStream in) {
+  public void build(final InputStream in, final boolean normalizeCode) {
     final CompilationUnit cu = JavaParser.parse(in);
-    build(cu);
+    build(cu, normalizeCode);
   }
 
-  public void build(final Path in) {
+  public void build(final Path in, final boolean normalizeCode) {
     try {
       CompilationUnit cu;
       cu = JavaParser.parse(in);
-      build(cu);
+      build(cu, normalizeCode);
     } catch (final IOException e) {
       e.printStackTrace();
     }
   }
 
-  public void build(final String in) {
+  public void build(final String in, final boolean normalizeCode) {
     final CompilationUnit cu = JavaParser.parse(in);
-    build(cu);
+    build(cu, normalizeCode);
   }
 
-  private void build(final CompilationUnit cu) {
+  private void build(CompilationUnit cu, final boolean normalizeCode) {
     final CombinedTypeSolver typeSolver = new CombinedTypeSolver();
     typeSolver.add(new ReflectionTypeSolver());
     originalCu = JavaParser.parse(cu.toString());
-    //final Normalizer normalizer = new Normalizer(cu, typeSolver);
-    //cu = normalizer.normalize();
+    if (normalizeCode) {
+      final Normalizer normalizer = new Normalizer(cu, typeSolver);
+      cu = normalizer.normalize();
+    }
     normalizedCu = cu;
     cdgBuilder = new CDGBuilder(cu);
     cdgBuilder.build();
@@ -86,7 +89,7 @@ public class PDGBuilder {
     computeInterProceduralCalls(cdgBuilder.getMethodParams(), cdgBuilder.getCalls(),
         cdgBuilder.getMethodFormalOut());
     cfgs = cdgBuilder.getCfgs();
-    computeDataDependencies();
+    //computeDataDependencies();
   }
 
   private void computeInterProceduralCalls(

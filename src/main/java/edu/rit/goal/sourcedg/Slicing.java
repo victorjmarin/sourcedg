@@ -14,7 +14,7 @@ public class Slicing {
   public static void main(final String[] args) throws Exception {
     final FileInputStream in = new FileInputStream("programs/java8/normalization/8810011.java");
     final PDGBuilder builder = new PDGBuilder();
-    builder.build(in);
+    builder.build(in, true);
     final PDG pdg = builder.getPDG();
 
     final Vertex v = pdg.vertexSet().stream().filter(u -> u.getLabel().contains("System.out.print"))

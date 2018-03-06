@@ -10,6 +10,7 @@ import org.jgrapht.ext.ComponentNameProvider;
 import org.jgrapht.ext.DOTExporter;
 import org.jgrapht.ext.ExportException;
 import org.jgrapht.ext.IntegerComponentNameProvider;
+import org.jgrapht.graph.DefaultEdge;
 import edu.rit.goal.sourcedg.graph.Edge;
 import edu.rit.goal.sourcedg.graph.Vertex;
 import edu.rit.goal.sourcedg.graph.VertexSubtype;
@@ -104,6 +105,30 @@ public class GraphExporter {
   public static void exportAsDot(final Graph<Vertex, Edge> graph, final String path,
       final String fileName) {
     try {
+      final String filePath = path + "/" + fileName + ".dot";
+      final File dotFile = new File(filePath);
+      exporter.exportGraph(graph, dotFile);
+
+      final Graphviz gv = new Graphviz();
+      gv.readSource(filePath);
+
+      final String type = "png";
+      final String repesentationType = "dot";
+      final File out = new File(path + "/" + fileName + "." + type);
+      gv.writeGraphToFile(gv.getGraph(gv.getDotSource(), type, repesentationType), out);
+
+      // dotFile.delete();
+    } catch (final ExportException e) {
+      e.printStackTrace();
+    }
+  }
+
+  public static void exportDefaultAsDot(final Graph<Vertex, DefaultEdge> graph, final String path,
+      final String fileName) {
+    try {
+      final DOTExporter<Vertex, DefaultEdge> exporter =
+          new DOTExporter<>(new IntegerComponentNameProvider<>(), vertexLabelProvider, null,
+              vertexAttrProvider, null);
       final String filePath = path + "/" + fileName + ".dot";
       final File dotFile = new File(filePath);
       exporter.exportGraph(graph, dotFile);

@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ConstructorDeclaration;
@@ -46,7 +45,6 @@ import com.github.javaparser.ast.stmt.SynchronizedStmt;
 import com.github.javaparser.ast.stmt.ThrowStmt;
 import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
-
 import edu.rit.goal.sourcedg.builder.PDGBuilder;
 import edu.rit.goal.sourcedg.graph.CFG;
 import edu.rit.goal.sourcedg.graph.Vertex;
@@ -111,26 +109,26 @@ public class Validate {
 	  Set<Node> impactThen = new HashSet<>(), impactElse = new HashSet<>();
   }
   
-  private static boolean disruptFound(Node toSearch, Node ctrlFlowDisrupt) {
+  private static boolean disruptFound(final Node toSearch, final Node ctrlFlowDisrupt) {
 	  boolean ret = toSearch == ctrlFlowDisrupt;
 	  if (!ret)
-		  for (Iterator<Node> it = toSearch.getChildNodes().iterator(); !ret && it.hasNext(); )
+		  for (final Iterator<Node> it = toSearch.getChildNodes().iterator(); !ret && it.hasNext(); )
 			  ret = disruptFound(it.next(), ctrlFlowDisrupt);
 	  return ret;
   }
   
   // Takes a node that disrupts the control flow and returns all bottom-up impacted nodes.
-  private static DisruptInfo getImpactedStatements(Node ctrlFlowDisrupt) {
-	  DisruptInfo info = new Validate().new DisruptInfo();
+  private static DisruptInfo getImpactedStatements(final Node ctrlFlowDisrupt) {
+	  final DisruptInfo info = new Validate().new DisruptInfo();
 	  info.disrupt = ctrlFlowDisrupt;
 	  
 	  Node current = ctrlFlowDisrupt;
 	  boolean goOn = true;
 	  
 	  do {
-		  Node n = current.getParentNode().get();
+		  final Node n = current.getParentNode().get();
 		  if (n.getClass().equals(IfStmt.class)) {
-			  IfStmt stmt = (IfStmt) n;
+			  final IfStmt stmt = (IfStmt) n;
 			  if (disruptFound(stmt.getThenStmt(), ctrlFlowDisrupt))
 				  info.impactThen.add(n);
 			  else
@@ -163,7 +161,7 @@ public class Validate {
 
   private static void check(final String programStr) throws Exception {
     final PDGBuilder builder = new PDGBuilder();
-    builder.build(programStr);
+    builder.build(programStr, false);
     for (final CFG g : builder.getCfgs()) {
     	// TODO 0: Remove!!!!
     	if (!get(g, SynchronizedStmt.class).isEmpty())
@@ -185,22 +183,22 @@ public class Validate {
     	boolean withLabels = false;
     	
     	// Get all breaks, continues and returns.
-    	List<DisruptInfo> disruptions = new ArrayList<>();
-    	for (BreakStmt b : get(g, BreakStmt.class)) {
+    	final List<DisruptInfo> disruptions = new ArrayList<>();
+    	for (final BreakStmt b : get(g, BreakStmt.class)) {
     		withLabels = b.getLabel().isPresent();
     		disruptions.add(getImpactedStatements(b));
     	}
-    	for (ContinueStmt c : get(g, ContinueStmt.class)) {
+    	for (final ContinueStmt c : get(g, ContinueStmt.class)) {
     		withLabels = c.getLabel().isPresent();
     		disruptions.add(getImpactedStatements(c));
     	}
-    	for (ReturnStmt r :get(g, ReturnStmt.class))
+    	for (final ReturnStmt r :get(g, ReturnStmt.class))
     		disruptions.add(getImpactedStatements(r));
     	
     	if (withLabels)
     		continue;
     	
-    	for (DisruptInfo i : disruptions) {
+    	for (final DisruptInfo i : disruptions) {
     		final SubgraphQuery q = new SubgraphQuery(SubgraphQueryEdge.class);
     		
     		if (i.disrupt.getClass().equals(BreakStmt.class) && !i.main.getClass().equals(SwitchStmt.class)) {
@@ -208,38 +206,38 @@ public class Validate {
     			
     			final Node nextNode = getNext(i.main);
     	        if (nextNode != null) {
-    	          SubgraphQueryNode nextStmt = q.addVertex(null, nextNode);
+    	          final SubgraphQueryNode nextStmt = q.addVertex(null, nextNode);
     	          q.addPath(main, nextStmt);
     	        }
     		} else if (i.disrupt.getClass().equals(BreakStmt.class) && i.main.getClass().equals(SwitchStmt.class)) {
     			// TODO 0: Switch.
     		} else if (i.disrupt.getClass().equals(ContinueStmt.class) && !i.main.getClass().equals(ForStmt.class)) {
     			final SubgraphQueryNode main = q.addVertex(VertexType.CONTINUE, i.disrupt);
-    			SubgraphQueryNode conditionStmt = q.addVertex(null, i.main);
+    			final SubgraphQueryNode conditionStmt = q.addVertex(null, i.main);
   	          	q.addPath(main, conditionStmt);
     		} else if (i.disrupt.getClass().equals(ContinueStmt.class) && i.main.getClass().equals(ForStmt.class)) {
     			final SubgraphQueryNode main = q.addVertex(VertexType.CONTINUE, i.disrupt);
-  	          	ForStmt f = (ForStmt) i.main;
+  	          	final ForStmt f = (ForStmt) i.main;
     			
     			Node firstUpdate = null;
     	        if (!f.getUpdate().isEmpty())
     	          firstUpdate = getFirstNode(f.getUpdate().get(0));
     	        
     	        if (firstUpdate == null) {
-    	        	SubgraphQueryNode conditionStmt = q.addVertex(null, i.main);
+    	        	final SubgraphQueryNode conditionStmt = q.addVertex(null, i.main);
       	          	q.addPath(main, conditionStmt);
     	        } else {
-    	        	SubgraphQueryNode updateStmt = q.addVertex(null, firstUpdate);
+    	        	final SubgraphQueryNode updateStmt = q.addVertex(null, firstUpdate);
       	          	q.addPath(main, updateStmt);
     	        }	
     		} else if (i.disrupt.getClass().equals(ReturnStmt.class))
     			q.addVertex(VertexType.RETURN, i.disrupt);
     		
-    		Set<Map<SubgraphQueryNode, Vertex>> solutions = match(g, q);
+    		final Set<Map<SubgraphQueryNode, Vertex>> solutions = match(g, q);
     		
     		// Only for returns.
     		if (!solutions.isEmpty() && i.disrupt.getClass().equals(ReturnStmt.class))
-    			for (Map<SubgraphQueryNode, Vertex> sol : solutions)
+    			for (final Map<SubgraphQueryNode, Vertex> sol : solutions)
     				if (!g.outgoingEdgesOf(sol.values().iterator().next()).isEmpty())
     					// Return with outgoing edges.
     					throw new Exception("RWOE");
@@ -269,8 +267,8 @@ public class Validate {
         }
         
         boolean thenImpactedByDisruptions = false, elseImpactedByDisruptions = false;
-        for (Iterator<DisruptInfo> it = disruptions.iterator(); (!thenImpactedByDisruptions || !elseImpactedByDisruptions) && it.hasNext(); ) {
-        	DisruptInfo info = it.next();
+        for (final Iterator<DisruptInfo> it = disruptions.iterator(); (!thenImpactedByDisruptions || !elseImpactedByDisruptions) && it.hasNext(); ) {
+        	final DisruptInfo info = it.next();
         	thenImpactedByDisruptions = thenImpactedByDisruptions || info.impactThen.contains(i);
         	elseImpactedByDisruptions = elseImpactedByDisruptions || info.impactElse.contains(i);
         }
@@ -301,7 +299,7 @@ public class Validate {
       }
 
       // Get all while and enhanced for nodes.
-      List<Statement> whileAndEnhancedForLoops = new ArrayList<>();
+      final List<Statement> whileAndEnhancedForLoops = new ArrayList<>();
       whileAndEnhancedForLoops.addAll(get(g, WhileStmt.class));
       whileAndEnhancedForLoops.addAll(get(g, ForeachStmt.class));
       
@@ -310,8 +308,8 @@ public class Validate {
         final SubgraphQueryNode main = q.addVertex(VertexType.CTRL, loop);
         
         boolean hasDisruptions = false;
-        for (Iterator<DisruptInfo> it = disruptions.iterator(); !hasDisruptions && it.hasNext(); ) {
-        	DisruptInfo info = it.next();
+        for (final Iterator<DisruptInfo> it = disruptions.iterator(); !hasDisruptions && it.hasNext(); ) {
+        	final DisruptInfo info = it.next();
         	hasDisruptions = hasDisruptions || info.main == loop;
         }
         
@@ -353,8 +351,8 @@ public class Validate {
         final SubgraphQueryNode main = q.addVertex(VertexType.CTRL, d);
         
         boolean hasDisruptions = false;
-        for (Iterator<DisruptInfo> it = disruptions.iterator(); !hasDisruptions && it.hasNext(); ) {
-        	DisruptInfo info = it.next();
+        for (final Iterator<DisruptInfo> it = disruptions.iterator(); !hasDisruptions && it.hasNext(); ) {
+        	final DisruptInfo info = it.next();
         	hasDisruptions = hasDisruptions || info.main == d;
         }
 
@@ -395,8 +393,8 @@ public class Validate {
         final NodeList<Expression> update = f.getUpdate();
         
         boolean hasDisruptions = false;
-        for (Iterator<DisruptInfo> it = disruptions.iterator(); !hasDisruptions && it.hasNext(); ) {
-        	DisruptInfo info = it.next();
+        for (final Iterator<DisruptInfo> it = disruptions.iterator(); !hasDisruptions && it.hasNext(); ) {
+        	final DisruptInfo info = it.next();
         	hasDisruptions = hasDisruptions || info.main == f;
         }
 
@@ -508,7 +506,7 @@ public class Validate {
     if (n.getClass().equals(EmptyStmt.class))
       return null;
     else if (n.getClass().equals(ForStmt.class)) {
-    	ForStmt forLoop = (ForStmt) n;
+    	final ForStmt forLoop = (ForStmt) n;
     	
     	Node ret = null;
     	if (!forLoop.getInitialization().isEmpty())
@@ -579,7 +577,7 @@ public class Validate {
     	  int pos = -1;
     	  // We cannot use indexOf because the AST library uses equals, which can affect when there is copied and pasted code.
     	  // For some reason, orphan comments may be added as child nodes, let's not take them into account.
-    	  List<Node> children = new ArrayList<>(parent.getChildNodes());
+    	  final List<Node> children = new ArrayList<>(parent.getChildNodes());
     	  children.removeAll(parent.getOrphanComments());
     	  for (int i = 0; pos == -1 && i < children.size(); i++)
     		  if (children.get(i) == n)
