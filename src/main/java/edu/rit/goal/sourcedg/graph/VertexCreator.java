@@ -32,6 +32,7 @@ import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.ThrowStmt;
 import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
+
 import edu.rit.goal.sourcedg.normalization.Normalizer;
 import edu.rit.goal.sourcedg.util.Utils;
 
@@ -278,8 +279,8 @@ public class VertexCreator {
   }
 
   public void setOriginalLine(final Vertex v, final Node n) {
-    // final Integer line = findParentComment(n);
-    // v.setOriginalLine(line);
+     final Integer line = findParentComment(n);
+     v.setOriginalLine(line);
   }
 
   private Integer findParentComment(final Node n) {

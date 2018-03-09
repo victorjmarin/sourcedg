@@ -89,7 +89,7 @@ public class PDGBuilder {
     computeInterProceduralCalls(cdgBuilder.getMethodParams(), cdgBuilder.getCalls(),
         cdgBuilder.getMethodFormalOut());
     cfgs = cdgBuilder.getCfgs();
-    //computeDataDependencies();
+    computeDataDependencies();
   }
 
   private void computeInterProceduralCalls(
