@@ -40,6 +40,12 @@ public class VertexCreator {
 
   private int id = 0;
 
+  public Vertex exit() {
+    Vertex result = new Vertex(VertexType.EXIT, "exit");
+	setId(result);
+	return result;
+  }
+  
   public Vertex classOrInterfaceDeclaration(final ClassOrInterfaceDeclaration n) {
     final String label = n.getNameAsString();
     final Vertex result = new Vertex(VertexType.CLASS, label, n);

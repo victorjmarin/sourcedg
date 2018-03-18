@@ -240,6 +240,9 @@ public class CDGBuilder {
     addEdges(EdgeType.CTRL_TRUE, v, inScope);
     popScope();
     // CFG
+    Vertex exit = vtxCreator.exit();
+    ControlFlow exitFlow = new ControlFlow(exit, exit);
+    bodyFlow = cfgBuilder.seq(bodyFlow, exitFlow);
     final ControlFlow result = cfgBuilder.methodDeclaration(v, paramFlow, bodyFlow);
     cfgBuilder.put(v);
     if (out != null)
