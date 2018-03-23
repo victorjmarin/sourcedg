@@ -34,6 +34,7 @@ import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ForStmt;
 import com.github.javaparser.ast.stmt.ForeachStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
+import com.github.javaparser.ast.stmt.LabeledStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.ThrowStmt;
@@ -139,15 +140,20 @@ public class CDGBuilder {
       result = catchClause((CatchClause) n);
     else if (n instanceof ThrowStmt)
       result = throwStmt((ThrowStmt) n);
-    else {
-      final String nodeName = n.getClass().getSimpleName();
-      PDGBuilder.LOGGER.warning("No match for " + nodeName);
-      Integer count = unmatchedAstNodes.get(nodeName);
-      if (count == null)
-        count = 0;
-      unmatchedAstNodes.put(nodeName, count + 1);
-    }
+    else if (n instanceof LabeledStmt)
+      result = labeledStmt((LabeledStmt) n);
+    else
+      logUnmatched(n);
     return result;
+  }
+
+  private void logUnmatched(Node n) {
+    final String nodeName = n.getClass().getSimpleName();
+    PDGBuilder.LOGGER.warning("No match for " + nodeName);
+    Integer count = unmatchedAstNodes.get(nodeName);
+    if (count == null)
+      count = 0;
+    unmatchedAstNodes.put(nodeName, count + 1);
   }
 
   private ControlFlow blockStmt(final BlockStmt n) {
@@ -155,6 +161,12 @@ public class CDGBuilder {
     for (final Statement s : n.getStatements())
       flow.add(_build(s));
     return cfgBuilder.seq(flow);
+  }
+
+
+  private ControlFlow labeledStmt(LabeledStmt n) {
+    logUnmatched(n);
+    return _build(n.getStatement());
   }
 
   private ControlFlow expressionStmt(final ExpressionStmt n) {
@@ -389,7 +401,7 @@ public class CDGBuilder {
     final ControlFlow result = cfgBuilder.continueStmt(v, loopStack.peek());
     return result;
   }
-  
+
 
   private ControlFlow tryStmt(final TryStmt n) {
     final Vertex v = vtxCreator.tryStmt(n);
