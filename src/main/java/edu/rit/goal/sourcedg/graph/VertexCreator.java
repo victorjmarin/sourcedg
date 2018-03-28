@@ -13,6 +13,7 @@ import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.comments.Comment;
+import com.github.javaparser.ast.expr.ArrayAccessExpr;
 import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
@@ -32,7 +33,6 @@ import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.ThrowStmt;
 import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
-
 import edu.rit.goal.sourcedg.normalization.Normalizer;
 import edu.rit.goal.sourcedg.util.Utils;
 
@@ -42,10 +42,10 @@ public class VertexCreator {
 
   public Vertex exit() {
     Vertex result = new Vertex(VertexType.EXIT, "exit");
-	setId(result);
-	return result;
+    setId(result);
+    return result;
   }
-  
+
   public Vertex classOrInterfaceDeclaration(final ClassOrInterfaceDeclaration n) {
     final String label = n.getNameAsString();
     final Vertex result = new Vertex(VertexType.CLASS, label, n);
@@ -285,8 +285,8 @@ public class VertexCreator {
   }
 
   public void setOriginalLine(final Vertex v, final Node n) {
-     final Integer line = findParentComment(n);
-     v.setOriginalLine(line);
+    // final Integer line = findParentComment(n);
+    // v.setOriginalLine(line);
   }
 
   private Integer findParentComment(final Node n) {
@@ -343,6 +343,9 @@ public class VertexCreator {
     final Optional<ObjectCreationExpr> objectCreation = ast.findFirst(ObjectCreationExpr.class);
     if (objectCreation.isPresent())
       v.getSubtypes().add(VertexSubtype.NEW_OBJ);
+    final Optional<ArrayAccessExpr> arrayAccessExpr = ast.findFirst(ArrayAccessExpr.class);
+    if (arrayAccessExpr.isPresent())
+      v.getSubtypes().add(VertexSubtype.ARRAY_ACCESS);
   }
 
   private Set<VertexSubtype> subtypesFromText(final String text) {
