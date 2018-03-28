@@ -390,6 +390,8 @@ public class VertexCreator {
       result.add(VertexSubtype.SH_DIV);
     if (text.contains(".print"))
       result.add(VertexSubtype.PRINT);
+    if (text.contains("[") && text.contains("]"))
+        result.add(VertexSubtype.ARRAY_ACCESS);
     return result;
   }
 
