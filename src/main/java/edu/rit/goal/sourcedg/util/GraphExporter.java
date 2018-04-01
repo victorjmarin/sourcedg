@@ -89,15 +89,6 @@ public class GraphExporter {
         }
       };
 
-
-  public void m1() {
-    int p1 = 5;
-    do
-      p1 = 1;
-    while (p1 > 0);
-  }
-
-
   private static final DOTExporter<Vertex, Edge> exporter =
       new DOTExporter<>(new IntegerComponentNameProvider<>(), vertexLabelProvider, null,
           vertexAttrProvider, edgeAttrProvider);
@@ -117,7 +108,7 @@ public class GraphExporter {
       final File out = new File(path + "/" + fileName + "." + type);
       gv.writeGraphToFile(gv.getGraph(gv.getDotSource(), type, repesentationType), out);
 
-      // dotFile.delete();
+      dotFile.delete();
     } catch (final ExportException e) {
       e.printStackTrace();
     }

@@ -39,6 +39,11 @@ import edu.rit.goal.sourcedg.util.Utils;
 public class VertexCreator {
 
   private int id = 0;
+  private boolean originalLines;
+
+  public VertexCreator(boolean originalLines) {
+    this.originalLines = originalLines;
+  }
 
   public Vertex exit() {
     Vertex result = new Vertex(VertexType.EXIT, "exit");
@@ -285,8 +290,10 @@ public class VertexCreator {
   }
 
   public void setOriginalLine(final Vertex v, final Node n) {
-    // final Integer line = findParentComment(n);
-    // v.setOriginalLine(line);
+    if (originalLines) {
+      final Integer line = findParentComment(n);
+      v.setOriginalLine(line);
+    }
   }
 
   private Integer findParentComment(final Node n) {

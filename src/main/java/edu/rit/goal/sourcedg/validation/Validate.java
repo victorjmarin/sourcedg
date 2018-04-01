@@ -46,6 +46,7 @@ import com.github.javaparser.ast.stmt.ThrowStmt;
 import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
 import edu.rit.goal.sourcedg.builder.PDGBuilder;
+import edu.rit.goal.sourcedg.builder.PDGBuilderConfig;
 import edu.rit.goal.sourcedg.graph.CFG;
 import edu.rit.goal.sourcedg.graph.Vertex;
 import edu.rit.goal.sourcedg.graph.VertexType;
@@ -160,8 +161,9 @@ public class Validate {
   }
 
   private static void check(final String programStr) throws Exception {
-    final PDGBuilder builder = new PDGBuilder();
-    builder.build(programStr, false);
+    PDGBuilderConfig config = PDGBuilderConfig.create();
+    final PDGBuilder builder = new PDGBuilder(config);
+    builder.build(programStr);
     for (final CFG g : builder.getCfgs()) {
     	// TODO 0: Remove!!!!
     	if (!get(g, SynchronizedStmt.class).isEmpty())

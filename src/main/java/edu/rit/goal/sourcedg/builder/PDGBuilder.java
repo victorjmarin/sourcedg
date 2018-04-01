@@ -33,58 +33,60 @@ public class PDGBuilder {
 
   public static final Logger LOGGER = Logger.getLogger("PDG");
 
+  private PDGBuilderConfig config;
   private PDG pdg;
   private Collection<CFG> cfgs;
   private CompilationUnit originalCu;
   private CompilationUnit normalizedCu;
   private CDGBuilder cdgBuilder;
 
-  public PDGBuilder() {
-    this(Level.OFF, null);
+  public PDGBuilder(PDGBuilderConfig config) {
+    this(config, Level.OFF, null);
   }
 
-  public PDGBuilder(final Level logLevel) {
-    this(logLevel, null);
+  public PDGBuilder(PDGBuilderConfig config, final Level logLevel) {
+    this(config, logLevel, null);
   }
 
-  public PDGBuilder(final Level logLevel, final Handler handler) {
+  public PDGBuilder(PDGBuilderConfig config, final Level logLevel, final Handler handler) {
+    this.config = config;
     LOGGER.setLevel(logLevel);
     LOGGER.addHandler(new ConsoleHandler());
     if (handler != null)
       LOGGER.addHandler(handler);
   }
 
-  public void build(final InputStream in, final boolean normalizeCode) {
+  public void build(final InputStream in) {
     final CompilationUnit cu = JavaParser.parse(in);
-    build(cu, normalizeCode);
+    build(cu);
   }
 
-  public void build(final Path in, final boolean normalizeCode) {
+  public void build(final Path in) {
     try {
       CompilationUnit cu;
       cu = JavaParser.parse(in);
-      build(cu, normalizeCode);
+      build(cu);
     } catch (final IOException e) {
       e.printStackTrace();
     }
   }
 
-  public void build(final String in, final boolean normalizeCode) {
+  public void build(final String in) {
     final CompilationUnit cu = JavaParser.parse(in);
-    build(cu, normalizeCode);
+    build(cu);
   }
 
-  private void build(CompilationUnit cu, final boolean normalizeCode) {
+  private void build(CompilationUnit cu) {
     final CombinedTypeSolver typeSolver = new CombinedTypeSolver();
     typeSolver.add(new ReflectionTypeSolver());
     originalCu = JavaParser.parse(cu.toString());
-    if (normalizeCode) {
+    if (config.isNormalize()) {
       final Normalizer normalizer = new Normalizer(cu, typeSolver);
       cu = normalizer.normalize();
     }
     normalizedCu = cu;
     cdgBuilder = new CDGBuilder(cu);
-    cdgBuilder.build();
+    cdgBuilder.build(config.isOriginalLines());
     pdg = cdgBuilder.getCDG();
     computeInterProceduralCalls(cdgBuilder.getMethodParams(), cdgBuilder.getCalls(),
         cdgBuilder.getMethodFormalOut());
