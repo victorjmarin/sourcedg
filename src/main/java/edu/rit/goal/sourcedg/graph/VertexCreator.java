@@ -33,16 +33,18 @@ import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.ThrowStmt;
 import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
+
+import edu.rit.goal.sourcedg.builder.PDGBuilderConfig;
 import edu.rit.goal.sourcedg.normalization.Normalizer;
 import edu.rit.goal.sourcedg.util.Utils;
 
 public class VertexCreator {
 
   private int id = 0;
-  private boolean originalLines;
+  private PDGBuilderConfig cfg;
 
-  public VertexCreator(boolean originalLines) {
-    this.originalLines = originalLines;
+  public VertexCreator(PDGBuilderConfig cfg) {
+    this.cfg = cfg;
   }
 
   public Vertex exit() {
@@ -290,8 +292,12 @@ public class VertexCreator {
   }
 
   public void setOriginalLine(final Vertex v, final Node n) {
-    if (originalLines) {
-      final Integer line = findParentComment(n);
+    if (cfg.isOriginalLines()) {
+      Integer line = null;
+      if (cfg.isNormalize())
+    	  line = findParentComment(n);
+      else if (n.getRange().isPresent())
+    	  line = n.getRange().get().begin.line;
       v.setOriginalLine(line);
     }
   }

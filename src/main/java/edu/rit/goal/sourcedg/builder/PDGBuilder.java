@@ -86,7 +86,7 @@ public class PDGBuilder {
     }
     normalizedCu = cu;
     cdgBuilder = new CDGBuilder(cu);
-    cdgBuilder.build(config.isOriginalLines());
+    cdgBuilder.build(config);
     pdg = cdgBuilder.getCDG();
     computeInterProceduralCalls(cdgBuilder.getMethodParams(), cdgBuilder.getCalls(),
         cdgBuilder.getMethodFormalOut());

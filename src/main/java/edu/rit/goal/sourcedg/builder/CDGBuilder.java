@@ -74,9 +74,9 @@ public class CDGBuilder {
     this.cu = cu;
   }
 
-  public void build(boolean originalLines) {
+  public void build(PDGBuilderConfig cfg) {
     unmatchedAstNodes = new HashMap<>();
-    vtxCreator = new VertexCreator(originalLines);
+    vtxCreator = new VertexCreator(cfg);
     cfgBuilder = new CFGBuilder();
     cdg = new PDG();
     clsStack = new ArrayDeque<>();
