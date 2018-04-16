@@ -13,17 +13,19 @@ public class Vertex implements Serializable {
   private String label;
   private String def;
   private Set<String> refs;
-  private Set<VertexSubtype> subtypes;
-  private String calledMethodName;
+  private Set<String> subtypes;
   private Integer startLine;
   private Integer endLine;
   private final Set<Vertex> in;
   private Set<Vertex> out;
   private Node ast;
   private Integer originalLine;
+  private PDG pdg;
 
   // Graphviz attributes
   private String fillColor;
+
+  private boolean visited;
 
   public Vertex(final String label) {
     this.label = label;
@@ -136,20 +138,12 @@ public class Vertex implements Serializable {
     this.out = out;
   }
 
-  public Set<VertexSubtype> getSubtypes() {
+  public Set<String> getSubtypes() {
     return subtypes;
   }
 
-  public void setSubtypes(final Set<VertexSubtype> subtypes) {
+  public void setSubtypes(final Set<String> subtypes) {
     this.subtypes = subtypes;
-  }
-
-  public String getCalledMethodName() {
-    return calledMethodName;
-  }
-
-  public void setCalledMethodName(final String calledMethodName) {
-    this.calledMethodName = calledMethodName;
   }
 
   public Node getAst() {
@@ -175,6 +169,22 @@ public class Vertex implements Serializable {
 
   public void setOriginalLine(final Integer originalLine) {
     this.originalLine = originalLine;
+  }
+
+  public boolean isVisited() {
+    return visited;
+  }
+
+  public void setVisited(boolean visited) {
+    this.visited = visited;
+  }
+
+  public PDG getPDG() {
+    return pdg;
+  }
+
+  public void setPDG(PDG pdg) {
+    this.pdg = pdg;
   }
 
   @Override

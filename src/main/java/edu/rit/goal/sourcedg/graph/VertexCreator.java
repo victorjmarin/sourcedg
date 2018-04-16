@@ -15,10 +15,22 @@ import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.comments.Comment;
 import com.github.javaparser.ast.expr.ArrayAccessExpr;
 import com.github.javaparser.ast.expr.AssignExpr;
+import com.github.javaparser.ast.expr.BinaryExpr;
+import com.github.javaparser.ast.expr.BooleanLiteralExpr;
+import com.github.javaparser.ast.expr.CharLiteralExpr;
+import com.github.javaparser.ast.expr.ConditionalExpr;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.FieldAccessExpr;
+import com.github.javaparser.ast.expr.InstanceOfExpr;
+import com.github.javaparser.ast.expr.IntegerLiteralExpr;
+import com.github.javaparser.ast.expr.LongLiteralExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.NullLiteralExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.expr.SimpleName;
+import com.github.javaparser.ast.expr.StringLiteralExpr;
+import com.github.javaparser.ast.expr.SuperExpr;
+import com.github.javaparser.ast.expr.ThisExpr;
 import com.github.javaparser.ast.expr.UnaryExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.BreakStmt;
@@ -33,7 +45,7 @@ import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.ThrowStmt;
 import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
-
+import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import edu.rit.goal.sourcedg.builder.PDGBuilderConfig;
 import edu.rit.goal.sourcedg.normalization.Normalizer;
 import edu.rit.goal.sourcedg.util.Utils;
@@ -295,9 +307,9 @@ public class VertexCreator {
     if (cfg.isOriginalLines()) {
       Integer line = null;
       if (cfg.isNormalize())
-    	  line = findParentComment(n);
+        line = findParentComment(n);
       else if (n.getRange().isPresent())
-    	  line = n.getRange().get().begin.line;
+        line = n.getRange().get().begin.line;
       v.setOriginalLine(line);
     }
   }
@@ -341,77 +353,156 @@ public class VertexCreator {
   }
 
   private void setSubtypes(final Vertex v, final Node n) {
-    final Set<VertexSubtype> subtypes = subtypesFromText(v.getLabel());
-    v.setSubtypes(subtypes);
-    addSubtypesFromAst(n, v);
-  }
-
-  private void addSubtypesFromAst(final Node ast, final Vertex v) {
-    final Optional<MethodCallExpr> methodCall = ast.findFirst(MethodCallExpr.class);
-    if (methodCall.isPresent()) {
-      v.setCalledMethodName(methodCall.get().getNameAsString());
-      if (methodCall.get().getScope().isPresent())
-        v.getSubtypes().add(VertexSubtype.SCOPED_CALL);
-    }
-    final Optional<ObjectCreationExpr> objectCreation = ast.findFirst(ObjectCreationExpr.class);
-    if (objectCreation.isPresent())
-      v.getSubtypes().add(VertexSubtype.NEW_OBJ);
-    final Optional<ArrayAccessExpr> arrayAccessExpr = ast.findFirst(ArrayAccessExpr.class);
-    if (arrayAccessExpr.isPresent())
-      v.getSubtypes().add(VertexSubtype.ARRAY_ACCESS);
-  }
-
-  private Set<VertexSubtype> subtypesFromText(final String text) {
-    final Set<VertexSubtype> result = new HashSet<>();
-    if (text.contains("+"))
-      result.add(VertexSubtype.PLUS);
-    if (text.contains("-"))
-      result.add(VertexSubtype.MINUS);
-    if (text.contains("*"))
-      result.add(VertexSubtype.MULT);
-    if (text.contains("/"))
-      result.add(VertexSubtype.DIV);
-    if (text.contains("<"))
-      result.add(VertexSubtype.LT);
-    if (text.contains(">"))
-      result.add(VertexSubtype.GT);
-    if (text.contains("<="))
-      result.add(VertexSubtype.LEQ);
-    if (text.contains(">="))
-      result.add(VertexSubtype.GEQ);
-    if (text.contains("=="))
-      result.add(VertexSubtype.EQ);
-    if (text.contains("!="))
-      result.add(VertexSubtype.NOT_EQ);
-    if (text.contains("%"))
-      result.add(VertexSubtype.MOD);
-    if (text.contains("&&"))
-      result.add(VertexSubtype.AND);
-    if (text.contains("||"))
-      result.add(VertexSubtype.OR);
-    if (text.contains("++"))
-      result.add(VertexSubtype.INCR);
-    if (text.contains("--"))
-      result.add(VertexSubtype.DECR);
-    if (text.contains("+="))
-      result.add(VertexSubtype.SH_PLUS);
-    if (text.contains("-="))
-      result.add(VertexSubtype.SH_MINUS);
-    if (text.contains("*="))
-      result.add(VertexSubtype.SH_MULT);
-    if (text.contains("/="))
-      result.add(VertexSubtype.SH_DIV);
-    if (text.contains(".print"))
-      result.add(VertexSubtype.PRINT);
-    return result;
+    CollectSubtypesVisitor visitor = new CollectSubtypesVisitor();
+    v.getAst().accept(visitor, v);
   }
 
   public static void selfCall(final Vertex v) {
-    v.getSubtypes().add(VertexSubtype.SELF_CALL);
+    v.getSubtypes().add("SELF_CALL");
   }
 
   public int getId() {
     return id;
+  }
+
+  private class CollectSubtypesVisitor extends VoidVisitorAdapter<Vertex> {
+
+    @Override
+    public void visit(ArrayAccessExpr n, Vertex v) {
+      super.visit(n, v);
+      v.getSubtypes().add("ARRAY_ACCESS");
+    }
+
+    @Override
+    public void visit(BinaryExpr n, Vertex v) {
+      super.visit(n, v);
+      v.getSubtypes().add(n.getOperator().toString());
+    }
+
+    @Override
+    public void visit(FieldAccessExpr n, Vertex v) {
+      super.visit(n, v);
+      v.getSubtypes().add(n.getName().toString());
+    }
+
+    @Override
+    public void visit(InstanceOfExpr n, Vertex v) {
+      super.visit(n, v);
+      v.getSubtypes().add("INSTANCE_OF");
+    }
+
+    @Override
+    public void visit(ObjectCreationExpr n, Vertex v) {
+      super.visit(n, v);
+      v.getSubtypes().add("NEW");
+    }
+
+    @Override
+    public void visit(MethodCallExpr n, Vertex v) {
+      super.visit(n, v);
+      v.getSubtypes().add(n.getName().toString());
+      v.getSubtypes().add("METHOD_CALL");
+      if (n.getScope().isPresent())
+        v.getSubtypes().add("SCOPED_CALL");
+    }
+
+    @Override
+    public void visit(SuperExpr n, Vertex v) {
+      super.visit(n, v);
+      v.getSubtypes().add("SUPER");
+    }
+
+    @Override
+    public void visit(ThisExpr n, Vertex v) {
+      super.visit(n, v);
+      v.getSubtypes().add("THIS");
+    }
+
+    @Override
+    public void visit(UnaryExpr n, Vertex v) {
+      super.visit(n, v);
+      v.getSubtypes().add(n.getOperator().toString());
+    }
+
+    @Override
+    public void visit(BooleanLiteralExpr n, Vertex v) {
+      super.visit(n, v);
+      v.getSubtypes().add("" + n.getValue());
+    }
+
+    @Override
+    public void visit(CharLiteralExpr n, Vertex v) {
+      super.visit(n, v);
+      v.getSubtypes().add(n.getValue());
+    }
+
+    @Override
+    public void visit(IntegerLiteralExpr n, Vertex v) {
+      super.visit(n, v);
+      v.getSubtypes().add(n.getValue());
+    }
+
+    @Override
+    public void visit(LongLiteralExpr n, Vertex v) {
+      super.visit(n, v);
+      v.getSubtypes().add(n.getValue());
+    }
+
+    @Override
+    public void visit(NullLiteralExpr n, Vertex v) {
+      super.visit(n, v);
+      v.getSubtypes().add("null");
+    }
+
+    @Override
+    public void visit(StringLiteralExpr n, Vertex v) {
+      super.visit(n, v);
+      v.getSubtypes().add(n.getValue());
+    }
+
+    // Expressions/statements that we may receive as a whole.
+    @Override
+    public void visit(ConditionalExpr n, Vertex v) {
+      // We are only interested in the condition.
+      n.getCondition().accept(this, v);
+    }
+
+    @Override
+    public void visit(DoStmt n, Vertex v) {
+      // We are only interested in the condition.
+      n.getCondition().accept(this, v);
+    }
+
+    @Override
+    public void visit(IfStmt n, Vertex v) {
+      // We are only interested in the comparison.
+      n.getCondition().accept(this, v);
+    }
+
+    @Override
+    public void visit(ForStmt n, Vertex v) {
+      // We are only interested in the comparison.
+      n.getCompare().ifPresent(l -> l.accept(this, v));
+    }
+
+    @Override
+    public void visit(ForeachStmt n, Vertex v) {
+      // We are only interested in the iterable.
+      n.getIterable().accept(this, v);
+    }
+
+    @Override
+    public void visit(ReturnStmt n, Vertex v) {
+      // We are only interested in the expression.
+      n.getExpression().ifPresent(l -> l.accept(this, v));
+    }
+
+    @Override
+    public void visit(WhileStmt n, Vertex v) {
+      // We are only interested in the condition.
+      n.getCondition().accept(this, v);
+    }
+
   }
 
 }
