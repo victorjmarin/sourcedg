@@ -5,6 +5,7 @@ public class PDGBuilderConfig {
   private boolean normalize;
   private boolean originalLines;
 
+  private PDGBuilderConfig() {}
 
   private PDGBuilderConfig(boolean normalize, boolean originalLines) {
     super();
@@ -20,7 +21,7 @@ public class PDGBuilderConfig {
     normalize = true;
     return this;
   }
-  
+
   public PDGBuilderConfig originalLines() {
     originalLines = true;
     return this;
@@ -32,6 +33,10 @@ public class PDGBuilderConfig {
 
   public boolean isOriginalLines() {
     return originalLines;
+  }
+
+  public String toString() {
+    return String.format("[normalize=%s, originalLines=%s]", normalize, originalLines);
   }
 
 }
