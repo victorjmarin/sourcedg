@@ -14,4 +14,5 @@ dependencies {
 	compile group: 'org.jgrapht', name: 'jgrapht-ext', version: '1.0.1'
     compile group: 'com.github.javaparser', name: 'javaparser-core', version: '3.5.17'
     compile group: 'com.github.javaparser', name: 'javaparser-symbol-solver-core', version: '3.5.17'
+    compile group: 'org.apache.commons', name: 'commons-math3', version: '3.5'
 }
