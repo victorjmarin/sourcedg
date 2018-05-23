@@ -28,6 +28,7 @@ public class Validate {
     final String chunkp = "validation_chunks/bcb-chunk$.txt";
 
     SynchronizedSummaryStatistics globalLocStats = new SynchronizedSummaryStatistics(), globalTimeStats = new SynchronizedSummaryStatistics();
+    SynchronizedSummaryStatistics globalNodesStats = new SynchronizedSummaryStatistics(), globalEdgesStats = new SynchronizedSummaryStatistics();
     IntStream.rangeClosed(1, BCBChunks.CHUNKS).parallel().forEach(i -> {
       try {
         final String chunk = chunkp.replace("$", String.valueOf(i));
@@ -46,7 +47,7 @@ public class Validate {
             final String programStr = new String(encoded, Charset.forName("UTF-8"));
             try {
             	long tic = System.nanoTime();
-              check(programStr);
+              check(programStr, globalNodesStats, globalEdgesStats);
               long toc = System.nanoTime();
               
               locStats.addValue(programStr.split("\n").length);
@@ -69,6 +70,8 @@ public class Validate {
     zip.close();
     
     System.out.println("Total: " + globalLocStats.getN());
+    System.out.println("Nodes: " + globalNodesStats.getMean() + " +/- " + globalNodesStats.getStandardDeviation() + " (" + globalNodesStats.getMax() + ")");
+    System.out.println("Edges: " + globalEdgesStats.getMean() + " +/- " + globalEdgesStats.getStandardDeviation() + " (" + globalEdgesStats.getMax() + ")");
     System.out.println("LOC: " + globalLocStats.getMean() + " +/- " + globalLocStats.getStandardDeviation() + " (" + globalLocStats.getMax() + ")");
     System.out.println("Time: " + globalTimeStats.getMean() + " +/- " + globalTimeStats.getStandardDeviation() + " (" + globalTimeStats.getMax() + ")");
 	  
@@ -136,10 +139,12 @@ public class Validate {
 //	  return info;
 //  }
 
-  private static void check(final String programStr) throws Exception {
+  private static void check(final String programStr, SynchronizedSummaryStatistics globalNodesStats, SynchronizedSummaryStatistics globalEdgesStats) throws Exception {
     PDGBuilderConfig config = PDGBuilderConfig.create();
     final PDGBuilder builder = new PDGBuilder(config);
     builder.build(programStr);
+    globalNodesStats.addValue(builder.getPDG().vertexSet().size());
+    globalEdgesStats.addValue(builder.getPDG().edgeSet().size());
 //    for (final CFG g : builder.getCfgs()) {
 //    	// TODO 0: Remove!!!!
 //    	if (!get(g, SynchronizedStmt.class).isEmpty())
