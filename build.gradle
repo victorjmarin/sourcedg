@@ -15,4 +15,5 @@ dependencies {
     compile group: 'org.antlr', name: 'antlr4-runtime', version: '4.7'
     compile group: 'com.github.javaparser', name: 'javaparser-core', version: '3.5.2'
     compile group: 'com.github.javaparser', name: 'java-symbol-solver-core', version: '0.6.1'
+    compile group: 'org.apache.commons', name: 'commons-math3', version: '3.5'
 }
