@@ -15,12 +15,15 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
 import org.jgrapht.DirectedGraph;
+
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
 import com.github.javaparser.utils.Pair;
+
 import edu.rit.goal.sourcedg.graph.CFG;
 import edu.rit.goal.sourcedg.graph.Edge;
 import edu.rit.goal.sourcedg.graph.EdgeType;
@@ -88,8 +91,9 @@ public class PDGBuilder {
     cdgBuilder = new CDGBuilder(cu);
     cdgBuilder.build(config);
     pdg = cdgBuilder.getCDG();
-    computeInterProceduralCalls(cdgBuilder.getMethodParams(), cdgBuilder.getCalls(),
-        cdgBuilder.getMethodFormalOut());
+    if (config.isInterproceduralCalls())
+    	computeInterProceduralCalls(cdgBuilder.getMethodParams(), cdgBuilder.getCalls(),
+    			cdgBuilder.getMethodFormalOut());
     cfgs = cdgBuilder.getCfgs();
     computeDataDependencies();
   }

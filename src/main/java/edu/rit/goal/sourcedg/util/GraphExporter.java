@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
 import org.jgrapht.Graph;
 import org.jgrapht.ext.ComponentAttributeProvider;
 import org.jgrapht.ext.ComponentNameProvider;
@@ -11,9 +12,9 @@ import org.jgrapht.ext.DOTExporter;
 import org.jgrapht.ext.ExportException;
 import org.jgrapht.ext.IntegerComponentNameProvider;
 import org.jgrapht.graph.DefaultEdge;
+
 import edu.rit.goal.sourcedg.graph.Edge;
 import edu.rit.goal.sourcedg.graph.Vertex;
-import edu.rit.goal.sourcedg.graph.VertexSubtype;
 
 public class GraphExporter {
 
@@ -22,7 +23,7 @@ public class GraphExporter {
         @Override
         public String getName(final Vertex component) {
           String result = component.getId() + "-" + component.getType() + "\n";
-          final Set<VertexSubtype> subtypes = component.getSubtypes();
+          final Set<String> subtypes = component.getSubtypes();
           // if (!subtypes.isEmpty())
           // result += subtypes + "\n";
           result += component.getLabel().replaceAll("\"", "'");

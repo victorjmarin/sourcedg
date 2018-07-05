@@ -2,19 +2,19 @@ package edu.rit.goal.sourcedg.builder;
 
 public class PDGBuilderConfig {
 
-  private boolean normalize;
-  private boolean originalLines;
+  private boolean normalize, originalLines, interproceduralCalls;
 
   private PDGBuilderConfig() {}
 
-  private PDGBuilderConfig(boolean normalize, boolean originalLines) {
+  private PDGBuilderConfig(boolean normalize, boolean originalLines, boolean interproceduralCalls) {
     super();
     this.normalize = normalize;
     this.originalLines = originalLines;
+    this.interproceduralCalls = interproceduralCalls;
   }
 
   public static PDGBuilderConfig create() {
-    return new PDGBuilderConfig(false, false);
+    return new PDGBuilderConfig(false, false, false);
   }
 
   public PDGBuilderConfig normalize() {
@@ -26,6 +26,11 @@ public class PDGBuilderConfig {
     originalLines = true;
     return this;
   }
+  
+  public PDGBuilderConfig interproceduralCalls() {
+	  interproceduralCalls = true;
+	  return this;
+  }
 
   public boolean isNormalize() {
     return normalize;
@@ -34,9 +39,13 @@ public class PDGBuilderConfig {
   public boolean isOriginalLines() {
     return originalLines;
   }
+  
+  public boolean isInterproceduralCalls() {
+	return interproceduralCalls;
+  }
 
   public String toString() {
-    return String.format("[normalize=%s, originalLines=%s]", normalize, originalLines);
+    return String.format("[normalize=%s, originalLines=%s, interproceduralCalls=%s]", normalize, originalLines, interproceduralCalls);
   }
 
 }
