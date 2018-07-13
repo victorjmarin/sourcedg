@@ -12,6 +12,8 @@ public class PDG extends DefaultDirectedGraph<Vertex, Edge> {
    */
   private static final long serialVersionUID = 4208713030783810103L;
 
+  private String pathToProgram;
+
   public PDG() {
     super(Edge.class);
   }
@@ -41,6 +43,14 @@ public class PDG extends DefaultDirectedGraph<Vertex, Edge> {
 
   public Set<Vertex> forwardSlice(final Set<Vertex> S) {
     return PDGSlicer.forward(this, S);
+  }
+
+  public String getPathToProgram() {
+    return pathToProgram;
+  }
+
+  public void setPathToProgram(String pathToProgram) {
+    this.pathToProgram = pathToProgram;
   }
 
 }
