@@ -37,6 +37,10 @@ public class PDG extends DefaultDirectedGraph<Vertex, Edge> {
     return null;
   }
 
+  public Vertex getEntry() {
+    return vertexSet().stream().filter(n -> VertexType.ENTRY.equals(n.getType())).findFirst().get();
+  }
+
   public Set<Vertex> backwardSlice(final Set<Vertex> S) {
     return PDGSlicer.backward(this, S);
   }

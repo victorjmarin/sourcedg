@@ -124,7 +124,7 @@ public class VertexCreator {
   public Vertex ifStmt(final IfStmt n) {
     final Expression cond = n.getCondition();
     final String label = cond.toString();
-    final Vertex result = new Vertex(VertexType.CTRL, label, n);
+    final Vertex result = new Vertex(VertexType.CTRL, label, cond);
     setId(result);
     setRefs(cond, result);
     setSubtypes(result, cond);
@@ -137,7 +137,7 @@ public class VertexCreator {
     String label = "";
     if (cond.isPresent())
       label = cond.get().toString();
-    final Vertex result = new Vertex(VertexType.CTRL, label, n);
+    final Vertex result = new Vertex(VertexType.CTRL, label, cond.get());
     setId(result);
     setOriginalLine(result, n);
     if (cond.isPresent()) {
@@ -150,7 +150,7 @@ public class VertexCreator {
   public Vertex foreachStmt(final ForeachStmt n) {
     final Expression it = n.getIterable();
     final String label = it.toString();
-    final Vertex result = new Vertex(VertexType.CTRL, label, n);
+    final Vertex result = new Vertex(VertexType.CTRL, label, it);
     setId(result);
     setOriginalLine(result, n);
     setRefs(it, result);
@@ -161,7 +161,7 @@ public class VertexCreator {
   public Vertex whileStmt(final WhileStmt n) {
     final Expression cond = n.getCondition();
     final String label = cond.toString();
-    final Vertex result = new Vertex(VertexType.CTRL, label, n);
+    final Vertex result = new Vertex(VertexType.CTRL, label, cond);
     setId(result);
     setOriginalLine(result, n);
     setRefs(cond, result);
@@ -172,7 +172,7 @@ public class VertexCreator {
   public Vertex doStmt(final DoStmt n) {
     final Expression cond = n.getCondition();
     final String label = cond.toString();
-    final Vertex result = new Vertex(VertexType.CTRL, label, n);
+    final Vertex result = new Vertex(VertexType.CTRL, label, cond);
     setId(result);
     setOriginalLine(result, n);
     setRefs(cond, result);
@@ -335,7 +335,9 @@ public class VertexCreator {
   }
 
   private void setDef(final Node n, final Vertex v) {
-    final String def = Utils.first(names(n));
+    String def = Utils.first(names(n));
+    if (n instanceof ArrayAccessExpr)
+      def = ((ArrayAccessExpr) n).getName().toString();
     v.setDef(def);
   }
 
