@@ -38,4 +38,8 @@ public class CFG extends DefaultDirectedGraph<Vertex, Edge> {
     return null;
   }
 
+  public int cyclomaticComplexity() {
+    return edgeSet().size() - vertexSet().size() + 2;
+  }
+
 }

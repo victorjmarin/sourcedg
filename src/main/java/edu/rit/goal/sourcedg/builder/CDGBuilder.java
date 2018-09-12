@@ -2,7 +2,6 @@ package edu.rit.goal.sourcedg.builder;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,7 +40,6 @@ import com.github.javaparser.ast.stmt.ThrowStmt;
 import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
 import com.github.javaparser.utils.Pair;
-import com.google.common.collect.Sets;
 import edu.rit.goal.sourcedg.graph.CFG;
 import edu.rit.goal.sourcedg.graph.Edge;
 import edu.rit.goal.sourcedg.graph.EdgeType;
@@ -149,7 +147,7 @@ public class CDGBuilder {
 
   private void logUnmatched(Node n) {
     final String nodeName = n.getClass().getSimpleName();
-    PDGBuilder.LOGGER.warning("No match for " + nodeName);
+    PDGBuilder.LOGGER.warning("No match for " + nodeName + "\n" + n.toString());
     Integer count = unmatchedAstNodes.get(nodeName);
     if (count == null)
       count = 0;
@@ -301,12 +299,13 @@ public class CDGBuilder {
     final Optional<Expression> init = n.getInitializer();
     if (init.isPresent() && init.get() instanceof MethodCallExpr) {
       // Def and uses are set in the corresponding ACTUAL_OUT and ACTUAL_IN vertices
-      v.resetDefUses();
+      v.clearDefUses();
       final MethodCallExpr call = (MethodCallExpr) init.get();
       // Set uses w.r.t. invoked objects
       final Optional<Expression> scope = call.getScope();
       if (scope.isPresent()) {
-        final Set<String> uses = Sets.newHashSet(scope.get().toString());
+        final Set<String> uses = new HashSet<>();
+        uses.add(scope.get().toString());
         v.setRefs(uses);
       }
       final ControlFlow inFlow = args(v, call);
@@ -325,12 +324,13 @@ public class CDGBuilder {
     final Expression value = n.getValue();
     if (value instanceof MethodCallExpr) {
       // Def and uses are set in the corresponding ACTUAL_OUT and ACTUAL_IN vertices
-      v.resetDefUses();
+      v.clearDefUses();
       final MethodCallExpr call = (MethodCallExpr) value;
       // Set uses w.r.t. invoked objects
       final Optional<Expression> scope = call.getScope();
       if (scope.isPresent()) {
-        final Set<String> uses = Sets.newHashSet(scope.get().toString());
+        final Set<String> uses = new HashSet<>();
+        uses.add(scope.get().toString());
         v.setRefs(uses);
       }
       final ControlFlow inFlow = args(v, call);
@@ -633,7 +633,7 @@ public class CDGBuilder {
     callPairs.add(pair);
   }
 
-  public Collection<CFG> getCfgs() {
+  public List<CFG> getCfgs() {
     return cfgBuilder.getCfgs();
   }
 

@@ -1,10 +1,10 @@
 package edu.rit.goal.sourcedg.analysis;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-import com.google.common.collect.Sets;
 import edu.rit.goal.sourcedg.graph.Edge;
 import edu.rit.goal.sourcedg.graph.EdgeType;
 import edu.rit.goal.sourcedg.graph.PDG;
@@ -13,9 +13,12 @@ import edu.rit.goal.sourcedg.graph.Vertex;
 public class PDGSlicer {
 
   public static Set<Vertex> backward(final PDG pdg, final Set<Vertex> S) {
-    final Set<Vertex> S2 = backwardSlice(pdg, S, Sets.newHashSet(EdgeType.PARAM_OUT));
-    final Set<Vertex> result =
-        backwardSlice(pdg, S2, Sets.newHashSet(EdgeType.PARAM_IN, EdgeType.CALL));
+    Set<EdgeType> k1 = new HashSet<>();
+    k1.add(EdgeType.PARAM_OUT);
+    Set<EdgeType> k2 = new HashSet<>();
+    Collections.addAll(k2, EdgeType.PARAM_IN, EdgeType.CALL);
+    final Set<Vertex> S2 = backwardSlice(pdg, S, k1);
+    final Set<Vertex> result = backwardSlice(pdg, S2, k2);
     result.addAll(S2);
     return result;
   }
@@ -45,8 +48,12 @@ public class PDGSlicer {
   }
 
   public static Set<Vertex> forward(final PDG pdg, final Set<Vertex> S) {
-    final Set<Vertex> S2 = forwardSlice(pdg, S, Sets.newHashSet(EdgeType.PARAM_IN, EdgeType.CALL));
-    final Set<Vertex> result = forwardSlice(pdg, S2, Sets.newHashSet(EdgeType.PARAM_OUT));
+    Set<EdgeType> k1 = new HashSet<>();
+    Collections.addAll(k1, EdgeType.PARAM_IN, EdgeType.CALL);
+    Set<EdgeType> k2 = new HashSet<>();
+    k2.add(EdgeType.PARAM_OUT);
+    final Set<Vertex> S2 = forwardSlice(pdg, S, k1);
+    final Set<Vertex> result = forwardSlice(pdg, S2, k2);
     result.addAll(S2);
     return result;
   }

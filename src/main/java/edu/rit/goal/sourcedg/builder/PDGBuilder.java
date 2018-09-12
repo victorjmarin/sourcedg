@@ -3,27 +3,19 @@ package edu.rit.goal.sourcedg.builder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
-import org.jgrapht.DirectedGraph;
-
+import org.jgrapht.Graph;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
-import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
 import com.github.javaparser.utils.Pair;
-
 import edu.rit.goal.sourcedg.graph.CFG;
 import edu.rit.goal.sourcedg.graph.Edge;
 import edu.rit.goal.sourcedg.graph.EdgeType;
@@ -38,25 +30,18 @@ public class PDGBuilder {
 
   private PDGBuilderConfig config;
   private PDG pdg;
-  private Collection<CFG> cfgs;
+  private List<CFG> cfgs;
   private CompilationUnit originalCu;
   private CompilationUnit normalizedCu;
   private CDGBuilder cdgBuilder;
 
   public PDGBuilder(PDGBuilderConfig config) {
-    this(config, Level.OFF, null);
+    this(config, Level.OFF);
   }
 
   public PDGBuilder(PDGBuilderConfig config, final Level logLevel) {
-    this(config, logLevel, null);
-  }
-
-  public PDGBuilder(PDGBuilderConfig config, final Level logLevel, final Handler handler) {
     this.config = config;
     LOGGER.setLevel(logLevel);
-    LOGGER.addHandler(new ConsoleHandler());
-    if (handler != null)
-      LOGGER.addHandler(handler);
   }
 
   public void build(final InputStream in) {
@@ -80,11 +65,9 @@ public class PDGBuilder {
   }
 
   private void build(CompilationUnit cu) {
-    final CombinedTypeSolver typeSolver = new CombinedTypeSolver();
-    typeSolver.add(new ReflectionTypeSolver());
     originalCu = JavaParser.parse(cu.toString());
     if (config.isNormalize()) {
-      final Normalizer normalizer = new Normalizer(cu, typeSolver);
+      final Normalizer normalizer = new Normalizer(cu);
       cu = normalizer.normalize();
     }
     normalizedCu = cu;
@@ -92,8 +75,8 @@ public class PDGBuilder {
     cdgBuilder.build(config);
     pdg = cdgBuilder.getCDG();
     if (config.isInterproceduralCalls())
-    	computeInterProceduralCalls(cdgBuilder.getMethodParams(), cdgBuilder.getCalls(),
-    			cdgBuilder.getMethodFormalOut());
+      computeInterProceduralCalls(cdgBuilder.getMethodParams(), cdgBuilder.getCalls(),
+          cdgBuilder.getMethodFormalOut());
     cfgs = cdgBuilder.getCfgs();
     computeDataDependencies();
   }
@@ -142,7 +125,7 @@ public class PDGBuilder {
 
   // https://dl.acm.org/citation.cfm?id=154268
   private void computeDataDependencies() {
-    for (final DirectedGraph<Vertex, Edge> cfg : cfgs)
+    for (final Graph<Vertex, Edge> cfg : cfgs)
       reachingDefinitions(cfg);
     for (final Vertex v : pdg.vertexSet()) {
       final Map<String, Set<Vertex>> inDefs = inDefs(v);
@@ -161,7 +144,7 @@ public class PDGBuilder {
     }
   }
 
-  private void reachingDefinitions(final DirectedGraph<Vertex, Edge> cfg) {
+  private void reachingDefinitions(final Graph<Vertex, Edge> cfg) {
     boolean changes = true;
     while (changes) {
       changes = false;
@@ -199,7 +182,7 @@ public class PDGBuilder {
     return pdg;
   }
 
-  public Collection<CFG> getCfgs() {
+  public List<CFG> getCfgs() {
     return cfgs;
   }
 

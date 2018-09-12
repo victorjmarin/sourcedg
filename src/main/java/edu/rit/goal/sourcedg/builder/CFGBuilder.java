@@ -2,7 +2,6 @@ package edu.rit.goal.sourcedg.builder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -226,8 +225,8 @@ public class CFGBuilder {
     cfg = new CFG();
   }
 
-  public Collection<CFG> getCfgs() {
-    return m.values();
+  public List<CFG> getCfgs() {
+    return new ArrayList<>(m.values());
   }
 
 }

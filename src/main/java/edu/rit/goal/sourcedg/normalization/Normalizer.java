@@ -43,7 +43,6 @@ import com.github.javaparser.ast.stmt.WhileStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.visitor.ModifierVisitor;
-import com.github.javaparser.symbolsolver.model.resolution.TypeSolver;
 import edu.rit.goal.sourcedg.builder.PDGBuilder;
 
 public class Normalizer {
@@ -56,10 +55,8 @@ public class Normalizer {
   private final List<ExpressionStmt> expressions = new ArrayList<>();
   private final List<ModifierVisitor<Void>> visitors;
   private final HashMap<DepKey, ExpressionStmt> mAss;
-  private final TypeSolver typeSolver;
 
-  public Normalizer(final CompilationUnit cu, final TypeSolver typeSolver) {
-    this.typeSolver = typeSolver;
+  public Normalizer(final CompilationUnit cu) {
     this.cu = cu;
     visitors = new ArrayList<>();
     mAss = new HashMap<>();

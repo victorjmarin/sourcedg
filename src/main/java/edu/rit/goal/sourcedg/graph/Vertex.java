@@ -19,7 +19,7 @@ public class Vertex implements Serializable {
   private final Set<Vertex> in;
   private Set<Vertex> out;
   private Node ast;
-  private Integer originalLine;
+  private Integer line;
   private PDG pdg;
 
   // Graphviz attributes
@@ -158,17 +158,17 @@ public class Vertex implements Serializable {
     this.fillColor = fillColor;
   }
 
-  public void resetDefUses() {
+  public void clearDefUses() {
     def = null;
     refs = new HashSet<>();
   }
 
-  public Integer getOriginalLine() {
-    return originalLine;
+  public Integer getLine() {
+    return line;
   }
 
-  public void setOriginalLine(final Integer originalLine) {
-    this.originalLine = originalLine;
+  public void setLine(final Integer line) {
+    this.line = line;
   }
 
   public boolean isVisited() {

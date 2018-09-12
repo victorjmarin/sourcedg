@@ -34,19 +34,6 @@ public class ControlFlow {
     breaks = new HashSet<>();
   }
 
-//  public ControlFlow(final Set<Vertex> in, final Vertex out) {
-//    this.in = in;
-//    this.out = new HashSet<>();
-//    this.out.add(out);
-//    breaks = new HashSet<>();
-//  }
-
-//  public ControlFlow(final Set<Vertex> in, final Set<Vertex> out) {
-//    this.in = in;
-//    this.out = new HashSet<>(out);
-//    breaks = new HashSet<>();
-//  }
-
   public Vertex getIn() {
     return in;
   }
