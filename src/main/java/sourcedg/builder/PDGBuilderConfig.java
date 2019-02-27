@@ -16,79 +16,76 @@ package sourcedg.builder;
  * @author victorjmarin
  *
  */
-public class PDGBuilderConfig
-{
+public class PDGBuilderConfig {
 
-    private boolean normalize, keepLines, interproceduralCalls;
+	private boolean normalize, keepLines, removeComments, removeImports, interproceduralCalls;
 
-    private long initialVertexId;
+	private long initialVertexId;
 
-    private PDGBuilderConfig()
-    {}
+	private PDGBuilderConfig() {
+	}
 
-    private PDGBuilderConfig(boolean normalize, boolean keepLines, boolean interproceduralCalls)
-    {
-	this.normalize = normalize;
-	this.keepLines = keepLines;
-	this.interproceduralCalls = interproceduralCalls;
-    }
+	public static PDGBuilderConfig create() {
+		return new PDGBuilderConfig();
+	}
 
-    public static PDGBuilderConfig create()
-    {
-	return new PDGBuilderConfig(
-		false,
-		false,
-		false);
-    }
+	public PDGBuilderConfig initialVertexId(long id) {
+		initialVertexId = id;
+		return this;
+	}
 
-    public PDGBuilderConfig initialVertexId(long id)
-    {
-	initialVertexId = id;
-	return this;
-    }
+	public PDGBuilderConfig normalize() {
+		normalize = true;
+		return this;
+	}
 
-    public PDGBuilderConfig normalize()
-    {
-	normalize = true;
-	return this;
-    }
+	public PDGBuilderConfig keepLines() {
+		keepLines = true;
+		return this;
+	}
 
-    public PDGBuilderConfig keepLines()
-    {
-	keepLines = true;
-	return this;
-    }
+	public PDGBuilderConfig removeComments() {
+		removeComments = true;
+		return this;
+	}
 
-    public PDGBuilderConfig interproceduralCalls()
-    {
-	interproceduralCalls = true;
-	return this;
-    }
+	public PDGBuilderConfig removeImports() {
+		removeImports = true;
+		return this;
+	}
 
-    public boolean isNormalize()
-    {
-	return normalize;
-    }
+	public PDGBuilderConfig interproceduralCalls() {
+		interproceduralCalls = true;
+		return this;
+	}
 
-    public boolean isKeepLines()
-    {
-	return keepLines;
-    }
+	public boolean isNormalize() {
+		return normalize;
+	}
 
-    public boolean isInterproceduralCalls()
-    {
-	return interproceduralCalls;
-    }
+	public boolean isKeepLines() {
+		return keepLines;
+	}
 
-    public long getInitialVertexId()
-    {
-	return initialVertexId;
-    }
+	public boolean isRemoveComments() {
+		return removeComments;
+	}
 
-    public String toString()
-    {
-	return String
-		.format("[normalize=%s, originalLines=%s, interproceduralCalls=%s]", normalize, keepLines, interproceduralCalls);
-    }
+	public boolean isRemoveImports() {
+		return removeImports;
+	}
+
+	public boolean isInterproceduralCalls() {
+		return interproceduralCalls;
+	}
+
+	public long getInitialVertexId() {
+		return initialVertexId;
+	}
+
+	public String toString() {
+		return String.format("[normalize=%s, originalLines=%s, interproceduralCalls=%s]", normalize, keepLines,
+				interproceduralCalls);
+	}
 
 }

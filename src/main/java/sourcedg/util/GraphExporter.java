@@ -45,10 +45,10 @@ public class GraphExporter {
 		public Map<String, Attribute> getComponentAttributes(final Vertex component) {
 			final Map<String, Attribute> result = new HashMap<>();
 			final Attribute fillColor = DefaultAttribute.createAttribute(component.getFillColor());
-			if (fillColor != null) {
-				result.put("style", DefaultAttribute.createAttribute("filled"));
-				result.put("fillcolor", fillColor);
-			}
+//			if (fillColor != null) {
+//				result.put("style", DefaultAttribute.createAttribute("filled"));
+//				result.put("fillcolor", fillColor);
+//			}
 			if (component.getType() != null) {
 				switch (component.getType()) {
 				default:
