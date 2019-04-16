@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import com.github.javaparser.ast.ArrayCreationLevel;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
@@ -18,6 +19,8 @@ import com.github.javaparser.ast.body.ConstructorDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.VariableDeclarator;
+import com.github.javaparser.ast.expr.ArrayAccessExpr;
+import com.github.javaparser.ast.expr.ArrayCreationExpr;
 import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
@@ -287,6 +290,13 @@ public class CDGBuilder {
 		return new ControlFlow(a, a);
 	}
 
+	private ControlFlow arrayIdx(final Vertex v, final Node n) {
+		final Vertex a = vtxCreator.arrayIdx(n);
+		cdg.addVertex(a);
+		addEdge(EdgeType.CTRL_TRUE, v, a);
+		return new ControlFlow(a, a);
+	}
+
 	private ControlFlow variableDeclarationExpr(final VariableDeclarationExpr n) {
 		final List<ControlFlow> flow = new ArrayList<>();
 		for (final VariableDeclarator v : n.getVariables())
@@ -299,23 +309,34 @@ public class CDGBuilder {
 		cdg.addVertex(v);
 		inScope.add(v);
 		ControlFlow result = new ControlFlow(v, v);
+
 		// Check for call
 		final Optional<Expression> init = n.getInitializer();
 		if (init.isPresent() && init.get() instanceof MethodCallExpr) {
-			// Def and uses are set in the corresponding ACTUAL_OUT and ACTUAL_IN vertices
-			v.clearDefUses();
 			final MethodCallExpr call = (MethodCallExpr) init.get();
-			// Set uses w.r.t. invoked objects
-			final Optional<Expression> scope = call.getScope();
-			if (scope.isPresent()) {
-				final Set<String> uses = new HashSet<>();
-				uses.add(scope.get().toString());
-				v.setRefs(uses);
+			result = delegatedMethodCall(call, v, n.getName());
+		} else if (init.isPresent() && init.get() instanceof ArrayAccessExpr) {
+			ArrayAccessExpr arrAccess = (ArrayAccessExpr) init.get();
+			Expression idx = arrAccess.getIndex();
+			result = cfgBuilder.seq(arrayIdx(v, idx), result);
+			// Uses are set in the ARRAY_IDX vertex
+			v.clearUses();
+		} else if (init.isPresent() && init.get() instanceof ArrayCreationExpr) {
+			ArrayCreationExpr expr = (ArrayCreationExpr) init.get();
+			NodeList<ArrayCreationLevel> levels = expr.getLevels();
+			List<ControlFlow> flows = new ArrayList<>();
+			Set<String> arrRefs = new HashSet<>();
+			for (ArrayCreationLevel lvl : levels) {
+				ControlFlow arrIdxCf = arrayIdx(v, lvl);
+				flows.add(arrIdxCf);
+				arrRefs.addAll(arrIdxCf.getIn().getUses());
 			}
-			final ControlFlow inFlow = args(v, call);
-			final ControlFlow outFlow = actualOut(v, n.getName());
-			result = cfgBuilder.seq(inFlow, outFlow);
+			flows.add(result);
+			result = cfgBuilder.seq(flows);
+			// Uses are set in the ARRAY_IDX vertices
+			v.getUses().removeAll(arrRefs);
 		}
+
 		return result;
 	}
 
@@ -324,24 +345,45 @@ public class CDGBuilder {
 		cdg.addVertex(v);
 		inScope.add(v);
 		ControlFlow result = new ControlFlow(v, v);
+
+		final Expression target = n.getTarget();
+		if (target instanceof ArrayAccessExpr) {
+			ArrayAccessExpr arrAccess = (ArrayAccessExpr) target;
+			v.getUses().addAll(VertexCreator.names(arrAccess.getIndex()));
+//			Expression idx = arrAccess.getIndex();
+//			result = cfgBuilder.seq(arrayIdx(v, idx), result);
+		}
+
 		// Check for call
 		final Expression value = n.getValue();
 		if (value instanceof MethodCallExpr) {
-			// Def and uses are set in the corresponding ACTUAL_OUT and ACTUAL_IN vertices
-			v.clearDefUses();
 			final MethodCallExpr call = (MethodCallExpr) value;
-			// Set uses w.r.t. invoked objects
-			final Optional<Expression> scope = call.getScope();
-			if (scope.isPresent()) {
-				final Set<String> uses = new HashSet<>();
-				uses.add(scope.get().toString());
-				v.setRefs(uses);
-			}
-			final ControlFlow inFlow = args(v, call);
-			final ControlFlow outFlow = actualOut(v, n.getTarget());
-			result = cfgBuilder.seq(inFlow, outFlow);
+			result = delegatedMethodCall(call, v, n.getTarget());
+		} else if (value instanceof ArrayAccessExpr) {
+			ArrayAccessExpr arrAccess = (ArrayAccessExpr) value;
+			Expression idx = arrAccess.getIndex();
+			ControlFlow arrIdxCf = arrayIdx(v, idx);
+			result = cfgBuilder.seq(arrIdxCf, result);
+			// Uses are set in the ARRAY_IDX vertex
+			v.getUses().removeAll(arrIdxCf.getIn().getUses());
 		}
 		return result;
+	}
+
+	private ControlFlow delegatedMethodCall(MethodCallExpr call, Vertex v, Node n) {
+		// Def and uses are set in the corresponding ACTUAL_OUT and ACTUAL_IN vertices
+		v.clearDefUses();
+		// Set uses w.r.t. invoked objects
+		final Optional<Expression> scope = call.getScope();
+		if (scope.isPresent()) {
+			String scopeVar = scope.get().toString();
+			final Set<String> uses = new HashSet<>();
+			uses.add(scopeVar);
+			v.setUses(uses);
+		}
+		final ControlFlow inFlow = args(v, call);
+		final ControlFlow outFlow = actualOut(v, n);
+		return cfgBuilder.seq(inFlow, outFlow);
 	}
 
 	private ControlFlow methodCallExpr(final MethodCallExpr n) {
@@ -582,13 +624,13 @@ public class CDGBuilder {
 			final Expression scope) {
 		final List<ControlFlow> result = new ArrayList<>();
 		final List<Vertex> paramVtcs = new ArrayList<>();
-		result.add(new ControlFlow(v, v));
 		for (final Expression e : args) {
 			final Vertex a = argumentExpr(e);
 			addEdge(EdgeType.CTRL_TRUE, v, a);
 			result.add(new ControlFlow(a, a));
 			paramVtcs.add(a);
 		}
+		result.add(new ControlFlow(v, v));
 		final String methodName = callName(name, scope);
 		putCall(methodName, new Pair<>(v, paramVtcs));
 		return cfgBuilder.seq(result);

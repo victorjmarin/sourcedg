@@ -95,6 +95,7 @@ public class PDGBuilder {
 					cdgBuilder.getMethodFormalOut());
 		cfgs = cdgBuilder.getCfgs();
 		computeDataDependencies();
+		computeOutputDependencies();
 	}
 
 	private void computeInterProceduralCalls(final HashMap<String, Pair<Vertex, List<Vertex>>> methodParams,
@@ -144,16 +145,32 @@ public class PDGBuilder {
 			reachingDefinitions(cfg);
 		for (final Vertex v : pdg.vertexSet()) {
 			final Map<String, Set<Vertex>> inDefs = inDefs(v);
-			for (final String use : v.getRefs()) {
+			for (final String use : v.getUses()) {
 				boolean noEdgeForUse = true;
 				final Set<Vertex> inVtcs = inDefs.get(use);
 				if (inVtcs != null) {
-					for (final Vertex inVtx : inVtcs)
+					for (final Vertex inVtx : inVtcs) {
 						pdg.addEdge(inVtx, v, new Edge(inVtx, v, EdgeType.DATA));
+					}
 					noEdgeForUse = false;
 				}
 				if (noEdgeForUse) {
 					// TODO: Create initial state vertex
+				}
+			}
+		}
+	}
+
+	private void computeOutputDependencies() {
+		for (final Graph<Vertex, Edge> cfg : cfgs)
+			reachingDefinitions(cfg);
+		for (final Vertex v : pdg.vertexSet()) {
+			final Map<String, Set<Vertex>> inDefs = inDefs(v);
+			String pseudoUse = v.getPseudoUse();
+			final Set<Vertex> inVtcs = inDefs.get(pseudoUse);
+			if (inVtcs != null) {
+				for (final Vertex inVtx : inVtcs) {
+					pdg.addEdge(inVtx, v, new Edge(inVtx, v, EdgeType.OUTPUT));
 				}
 			}
 		}

@@ -15,6 +15,7 @@ import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.comments.Comment;
 import com.github.javaparser.ast.expr.ArrayAccessExpr;
+import com.github.javaparser.ast.expr.ArrayCreationExpr;
 import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.BinaryExpr;
 import com.github.javaparser.ast.expr.BooleanLiteralExpr;
@@ -110,6 +111,18 @@ public class VertexCreator {
 		setId(result);
 		setLine(result, n);
 		setDef(n, result);
+		// Uses are set for array accesses in assignments.
+		setUses(n, result);
+		result.getUses().remove(result.getDef());
+		return result;
+	}
+
+	public Vertex arrayIdx(final Node n) {
+		final Vertex result = new Vertex(VertexType.ARRAY_IDX, n.toString(), n);
+		setId(result);
+		setLine(result, n);
+		setUses(n, result);
+		setSubtypes(result, n);
 		return result;
 	}
 
@@ -127,7 +140,7 @@ public class VertexCreator {
 		final String label = cond.toString();
 		final Vertex result = new Vertex(VertexType.CTRL, label, cond);
 		setId(result);
-		setRefs(cond, result);
+		setUses(cond, result);
 		setSubtypes(result, cond);
 		setLine(result, n);
 		return result;
@@ -145,7 +158,7 @@ public class VertexCreator {
 		setId(result);
 		setLine(result, n);
 		if (cond.isPresent()) {
-			setRefs(cond.get(), result);
+			setUses(cond.get(), result);
 			setSubtypes(result, cond.get());
 		}
 		return result;
@@ -157,7 +170,7 @@ public class VertexCreator {
 		final Vertex result = new Vertex(VertexType.CTRL, label, it);
 		setId(result);
 		setLine(result, n);
-		setRefs(it, result);
+		setUses(it, result);
 		setSubtypes(result, it);
 		return result;
 	}
@@ -168,7 +181,7 @@ public class VertexCreator {
 		final Vertex result = new Vertex(VertexType.CTRL, label, cond);
 		setId(result);
 		setLine(result, n);
-		setRefs(cond, result);
+		setUses(cond, result);
 		setSubtypes(result, cond);
 		return result;
 	}
@@ -179,7 +192,7 @@ public class VertexCreator {
 		final Vertex result = new Vertex(VertexType.CTRL, label, cond);
 		setId(result);
 		setLine(result, n);
-		setRefs(cond, result);
+		setUses(cond, result);
 		setSubtypes(result, cond);
 		return result;
 	}
@@ -193,7 +206,7 @@ public class VertexCreator {
 		setDef(n.getName(), result);
 		setSubtypes(result, n);
 		if (init.isPresent())
-			setRefs(init.get(), result);
+			setUses(init.get(), result);
 		return result;
 	}
 
@@ -203,7 +216,8 @@ public class VertexCreator {
 		setId(result);
 		setLine(result, n);
 		setDef(n.getTarget(), result);
-		setRefs(n.getValue(), result);
+		setUses(n.getValue(), result);
+		setPseudoUse(n.getTarget(), result);
 		setSubtypes(result, n);
 		return result;
 	}
@@ -213,7 +227,11 @@ public class VertexCreator {
 		final Vertex result = new Vertex(VertexType.CALL, label, n);
 		setId(result);
 		setLine(result, n);
+		setUses(n, result);
 		setSubtypes(result, n);
+		final Optional<Expression> scope = n.getScope();
+		if (scope.isPresent())
+			setDef(scope.get(), result);
 		return result;
 	}
 
@@ -222,7 +240,8 @@ public class VertexCreator {
 		final Vertex result = new Vertex(VertexType.ACTUAL_IN, label, n);
 		setId(result);
 		setLine(result, n);
-		setRefs(n, result);
+		setUses(n, result);
+		setSubtypes(result, n);
 		return result;
 	}
 
@@ -232,7 +251,8 @@ public class VertexCreator {
 		setId(result);
 		setLine(result, n);
 		setDef(n, result);
-		setRefs(n, result);
+		setUses(n, result);
+		setPseudoUse(n, result);
 		setSubtypes(result, n);
 		return result;
 	}
@@ -244,7 +264,7 @@ public class VertexCreator {
 		setId(result);
 		setLine(result, n);
 		if (expr.isPresent()) {
-			setRefs(expr.get(), result);
+			setUses(expr.get(), result);
 			setSubtypes(result, expr.get());
 		}
 		return result;
@@ -281,6 +301,7 @@ public class VertexCreator {
 		final Vertex result = new Vertex(VertexType.CATCH, label, n);
 		setId(result);
 		setLine(result, n);
+		setDef(n, result);
 		return result;
 	}
 
@@ -298,7 +319,7 @@ public class VertexCreator {
 		final Vertex result = new Vertex(VertexType.THROW, label, n);
 		setId(result);
 		setLine(result, n);
-		setRefs(expr, result);
+		setUses(expr, result);
 		setSubtypes(result, expr);
 		return result;
 	}
@@ -344,13 +365,19 @@ public class VertexCreator {
 		v.setDef(def);
 	}
 
-	private void setRefs(final Node n, final Vertex v) {
+	private void setUses(final Node n, final Vertex v) {
 		final Set<String> uses = names(n);
-		v.setRefs(uses);
+		v.setUses(uses);
+	}
+
+	private void setPseudoUse(final Node n, final Vertex v) {
+		String pseudoUse = Utils.first(names(n));
+		v.setPseudoUse(pseudoUse);
+		// v.getUses().add(pseudoUse);
 	}
 
 	// TODO: This is a preliminary construction for def and uses. Be more thorough.
-	private Set<String> names(final Node ast) {
+	public static Set<String> names(final Node ast) {
 		if (ast == null)
 			return new HashSet<>();
 		return ast.findAll(SimpleName.class).stream().map(n -> n.getIdentifier()).collect(Collectors.toSet());
@@ -403,7 +430,13 @@ public class VertexCreator {
 		public void visit(ObjectCreationExpr n, Vertex v) {
 			super.visit(n, v);
 			v.getSubtypes().add(n.getTypeAsString());
-			v.getSubtypes().add("NEW");
+			v.getSubtypes().add("NEW_OBJECT");
+		}
+
+		@Override
+		public void visit(ArrayCreationExpr n, Vertex v) {
+			super.visit(n, v);
+			v.getSubtypes().add("NEW_ARRAY");
 		}
 
 		@Override
@@ -430,6 +463,9 @@ public class VertexCreator {
 		@Override
 		public void visit(UnaryExpr n, Vertex v) {
 			super.visit(n, v);
+			String operator = n.getOperator().toString();
+			if (operator.contains("PREFIX") || operator.contains("POSTFIX"))
+				v.getSubtypes().add("PRE/POST");
 			v.getSubtypes().add(n.getOperator().toString());
 		}
 
@@ -442,7 +478,7 @@ public class VertexCreator {
 		@Override
 		public void visit(CharLiteralExpr n, Vertex v) {
 			super.visit(n, v);
-			v.getSubtypes().add(n.getValue());
+			v.getSubtypes().add(n.getValue().toUpperCase());
 		}
 
 		@Override
@@ -466,7 +502,7 @@ public class VertexCreator {
 		@Override
 		public void visit(StringLiteralExpr n, Vertex v) {
 			super.visit(n, v);
-			v.getSubtypes().add(n.getValue());
+			v.getSubtypes().add(n.getValue().toUpperCase());
 		}
 
 		// Expressions/statements that we may receive as a whole.

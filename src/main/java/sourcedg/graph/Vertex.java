@@ -20,7 +20,9 @@ public class Vertex implements Serializable {
 	private Integer line;
 	private transient PDG pdg;
 	private transient String def;
-	private transient Set<String> refs;
+	private transient Set<String> uses;
+	// Used for output dependence edges.
+	private transient String pseudoUse;
 	private final transient Set<Vertex> in;
 	private transient Set<Vertex> out;
 	private transient Node ast;
@@ -31,8 +33,8 @@ public class Vertex implements Serializable {
 	private boolean visited;
 
 	public Vertex(final String label) {
-		this.label = label;
-		refs = new HashSet<>();
+		this.label = label.replaceAll("\n", " ");
+		uses = new HashSet<>();
 		subtypes = new HashSet<>();
 		in = new HashSet<>();
 		out = new HashSet<>();
@@ -40,7 +42,7 @@ public class Vertex implements Serializable {
 
 	public Vertex(final long id) {
 		this.id = id;
-		refs = new HashSet<>();
+		uses = new HashSet<>();
 		subtypes = new HashSet<>();
 		in = new HashSet<>();
 		out = new HashSet<>();
@@ -49,8 +51,8 @@ public class Vertex implements Serializable {
 	public Vertex(final VertexType type, final String label, final Node ast) {
 		id = -1;
 		this.type = type;
-		this.label = label;
-		refs = new HashSet<>();
+		this.label = label.replaceAll("\n", " ");
+		uses = new HashSet<>();
 		subtypes = new HashSet<>();
 		in = new HashSet<>();
 		out = new HashSet<>();
@@ -64,8 +66,8 @@ public class Vertex implements Serializable {
 	public Vertex(final long id, final VertexType type, final String label) {
 		this.id = id;
 		this.type = type;
-		this.label = label;
-		refs = new HashSet<>();
+		this.label = label.replaceAll("\n", " ");
+		uses = new HashSet<>();
 		subtypes = new HashSet<>();
 		in = new HashSet<>();
 		out = new HashSet<>();
@@ -79,38 +81,38 @@ public class Vertex implements Serializable {
 		this.id = id;
 	}
 
-	public void setType(final VertexType type) {
-		this.type = type;
-	}
-
-	public VertexType getType() {
-		return type;
-	}
-
 	public String getLabel() {
 		return label;
 	}
 
 	public void setLabel(final String label) {
-		this.label = label;
+		this.label = label.replaceAll("\n", " ");
 	}
 
 	public String getDef() {
 		return def;
 	}
 
-	public void setDef(final String assignedVariable) {
-		def = assignedVariable;
+	public void setDef(final String def) {
+		this.def = def;
 	}
 
-	public Set<String> getRefs() {
-		if (refs == null)
-			refs = new HashSet<>();
-		return refs;
+	public Set<String> getUses() {
+		if (uses == null)
+			uses = new HashSet<>();
+		return uses;
 	}
 
-	public void setRefs(final Set<String> readingVariables) {
-		refs = readingVariables;
+	public String getPseudoUse() {
+		return pseudoUse;
+	}
+
+	public void setPseudoUse(String pseudoUse) {
+		this.pseudoUse = pseudoUse;
+	}
+
+	public void setUses(final Set<String> uses) {
+		this.uses = uses;
 	}
 
 	public Integer getStartLine() {
@@ -141,12 +143,26 @@ public class Vertex implements Serializable {
 		this.out = out;
 	}
 
+	public VertexType getType() {
+		return type;
+	}
+
+	public void setType(final VertexType type) {
+		this.type = type;
+	}
+
 	public Set<String> getSubtypes() {
 		return subtypes;
 	}
 
 	public void setSubtypes(final Set<String> subtypes) {
 		this.subtypes = subtypes;
+	}
+
+	public Set<String> getTypeAndSubtypes() {
+		Set<String> result = new HashSet<>(subtypes);
+		result.add(type.name());
+		return result;
 	}
 
 	public Node getAst() {
@@ -163,7 +179,11 @@ public class Vertex implements Serializable {
 
 	public void clearDefUses() {
 		def = null;
-		refs = new HashSet<>();
+		uses = new HashSet<>();
+	}
+
+	public void clearUses() {
+		uses = new HashSet<>();
 	}
 
 	public Integer getLine() {

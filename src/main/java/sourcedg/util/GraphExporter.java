@@ -7,6 +7,7 @@ import java.util.Set;
 
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.io.Attribute;
 import org.jgrapht.io.ComponentAttributeProvider;
 import org.jgrapht.io.ComponentNameProvider;
@@ -74,6 +75,9 @@ public class GraphExporter {
 				case DATA:
 					result.put("style", DefaultAttribute.createAttribute("dashed"));
 					break;
+				case OUTPUT:
+					result.put("style", DefaultAttribute.createAttribute("bold"));
+					break;
 				case CALL:
 				case PARAM_IN:
 				case PARAM_OUT:
@@ -95,6 +99,44 @@ public class GraphExporter {
 		try {
 			final String filePath = path + "/" + fileName + ".dot";
 			final File dotFile = new File(filePath);
+			exporter.exportGraph(graph, dotFile);
+
+			final Graphviz gv = new Graphviz();
+			gv.readSource(filePath);
+
+			final String type = "png";
+			final String repesentationType = "dot";
+			final File out = new File(path + "/" + fileName + "." + type);
+			gv.writeGraphToFile(gv.getGraph(gv.getDotSource(), type, repesentationType), out);
+
+			dotFile.delete();
+		} catch (final ExportException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static <T> void exportAsDot2(final Graph<T, DefaultWeightedEdge> graph, final String path,
+			final String fileName) {
+		try {
+			final String filePath = path + "/" + fileName + ".dot";
+			final File dotFile = new File(filePath);
+
+			DOTExporter<T, DefaultWeightedEdge> exporter = new DOTExporter<>(new IntegerComponentNameProvider<>(),
+					new ComponentNameProvider<T>() {
+
+						@Override
+						public String getName(T component) {
+							return component.toString();
+						}
+					}, new ComponentNameProvider<DefaultWeightedEdge>() {
+
+						@Override
+						public String getName(DefaultWeightedEdge e) {
+							double roundedWeight = Math.round(graph.getEdgeWeight(e) * 100.0) / 100.0;
+							;
+							return String.valueOf(roundedWeight);
+						}
+					}, null, null);
 			exporter.exportGraph(graph, dotFile);
 
 			final Graphviz gv = new Graphviz();
