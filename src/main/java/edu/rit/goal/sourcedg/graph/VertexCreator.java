@@ -505,6 +505,12 @@ public class VertexCreator {
       n.getCondition().accept(this, v);
     }
 
+	@Override
+	public void visit(AssignExpr n, Vertex v) {
+		super.visit(n, v);
+		v.getSubtypes().add(n.getOperator().toString());
+	}
+
   }
 
 }

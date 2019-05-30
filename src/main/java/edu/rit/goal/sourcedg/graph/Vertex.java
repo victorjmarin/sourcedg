@@ -1,8 +1,11 @@
 package edu.rit.goal.sourcedg.graph;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+
 import com.github.javaparser.ast.Node;
 
 public class Vertex implements Serializable {
@@ -13,7 +16,7 @@ public class Vertex implements Serializable {
   private String label;
   private String def;
   private Set<String> refs;
-  private Set<String> subtypes;
+  private List<String> subtypes;
   private Integer startLine;
   private Integer endLine;
   private final Set<Vertex> in;
@@ -30,7 +33,7 @@ public class Vertex implements Serializable {
   public Vertex(final String label) {
     this.label = label;
     refs = new HashSet<>();
-    subtypes = new HashSet<>();
+    subtypes = new ArrayList<>();
     in = new HashSet<>();
     out = new HashSet<>();
   }
@@ -38,7 +41,7 @@ public class Vertex implements Serializable {
   public Vertex(final int id) {
     this.id = id;
     refs = new HashSet<>();
-    subtypes = new HashSet<>();
+    subtypes = new ArrayList<>();
     in = new HashSet<>();
     out = new HashSet<>();
   }
@@ -48,7 +51,7 @@ public class Vertex implements Serializable {
     this.type = type;
     this.label = label;
     refs = new HashSet<>();
-    subtypes = new HashSet<>();
+    subtypes = new ArrayList<>();
     in = new HashSet<>();
     out = new HashSet<>();
     this.ast = ast;
@@ -63,7 +66,7 @@ public class Vertex implements Serializable {
     this.type = type;
     this.label = label;
     refs = new HashSet<>();
-    subtypes = new HashSet<>();
+    subtypes = new ArrayList<>();
     in = new HashSet<>();
     out = new HashSet<>();
   }
@@ -138,11 +141,11 @@ public class Vertex implements Serializable {
     this.out = out;
   }
 
-  public Set<String> getSubtypes() {
+  public List<String> getSubtypes() {
     return subtypes;
   }
 
-  public void setSubtypes(final Set<String> subtypes) {
+  public void setSubtypes(final List<String> subtypes) {
     this.subtypes = subtypes;
   }
 
