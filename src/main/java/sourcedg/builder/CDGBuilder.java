@@ -626,6 +626,10 @@ public class CDGBuilder {
 		final List<Vertex> paramVtcs = new ArrayList<>();
 		for (final Expression e : args) {
 			final Vertex a = argumentExpr(e);
+
+			// Remove uses in parent node.
+			v.getUses().removeAll(v.getUses());
+
 			addEdge(EdgeType.CTRL_TRUE, v, a);
 			result.add(new ControlFlow(a, a));
 			paramVtcs.add(a);

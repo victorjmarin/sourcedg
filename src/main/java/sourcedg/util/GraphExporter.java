@@ -153,6 +153,35 @@ public class GraphExporter {
 		}
 	}
 
+	public static <T> void exportAsDot3(final Graph<T, DefaultEdge> graph, final String path, final String fileName) {
+		try {
+			final String filePath = path + "/" + fileName + ".dot";
+			final File dotFile = new File(filePath);
+
+			DOTExporter<T, DefaultEdge> exporter = new DOTExporter<>(new IntegerComponentNameProvider<>(),
+					new ComponentNameProvider<T>() {
+
+						@Override
+						public String getName(T component) {
+							return component.toString();
+						}
+					}, null, null, null);
+			exporter.exportGraph(graph, dotFile);
+
+			final Graphviz gv = new Graphviz();
+			gv.readSource(filePath);
+
+			final String type = "png";
+			final String repesentationType = "dot";
+			final File out = new File(path + "/" + fileName + "." + type);
+			gv.writeGraphToFile(gv.getGraph(gv.getDotSource(), type, repesentationType), out);
+
+			dotFile.delete();
+		} catch (final ExportException e) {
+			e.printStackTrace();
+		}
+	}
+
 	public static void exportDefaultAsDot(final Graph<Vertex, DefaultEdge> graph, final String path,
 			final String fileName) {
 		try {
