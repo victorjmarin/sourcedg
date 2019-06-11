@@ -22,6 +22,7 @@ import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.ArrayAccessExpr;
 import com.github.javaparser.ast.expr.ArrayCreationExpr;
 import com.github.javaparser.ast.expr.AssignExpr;
+import com.github.javaparser.ast.expr.EnclosedExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.UnaryExpr;
@@ -355,7 +356,9 @@ public class CDGBuilder {
 		}
 
 		// Check for call
-		final Expression value = n.getValue();
+		Expression value = n.getValue();
+		if (value instanceof EnclosedExpr)
+			value = ((EnclosedExpr) value).getInner();
 		if (value instanceof MethodCallExpr) {
 			final MethodCallExpr call = (MethodCallExpr) value;
 			result = delegatedMethodCall(call, v, n.getTarget());
